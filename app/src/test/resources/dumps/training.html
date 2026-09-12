@@ -1,0 +1,1923 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<script type="text/javascript">
+
+	function condel() {
+
+		return confirm('Diese Trainingseinstellung wirklich entfernen?');
+
+	}
+
+</script>
+
+<b><font color="#ffffff">Aktuelle Trainingseinstellung</font></b>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:os_wiki('OS_Hilfesystem_Training')"><img src="/images/os_hilfe.gif" border=0></a>
+
+<br>
+
+<br>
+
+<table border="0" width="405">
+
+<tr><td>Trainer 1: 0 Spieler</td><td>Trainer 2: 0 Spieler</td><td>Trainer 3: 0 Spieler</td></tr>
+
+<tr><td>Trainer 4: 0 Spieler</td><td>Trainer 5: 0 Spieler</td><td>Trainer 6: 0 Spieler</td></tr>
+
+<tr style="display:none"><td class="STU" colspan="3">Ein oder mehr Trainer betreuen mehr als 5 Spieler! Bitte reduziere diese Anzahl, ansonsten werden nur die ersten 5 Spieler von diesem Trainer trainiert!</td></tr>
+
+</table>
+
+<br>
+
+	<table border="0">
+
+		<tr>
+
+			<td>
+
+				<form method="POST">
+
+					<select name="trainingload">
+
+						<option value="0">Bitte w&auml;hlen</option>
+
+						<option value="53999">2026</option><option value="52532">Training 1</option>
+
+					</select>
+
+					<input type="submit" value="laden">
+
+				</form>
+
+			</td>
+
+			<td>
+
+				<form method="POST">
+
+					<select name="trainingsaveas">
+
+						<option value="0">Bitte w&auml;hlen</option>
+
+						<option value="53999">2026</option><option value="52532">Training 1</option>
+
+					</select>
+
+					<input type="submit" value="Speichern als">
+
+				</form>
+
+			</td>
+
+			<td>
+
+				<form method="POST">
+
+					<input type="text" name="trainingsave" value="Name:">
+
+					<input type="submit" value="Neue Speicherung anlegen">
+
+				</form>
+
+			</td>
+
+			<td>
+
+				<form method="POST">
+
+					<select name="trainingsdelete">
+
+						<option value="0">Bitte w&auml;hlen</option>
+
+						<option value="53999">2026</option><option value="52532">Training 1</option>
+
+					</select>
+
+					<input type="submit" value="L&ouml;schen" onClick="condel()">
+
+				</form>
+
+			</td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan="3">
+
+				Achtung! Bitte &Auml;nderungen vorher unten speichern, ansonsten werden diese nicht &uuml;bernommen!
+
+			</td>
+
+		</tr>
+
+	</table>
+
+<br>
+
+<form method="POST">
+
+ <table border="0" cellpadding="3"><tr align=middle><td></td><td>Name</td><td>Alter</td><td>Opti</td><td>Trainer</td><td>trainierter Skill</td><td>Skill</td><td>Chance</td></tr>
+
+ 
+<tr align="right">
+
+	<td></td>
+
+	<td class="TOR" align="left"><a href="javascript:spielerinfo(97944)">Lars Vincez</a></td>
+
+	<td class="TOR">33</td>
+
+	<td class="TOR">89.37</td>
+
+	<td><select name="tr197944" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr297944" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">ABS</option>
+<option value="2">STS</option>
+<option value="3">FAN</option>
+<option value="4">STB</option>
+<option value="5">SPL</option>
+<option value="6">REF</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="TOR"></td>
+
+	<td class="TOR">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="TOR" align="left"><a href="javascript:spielerinfo(104203)">Heiko Kehrer</a></td>
+
+	<td class="TOR">31</td>
+
+	<td class="TOR">55.22</td>
+
+	<td><select name="tr1104203" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2104203" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">ABS</option>
+<option value="2">STS</option>
+<option value="3">FAN</option>
+<option value="4">STB</option>
+<option value="5">SPL</option>
+<option value="6">REF</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="TOR"></td>
+
+	<td class="TOR">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="TOR" align="left"><a href="javascript:spielerinfo(120513)">Kuldar Mitt</a></td>
+
+	<td class="TOR">29</td>
+
+	<td class="TOR">87.63</td>
+
+	<td><select name="tr1120513" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2120513" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">ABS</option>
+<option value="2">STS</option>
+<option value="3">FAN</option>
+<option value="4">STB</option>
+<option value="5">SPL</option>
+<option value="6">REF</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="TOR"></td>
+
+	<td class="TOR">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="TOR" align="left"><a href="javascript:spielerinfo(149061)">Evghenii Bonciucov</a></td>
+
+	<td class="TOR">23</td>
+
+	<td class="TOR">73.22</td>
+
+	<td><select name="tr1149061" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2149061" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">ABS</option>
+<option value="2">STS</option>
+<option value="3">FAN</option>
+<option value="4">STB</option>
+<option value="5">SPL</option>
+<option value="6">REF</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="TOR"></td>
+
+	<td class="TOR">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="TOR" align="left"><a href="javascript:spielerinfo(169958)">Ardalan Golcheshmeh</a></td>
+
+	<td class="TOR">20</td>
+
+	<td class="TOR">55.30</td>
+
+	<td><select name="tr1169958" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2169958" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">ABS</option>
+<option value="2">STS</option>
+<option value="3">FAN</option>
+<option value="4">STB</option>
+<option value="5">SPL</option>
+<option value="6">REF</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="TOR"></td>
+
+	<td class="TOR">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(115904)">Flavio Zurlinden</a></td>
+
+	<td class="ABW">30</td>
+
+	<td class="ABW">93.00</td>
+
+	<td><select name="tr1115904" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2115904" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(131349)">Alexey Zuyev</a></td>
+
+	<td class="ABW">27</td>
+
+	<td class="ABW">89.59</td>
+
+	<td><select name="tr1131349" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2131349" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(131832)">Licínio Maurício</a></td>
+
+	<td class="ABW">27</td>
+
+	<td class="ABW">87.41</td>
+
+	<td><select name="tr1131832" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2131832" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(139649)">Kristo Dragiev</a></td>
+
+	<td class="ABW">26</td>
+
+	<td class="ABW">93.96</td>
+
+	<td><select name="tr1139649" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2139649" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(146803)">Dhuntiar Konechi</a></td>
+
+	<td class="ABW">24</td>
+
+	<td class="ABW">50.74</td>
+
+	<td><select name="tr1146803" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2146803" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(151229)">Space Parks</a></td>
+
+	<td class="ABW">24</td>
+
+	<td class="ABW">81.78</td>
+
+	<td><select name="tr1151229" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2151229" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(161985)">Egnatius Dajan</a></td>
+
+	<td class="ABW">22</td>
+
+	<td class="ABW">46.37</td>
+
+	<td><select name="tr1161985" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2161985" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(169711)">Harald Philippi</a></td>
+
+	<td class="ABW">20</td>
+
+	<td class="ABW">63.85</td>
+
+	<td><select name="tr1169711" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2169711" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(169957)">Mirko Antersberger</a></td>
+
+	<td class="ABW">20</td>
+
+	<td class="ABW">65.33</td>
+
+	<td><select name="tr1169957" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2169957" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(169981)">Roman Paduch</a></td>
+
+	<td class="ABW">19</td>
+
+	<td class="ABW">47.19</td>
+
+	<td><select name="tr1169981" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2169981" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="ABW" align="left"><a href="javascript:spielerinfo(174520)">Bernd Straka</a></td>
+
+	<td class="ABW">19</td>
+
+	<td class="ABW">48.00</td>
+
+	<td><select name="tr1174520" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2174520" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="ABW"></td>
+
+	<td class="ABW">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="DMI" align="left"><a href="javascript:spielerinfo(121743)">Oskari Konsa</a></td>
+
+	<td class="DMI">29</td>
+
+	<td class="DMI">87.81</td>
+
+	<td><select name="tr1121743" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2121743" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="DMI"></td>
+
+	<td class="DMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="DMI" align="left"><a href="javascript:spielerinfo(141759)">Koki Abamelek</a></td>
+
+	<td class="DMI">25</td>
+
+	<td class="DMI">80.63</td>
+
+	<td><select name="tr1141759" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2141759" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="DMI"></td>
+
+	<td class="DMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="DMI" align="left"><a href="javascript:spielerinfo(151152)">Dino Scerri</a></td>
+
+	<td class="DMI">24</td>
+
+	<td class="DMI">79.07</td>
+
+	<td><select name="tr1151152" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2151152" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="DMI"></td>
+
+	<td class="DMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="DMI" align="left"><a href="javascript:spielerinfo(151260)">Egidijus Davainis</a></td>
+
+	<td class="DMI">23</td>
+
+	<td class="DMI">66.70</td>
+
+	<td><select name="tr1151260" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2151260" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="DMI"></td>
+
+	<td class="DMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="DMI" align="left"><a href="javascript:spielerinfo(166171)">Jans Louwman</a></td>
+
+	<td class="DMI">21</td>
+
+	<td class="DMI">63.63</td>
+
+	<td><select name="tr1166171" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2166171" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="DMI"></td>
+
+	<td class="DMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="MIT" align="left"><a href="javascript:spielerinfo(111260)">Alain Achten</a></td>
+
+	<td class="MIT">31</td>
+
+	<td class="MIT">92.89</td>
+
+	<td><select name="tr1111260" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2111260" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="MIT"></td>
+
+	<td class="MIT">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="MIT" align="left"><a href="javascript:spielerinfo(116286)">Janar Pihel</a></td>
+
+	<td class="MIT">30</td>
+
+	<td class="MIT">89.00</td>
+
+	<td><select name="tr1116286" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2116286" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="MIT"></td>
+
+	<td class="MIT">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="MIT" align="left"><a href="javascript:spielerinfo(121678)">Tomás Simao</a></td>
+
+	<td class="MIT">29</td>
+
+	<td class="MIT">93.59</td>
+
+	<td><select name="tr1121678" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2121678" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="MIT"></td>
+
+	<td class="MIT">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="MIT" align="left"><a href="javascript:spielerinfo(138920)">Oscar Greaves</a></td>
+
+	<td class="MIT">26</td>
+
+	<td class="MIT">82.96</td>
+
+	<td><select name="tr1138920" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2138920" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="MIT"></td>
+
+	<td class="MIT">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="MIT" align="left"><a href="javascript:spielerinfo(156048)">Asko Prints</a></td>
+
+	<td class="MIT">23</td>
+
+	<td class="MIT">74.26</td>
+
+	<td><select name="tr1156048" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2156048" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="MIT"></td>
+
+	<td class="MIT">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="OMI" align="left"><a href="javascript:spielerinfo(142133)">Kauri Salumae</a></td>
+
+	<td class="OMI">25</td>
+
+	<td class="OMI">85.59</td>
+
+	<td><select name="tr1142133" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2142133" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="OMI"></td>
+
+	<td class="OMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="OMI" align="left"><a href="javascript:spielerinfo(174521)">Fabian Röwer</a></td>
+
+	<td class="OMI">19</td>
+
+	<td class="OMI">62.15</td>
+
+	<td><select name="tr1174521" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2174521" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="OMI"></td>
+
+	<td class="OMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="OMI" align="left"><a href="javascript:spielerinfo(176649)">Ivan Timachev</a></td>
+
+	<td class="OMI">18</td>
+
+	<td class="OMI">64.59</td>
+
+	<td><select name="tr1176649" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2176649" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="OMI"></td>
+
+	<td class="OMI">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="STU" align="left"><a href="javascript:spielerinfo(106235)">Ruslan Hryshukevich</a></td>
+
+	<td class="STU">32</td>
+
+	<td class="STU">98.67</td>
+
+	<td><select name="tr1106235" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2106235" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="STU"></td>
+
+	<td class="STU">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="STU" align="left"><a href="javascript:spielerinfo(126675)">Olev Tikerpää</a></td>
+
+	<td class="STU">28</td>
+
+	<td class="STU">86.44</td>
+
+	<td><select name="tr1126675" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2126675" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="STU"></td>
+
+	<td class="STU">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="STU" align="left"><a href="javascript:spielerinfo(132483)">Camilo Baruco</a></td>
+
+	<td class="STU">27</td>
+
+	<td class="STU">91.15</td>
+
+	<td><select name="tr1132483" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2132483" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="STU"></td>
+
+	<td class="STU">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="STU" align="left"><a href="javascript:spielerinfo(165491)">Ali Uzay</a></td>
+
+	<td class="STU">21</td>
+
+	<td class="STU">65.00</td>
+
+	<td><select name="tr1165491" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2165491" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="STU"></td>
+
+	<td class="STU">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="STU" align="left"><a href="javascript:spielerinfo(165648)">Ekin Demirpence</a></td>
+
+	<td class="STU">21</td>
+
+	<td class="STU">57.48</td>
+
+	<td><select name="tr1165648" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2165648" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="STU"></td>
+
+	<td class="STU">0.00 %</td>
+
+</tr><tr align="right">
+
+	<td></td>
+
+	<td class="STU" align="left"><a href="javascript:spielerinfo(169712)">Steffen Fromm</a></td>
+
+	<td class="STU">20</td>
+
+	<td class="STU">73.44</td>
+
+	<td><select name="tr1169712" size="1">
+
+		<option value="0" SELECTED>---</option>
+
+		<option value="1">T 1 60</option>
+
+		<option value="2">T 2 60</option>
+
+		<option value="3">T 3 60</option>
+
+		<option value="4">T 4 60</option>
+
+		<option value="5">T 5 60</option>
+
+		<option value="6">T 6 60</option>
+
+	</select></td>
+
+	<td><select name="tr2169712" size="1">
+
+		<option value="0" SELECTED>---</option>
+<option value="1">SCH</option>
+<option value="2">BAK</option>
+<option value="3">KOB</option>
+<option value="4">ZWK</option>
+<option value="5">DEC</option>
+<option value="6">GES</option>
+<option value="7">AGG</option>
+<option value="8">PAS</option>
+<option value="9">AUS</option>
+<option value="10">UEB</option>
+<option value="11">ZUV</option>
+
+
+	</select></td>
+
+	<td class="STU"></td>
+
+	<td class="STU">0.00 %</td>
+
+</tr>
+
+</TABLE>
+
+<input type="submit" name="trainingspeichern" value="Trainingseinstellung speichern">
+
+<input type="reset" value="Abbrechen">
+
+<input type="submit" name="trainingdelete" value="Trainingseinstellung l&ouml;schen">
+
+</form>
+</div>
+
+</body>
+
+</html>

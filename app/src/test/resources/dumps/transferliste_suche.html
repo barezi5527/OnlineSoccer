@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Transferliste - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Transferliste</h1>
+
+		<form method="GET" action="/osneu/transferliste">
+			<input type="hidden" name="gesucht" value="1" />
+
+			<p>
+									Zur Zeit befinden sich 1330 Spieler auf der internationalen Transferliste.
+							</p>
+
+			<table>
+				<tr><td>
+					<select name="alter">
+						<option value="0">Alter</option>
+						<option value="1">16-18</option>
+						<option value="2">19-20</option>
+						<option value="3">21-22</option>
+						<option value="4">23-24</option>
+						<option value="5">25-26</option>
+						<option value="6">27-28</option>
+						<option value="7">29-30</option>
+						<option value="8">31-32</option>
+						<option value="9">33+</option>
+					</select>
+					<select name="skill">
+						<option value="0">Skillschnitt</option>
+						<option value="1">0-20,00</option>
+						<option value="2">20,01-30,00</option>
+						<option value="3">30,01-40,00</option>
+						<option value="4">40,01-50,00</option>
+						<option value="5" selected>50,01-60,00</option>
+						<option value="6">60,01+</option>
+					</select>
+					<select name="opti">
+						<option value="0">Opt.Skillschnitt</option>
+						<option value="1">0-40,00</option>
+						<option value="2">40,01-50,00</option>
+						<option value="3">50,01-60,00</option>
+						<option value="4">60,01-70,00</option>
+						<option value="5">70,01-80,00</option>
+						<option value="6">80,01-90,00</option>
+						<option value="7">90,01+</option>
+					</select>
+					<select name="abloese">
+						<option value="0">Ablöse</option>
+						<option value="1">0-1.000.000</option>
+						<option value="2">1.000.001-2.500.000</option>
+						<option value="3">2.500.001-5.000.000</option>
+						<option value="4">5.000.001-10.000.000</option>
+						<option value="5">10.000.001-15.000.000</option>
+						<option value="6">15.000.001-25.000.000</option>
+						<option value="7">25.000.001-50.000.000</option>
+						<option value="8">50.000.001+</option>
+					</select>
+					<select name="position">
+						<option value="0">Position</option>
+													<option value="1">TOR</option>
+													<option value="2">ABW</option>
+													<option value="3">DMI</option>
+													<option value="4">MIT</option>
+													<option value="5">OMI</option>
+													<option value="6">STU</option>
+											</select>
+					<select name="tstatus">
+						<option value="0">Status</option>
+						<option value="1">A</option>
+						<option value="2">T</option>
+					</select>
+					<select name="tdetail">
+						<option value="0">Transferdetails</option>
+						<option value="1">Kauf</option>
+						<option value="2">Tausch</option>
+						<option value="4">Leihe</option>
+						<option value="3">Kauf/Tausch</option>
+						<option value="5">Kauf/Leihe</option>
+						<option value="6">Tausch/Leihe</option>
+						<option value="7">Kauf/Tausch/Leihe</option>
+					</select>
+					<select name="sortierung">
+						<option value="0">Sortierung</option>
+						<option value="11">Alter aufsteigend</option>
+						<option value="12">Alter absteigend</option>
+						<option value="21">Dauer aufsteigend</option>
+						<option value="22">Dauer absteigend</option>
+						<option value="71">Ablöse aufsteigend</option>
+						<option value="72">Ablöse absteigend</option>
+						<option value="41">Opti aufsteigend</option>
+						<option value="42">Opti absteigend</option>
+						<option value="51">Position aufsteigend</option>
+						<option value="52">Position absteigend</option>
+						<option value="61">Skill aufsteigend</option>
+						<option value="62" selected>Skill absteigend</option>
+						<option value="81">MW aufsteigend</option>
+						<option value="82">MW absteigend</option>
+					</select>
+					<select name="tinfo">
+						<option value="0">Transferinfo</option>
+						<option value="1">Nicht anzeigen</option>
+						<option value="2">Anzeigen</option>
+					</select>
+					<select name="proSeite">
+													<option value="25" selected>25 pro Seite</option>
+													<option value="50">50 pro Seite</option>
+													<option value="75">75 pro Seite</option>
+													<option value="100">100 pro Seite</option>
+											</select>
+					<input type="submit" value="Anzeigen" />
+				</td></tr>
+			</table>
+		</form>
+
+		<hr />
+
+									<table style="width:850px; margin:0px; padding:0px; text-align:center; font-size:1.1em;">
+					<tr>
+						<th width="10px">S</th>
+						<th width="40px" style="white-space:nowrap;">D</th>
+						<th width="200px">Name</th>
+						<th width="10px">Alter</th>
+						<th width="10px">Pos</th>
+						<th width="75px">Land</th>
+						<th width="50px">Skill</th>
+						<th width="50px">Opt.Skill</th>
+						<th width="200px">Team</th>
+						<th width="50px">Ablöse</th>
+						<th width="50px">Datum</th>
+						<th width="50px">Kontakt</th>
+					</tr>
+											<tr class="mit">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T/L</td>
+							<td><a href="/sp.php?s=130312" onClick="spielerinfo(130312);return false;">Juhani Kiikeri</a></td>
+							<td>27</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/FIN.gif" alt="Flagge" /></td>
+							<td>59,94</td>
+							<td>86,78</td>
+							<td><a href="/st.php?c=1078" onClick="teaminfo(1078);return false;">Aldershot United</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=1164">PM</a></td>
+						</tr>
+																	<tr class="omi">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=99384" onClick="spielerinfo(99384);return false;">Tyler Guy</a></td>
+							<td>33</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/ENG.gif" alt="Flagge" /></td>
+							<td>59,71</td>
+							<td>83,96</td>
+							<td><a href="/st.php?c=675" onClick="teaminfo(675);return false;">Rynninge BK</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=410">PM</a></td>
+						</tr>
+																	<tr class="omi">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=106081" onClick="spielerinfo(106081);return false;">Logorio Acevedo</a></td>
+							<td>32</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/PAN.gif" alt="Flagge" /></td>
+							<td>59,59</td>
+							<td>88,33</td>
+							<td><a href="/st.php?c=588" onClick="teaminfo(588);return false;">IF Torshavn</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=842">PM</a></td>
+						</tr>
+																	<tr class="tor">
+							<td>A</td>
+							<td style="white-space:nowrap;">K</td>
+							<td><a href="/sp.php?s=90755" onClick="spielerinfo(90755);return false;">Juan Manuel Catano</a></td>
+							<td>33</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/ESP.gif" alt="Flagge" /></td>
+							<td>59,59</td>
+							<td>88,63</td>
+							<td><a href="/st.php?c=109" onClick="teaminfo(109);return false;">UE Lemona</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=3401">PM</a></td>
+						</tr>
+																	<tr class="dmi">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T/L</td>
+							<td><a href="/sp.php?s=107417" onClick="spielerinfo(107417);return false;">Michael Van der Massen</a></td>
+							<td>30</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/BEL.gif" alt="Flagge" /></td>
+							<td>59,59</td>
+							<td>82,11</td>
+							<td><a href="/st.php?c=1841" onClick="teaminfo(1841);return false;">TB Tvöroyri</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=1141">PM</a></td>
+						</tr>
+																	<tr class="mit">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=80892" onClick="spielerinfo(80892);return false;">Mihalis Xandis</a></td>
+							<td>35</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GRE.gif" alt="Flagge" /></td>
+							<td>59,41</td>
+							<td>81,85</td>
+							<td><a href="/st.php?c=1430" onClick="teaminfo(1430);return false;">Dom Kranj 2000</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=753">PM</a></td>
+						</tr>
+																	<tr class="mit">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=133037" onClick="spielerinfo(133037);return false;">Hjalte Englund</a></td>
+							<td>27</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/DEN.gif" alt="Flagge" /></td>
+							<td>59,41</td>
+							<td>82,74</td>
+							<td><a href="/st.php?c=102" onClick="teaminfo(102);return false;">Ringe IF</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=2575">PM</a></td>
+						</tr>
+																	<tr class="dmi">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T</td>
+							<td><a href="/sp.php?s=136455" onClick="spielerinfo(136455);return false;">Stephen Jameson</a></td>
+							<td>26</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/ENG.gif" alt="Flagge" /></td>
+							<td>59,35</td>
+							<td>85,67</td>
+							<td><a href="/st.php?c=151" onClick="teaminfo(151);return false;">Liverpool Rangers</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=3362">PM</a></td>
+						</tr>
+																	<tr class="omi">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T/L</td>
+							<td><a href="/sp.php?s=129746" onClick="spielerinfo(129746);return false;">Ruggero Montero</a></td>
+							<td>27</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/ITA.gif" alt="Flagge" /></td>
+							<td>59,35</td>
+							<td>84,78</td>
+							<td><a href="/st.php?c=1949" onClick="teaminfo(1949);return false;">Metalan Charkow</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=19">PM</a></td>
+						</tr>
+																	<tr class="mit">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=121101" onClick="spielerinfo(121101);return false;">Regillio Nnano</a></td>
+							<td>29</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/MKD.gif" alt="Flagge" /></td>
+							<td>59,29</td>
+							<td>88,00</td>
+							<td><a href="/st.php?c=419" onClick="teaminfo(419);return false;">AC Kingstonian</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=4199">PM</a></td>
+						</tr>
+																	<tr class="stu">
+							<td>A</td>
+							<td style="white-space:nowrap;">T</td>
+							<td><a href="/sp.php?s=118216" onClick="spielerinfo(118216);return false;">Ben Karongee</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/BDI.gif" alt="Flagge" /></td>
+							<td>59,24</td>
+							<td>88,11</td>
+							<td><a href="/st.php?c=1668" onClick="teaminfo(1668);return false;">Komethy Lwow</a></td>
+							<td>194.481</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=939">PM</a></td>
+						</tr>
+																	<tr class="abw">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=106616" onClick="spielerinfo(106616);return false;">Tony Melbyrne</a></td>
+							<td>32</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/NIR.gif" alt="Flagge" /></td>
+							<td>59,24</td>
+							<td>86,19</td>
+							<td><a href="/st.php?c=276" onClick="teaminfo(276);return false;">Abbey United</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=410">PM</a></td>
+						</tr>
+																	<tr class="stu">
+							<td>A</td>
+							<td style="white-space:nowrap;">K</td>
+							<td><a href="/sp.php?s=103976" onClick="spielerinfo(103976);return false;">Orlando Alvarez</a></td>
+							<td>31</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/CUB.gif" alt="Flagge" /></td>
+							<td>59,24</td>
+							<td>86,78</td>
+							<td><a href="/st.php?c=792" onClick="teaminfo(792);return false;">FC Enschede</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=3850">PM</a></td>
+						</tr>
+																	<tr class="abw">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T</td>
+							<td><a href="/sp.php?s=92484" onClick="spielerinfo(92484);return false;">Jamie Hunter</a></td>
+							<td>34</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/WAL.gif" alt="Flagge" /></td>
+							<td>59,18</td>
+							<td>85,11</td>
+							<td><a href="/st.php?c=174" onClick="teaminfo(174);return false;">Caersws Sport</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=249">PM</a></td>
+						</tr>
+																	<tr class="dmi">
+							<td>A</td>
+							<td style="white-space:nowrap;">K</td>
+							<td><a href="/sp.php?s=102968" onClick="spielerinfo(102968);return false;">Markos Aristotelis</a></td>
+							<td>32</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GRE.gif" alt="Flagge" /></td>
+							<td>59,18</td>
+							<td>85,70</td>
+							<td><a href="/st.php?c=3382" onClick="teaminfo(3382);return false;">Real Encamp</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=161">PM</a></td>
+						</tr>
+																	<tr class="dmi">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T</td>
+							<td><a href="/sp.php?s=109885" onClick="spielerinfo(109885);return false;">Ralph Osraed</a></td>
+							<td>30</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/ENG.gif" alt="Flagge" /></td>
+							<td>58,88</td>
+							<td>84,93</td>
+							<td><a href="/st.php?c=1176" onClick="teaminfo(1176);return false;">SC Poggibonsi</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=3449">PM</a></td>
+						</tr>
+																	<tr class="omi">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=113351" onClick="spielerinfo(113351);return false;">Tablighat Imamaliyev</a></td>
+							<td>30</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/AZE.gif" alt="Flagge" /></td>
+							<td>58,82</td>
+							<td>84,74</td>
+							<td><a href="/st.php?c=675" onClick="teaminfo(675);return false;">Rynninge BK</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=410">PM</a></td>
+						</tr>
+																	<tr class="omi">
+							<td>A</td>
+							<td style="white-space:nowrap;">L</td>
+							<td><a href="/sp.php?s=111587" onClick="spielerinfo(111587);return false;">Alisher Aitbaiuly</a></td>
+							<td>30</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/KAZ.gif" alt="Flagge" /></td>
+							<td>58,65</td>
+							<td>88,48</td>
+							<td><a href="/st.php?c=1361" onClick="teaminfo(1361);return false;">Spartak Veliky Luky</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=2566">PM</a></td>
+						</tr>
+																	<tr class="mit">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T</td>
+							<td><a href="/sp.php?s=92208" onClick="spielerinfo(92208);return false;">Louis Gloden</a></td>
+							<td>34</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/LUX.gif" alt="Flagge" /></td>
+							<td>58,65</td>
+							<td>85,81</td>
+							<td><a href="/st.php?c=174" onClick="teaminfo(174);return false;">Caersws Sport</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=249">PM</a></td>
+						</tr>
+																	<tr class="abw">
+							<td>A</td>
+							<td style="white-space:nowrap;">K</td>
+							<td><a href="/sp.php?s=109084" onClick="spielerinfo(109084);return false;">Ellert Jón Garoarsson</a></td>
+							<td>31</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/ISL.gif" alt="Flagge" /></td>
+							<td>58,65</td>
+							<td>85,67</td>
+							<td><a href="/st.php?c=701" onClick="teaminfo(701);return false;">Amager 1910</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=1754">PM</a></td>
+						</tr>
+																	<tr class="stu">
+							<td>A</td>
+							<td style="white-space:nowrap;"></td>
+							<td><a href="/sp.php?s=106398" onClick="spielerinfo(106398);return false;">Eldar Terekhin</a></td>
+							<td>32</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/RUS.gif" alt="Flagge" /></td>
+							<td>58,59</td>
+							<td>87,85</td>
+							<td><a href="/st.php?c=1933" onClick="teaminfo(1933);return false;">Dynamo Astrakhan</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=479">PM</a></td>
+						</tr>
+																	<tr class="abw">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T</td>
+							<td><a href="/sp.php?s=105474" onClick="spielerinfo(105474);return false;">Mike Steiger</a></td>
+							<td>32</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/SUI.gif" alt="Flagge" /></td>
+							<td>58,59</td>
+							<td>81,33</td>
+							<td><a href="/st.php?c=382" onClick="teaminfo(382);return false;">SC Löwen Luzern</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=446">PM</a></td>
+						</tr>
+																	<tr class="dmi">
+							<td>A</td>
+							<td style="white-space:nowrap;">K</td>
+							<td><a href="/sp.php?s=100452" onClick="spielerinfo(100452);return false;">John Paul White</a></td>
+							<td>33</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>58,59</td>
+							<td>87,26</td>
+							<td><a href="/st.php?c=109" onClick="teaminfo(109);return false;">UE Lemona</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=3401">PM</a></td>
+						</tr>
+																	<tr class="dmi">
+							<td>A</td>
+							<td style="white-space:nowrap;">K/T</td>
+							<td><a href="/sp.php?s=122262" onClick="spielerinfo(122262);return false;">Xavier Angeloz</a></td>
+							<td>29</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/ESP.gif" alt="Flagge" /></td>
+							<td>58,35</td>
+							<td>85,48</td>
+							<td><a href="/st.php?c=734" onClick="teaminfo(734);return false;">Sheffield Owls</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=3947">PM</a></td>
+						</tr>
+																	<tr class="stu">
+							<td>A</td>
+							<td style="white-space:nowrap;">K</td>
+							<td><a href="/sp.php?s=105058" onClick="spielerinfo(105058);return false;">István Badea</a></td>
+							<td>32</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/ROM.gif" alt="Flagge" /></td>
+							<td>58,35</td>
+							<td>88,15</td>
+							<td><a href="/st.php?c=810" onClick="teaminfo(810);return false;">Lokomotive Porec</a></td>
+							<td>0</td>
+							<td>&nbsp;</td>
+							<td><a href="/osneu/pm?action=writeNew&receiver_id=2720">PM</a></td>
+						</tr>
+															</table>
+
+				<hr />
+
+				<table style="width:850px; margin:0 auto;">
+					<tr>
+						<td style="text-align:center;">
+														Seite 1 von 10 (227 Treffer)
+															<a href="?gesucht=1&amp;alter=0&amp;skill=5&amp;opti=0&amp;abloese=0&amp;position=0&amp;tstatus=0&amp;tdetail=0&amp;sortierung=62&amp;tinfo=0&amp;proSeite=25&seite=2">&gt;</a>
+								<a href="?gesucht=1&amp;alter=0&amp;skill=5&amp;opti=0&amp;abloese=0&amp;position=0&amp;tstatus=0&amp;tdetail=0&amp;sortierung=62&amp;tinfo=0&amp;proSeite=25&seite=10">&gt;&gt;</a>
+													</td>
+					</tr>
+				</table>
+						</div>
+    </body>
+</html>

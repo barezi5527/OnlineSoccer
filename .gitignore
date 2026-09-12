@@ -1,0 +1,18 @@
+# Zugangsdaten - niemals ins Repo
+.os_credentials
+credentials*
+*.pem
+
+# Lokale Analyse-Cookies
+.cookies/
+
+# Android/Gradle
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/

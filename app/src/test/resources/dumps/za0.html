@@ -1,0 +1,1797 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<SCRIPT LANGUAGE="JavaScript"><!-- Hide script
+
+function checkza (hnr) {msg=open("","checkza","toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=yes,height=600,width=400");msg.location = "checkza.php"}
+
+function checkzaNeu () {msg=open("","checkza_neu","toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=yes,height=600,width=400");msg.location = "/osneu/checkza"}
+
+function confirmdelete() {
+
+	check = confirm("Aufstellung unwiederruflich verwerfen?");
+
+	if (check == true) {
+
+		document.delete_form.submit();
+
+	} else {
+
+		return false;
+
+	}
+
+}
+
+-->
+
+</script>
+
+<TABLE border=0 cellpadding=5>
+
+ <tr>
+
+   <TD align=middle><a href="?p=0">Aufstellung</a></td>
+
+
+
+   <TD align=middle><a href="?p=1">Aktionen</a></td>
+
+   <TD align=middle><a href="?p=2">Einstellungen</a></td>
+
+
+
+   <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:os_wiki('OS_Hilfesystem_Aufstellung')"><img src="/images/os_hilfe.gif" border=0></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
+   <td align=middle><font size ="+1">Mannschaftsaufstellung</font></td>
+
+   <td>
+
+    <input type=button value="Zugabgabe speichern" onclick="javascript:checkza(1)">
+
+    <input type=button value="Zugabgabe speichern (neu)" onclick="javascript:checkzaNeu()">
+
+   </td>
+
+
+
+ </tr>
+
+</TABLE>
+
+<hr />
+
+<table>
+
+ <tr>
+
+  <td>ZA f&uuml;r ZAT 3 Termin: Dienstag, 08.09.2026 ab 19:30 Uhr Spiel :  </td><td class="">Frei : <a href="javascript:teaminfo(0)"></a> </td>
+
+  <td class="STU">Zugabgabe: Ung&uuml;ltig</td>
+
+ </tr>
+
+</table>
+
+<hr />
+<form method="GET">
+
+	<input type="hidden" name="p" value="0">
+
+	<table border="0" width="30%"><tr><td>
+
+		<select name="raster1" size=1>
+
+			<option value="0">Taktikauswahl</option>
+
+			<option value="93110">Vorbereitung 4-3-3</option><option value="92690">Copy</option><option value="92728">4-5-1</option><option value="92653">4-4-2_2025</option><option value="71599">4-4-2 2015</option><option value="92517">4-3-3_2025_V1</option><option value="92630">4-3-3-_2025_V3</option><option value="92546">4-3-3-2025_V2</option><option value="92501">4-3-3-2025_V1</option><option value="92881">3-6-1-2026</option><option value="71615">3-6-1 2015 v2</option><option value="71598">3-6-1 2015</option><option value="76297">3-6-1</option><option value="73448">3-5-2 offensive </option><option value="75782">3-5-2 Breit</option><option value="92652">3-5-2 2025</option><option value="75586">3-5-2 2017</option><option value="72249">3-5-2 2016</option><option value="71770">3-5-2 2015 v2</option><option value="71769">3-5-2 2015 v1</option><option value="92605">3-4-3_2025_v1</option><option value="92926">3-4-3 2025</option><option value="75871">2017 3-4-3 </option><option value="2">4-4-2 Raute</option><option value="5">4-4-2 Offensiv</option><option value="3">4-4-2 Libero</option><option value="4">4-4-2 Defensiv</option><option value="1">4-4-2</option><option value="7">3-4-3 Libero</option><option value="8">3-4-3 Flügel</option><option value="6">3-4-3</option>
+
+		</select>
+
+	</td><td>
+
+		<input type="submit" name="raster" value="Laden">
+
+	</td>
+
+	</form>
+
+	<form method="GET">
+
+	<input type="hidden" name="p" value="0">
+
+	<td>
+
+	</td>
+
+	<td>
+
+		<select name="lauf">
+
+			<option value="0">ZAT w&auml;hlen</option>
+
+			<option value="1">ZAT 1</option><option value="2">ZAT 2</option><option value="5">ZAT 5</option><option value="6">ZAT 6</option><option value="7">ZAT 7</option><option value="8">ZAT 8</option><option value="9">ZAT 9</option><option value="10">ZAT 10</option><option value="11">ZAT 11</option><option value="12">ZAT 12</option><option value="13">ZAT 13</option><option value="14">ZAT 14</option><option value="15">ZAT 15</option><option value="16">ZAT 16</option><option value="17">ZAT 17</option><option value="18">ZAT 18</option><option value="19">ZAT 19</option><option value="20">ZAT 20</option><option value="21">ZAT 21</option><option value="22">ZAT 22</option><option value="23">ZAT 23</option><option value="24">ZAT 24</option><option value="25">ZAT 25</option><option value="26">ZAT 26</option><option value="27">ZAT 27</option><option value="28">ZAT 28</option><option value="29">ZAT 29</option><option value="30">ZAT 30</option><option value="31">ZAT 31</option><option value="32">ZAT 32</option><option value="33">ZAT 33</option><option value="34">ZAT 34</option><option value="35">ZAT 35</option><option value="36">ZAT 36</option><option value="37">ZAT 37</option><option value="38">ZAT 38</option><option value="39">ZAT 39</option><option value="40">ZAT 40</option><option value="41">ZAT 41</option><option value="42">ZAT 42</option><option value="43">ZAT 43</option><option value="44">ZAT 44</option><option value="45">ZAT 45</option><option value="46">ZAT 46</option><option value="47">ZAT 47</option><option value="48">ZAT 48</option><option value="49">ZAT 49</option><option value="50">ZAT 50</option><option value="51">ZAT 51</option><option value="52">ZAT 52</option><option value="53">ZAT 53</option><option value="54">ZAT 54</option><option value="55">ZAT 55</option><option value="56">ZAT 56</option><option value="57">ZAT 57</option><option value="58">ZAT 58</option><option value="59">ZAT 59</option><option value="60">ZAT 60</option><option value="61">ZAT 61</option><option value="62">ZAT 62</option><option value="63">ZAT 63</option><option value="64">ZAT 64</option><option value="65">ZAT 65</option><option value="66">ZAT 66</option><option value="67">ZAT 67</option><option value="68">ZAT 68</option><option value="69">ZAT 69</option><option value="70">ZAT 70</option><option value="71">ZAT 71</option><option value="72">ZAT 72</option>
+
+		</select>
+
+	</td>
+
+	<td>
+
+		<input type="Submit" value="Laden">
+
+	</td>
+
+</form>
+
+<form method="GET" name="delete_form">
+
+	<input type="hidden" name="p" value="0">
+
+	<td>
+
+		<input type="button" name="delete" value="Aufstellung l&ouml;schen" onclick="javascript:confirmdelete();">
+
+		<input type="hidden" name="del_za" value="1">
+
+	</td>
+
+</form>
+
+<form method="GET">
+
+	<input type="hidden" name="p" value="0">
+
+	<td>
+
+		<input type="submit" name="aufspeichern" value="Aufstellung speichern">
+
+	</td></tr></table>
+
+	<br>
+
+	<br>
+
+	<table border=0 width="30%" align=left>
+
+		<tr bgcolor="#003300">
+
+			<td>&nbsp;</td>
+
+			<td>1</td>
+
+			<td>2</td>
+
+			<td>3</td>
+
+			<td>4</td>
+
+			<td>5</td>
+
+			<td>6</td>
+
+			<td>7</td>
+
+			<td>8</td>
+
+			<td>9</td>
+
+			<td>10</td>
+
+			<td>11</td>
+
+			<td>&nbsp;</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>O</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>O</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>N</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>N</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>M</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>M</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>L</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>L</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>K</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>K</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>J</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>J</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>I</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>I</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>H</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>H</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>G</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>G</td>
+
+		</tr>
+
+		<tr bgcolor="#003300"><td>F</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>F</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>E</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>E</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>D</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>D</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>C</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>C</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>B</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>B</td>
+
+		</tr>
+
+		<tr bgcolor="#003300">
+
+			<td>A</td>
+
+						<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+			<td width="8%"></td>
+
+		
+
+			<td>A</td>
+
+		</tr>	 
+
+		<tr align="middle">
+
+			<td colspan="6"></td>
+
+			<td bgcolor="#ffff00"><b><font color="#000000">T</font></b></td>
+
+			<td colspan="6"></td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan="13">&nbsp;</td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan=10>Ersatzbank</td>
+
+		</tr>
+
+		<tr align="middle">
+
+			<td bgcolor="#ffff00"><font color="#000000"><b>U</b></font></td>
+
+			<td></td>
+
+			<td bgcolor="#ffffff"><b><font color="#000000">V</font></b></td>
+
+			<td bgcolor="#ffffff"><b><font color="#000000">W</font></b></td>
+
+			<td bgcolor="#ffffff"><b><font color="#000000">X</font></b></td>
+
+			<td bgcolor="#ffffff"><b><font color="#000000">Y</font></b></td>
+
+			<td bgcolor="#ffffff"><b><font color="#000000">Z</font></b></td>
+
+		</tr>
+
+	</table>
+
+	<table border="0">
+
+		<tr align="middle">
+
+			<td>Raster</td>
+
+			<td>Name</td>
+
+			<td>Alter</td>
+
+			<td>U</td>
+
+			<td>Moral</td>
+
+			<td>Fitness</td>
+
+			<td>Skillschnitt</td>
+
+			<td>Opt.Skill</td>
+
+			<td>S</td>
+
+		</tr>
+
+				<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[97944]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="TOR" align="left"><a href="javascript:spielerinfo(97944)">Lars Vincez</a></td>
+
+			<td class="TOR">33</td>
+
+			<td class="STU"></td>
+
+			<td class="TOR">85</td>
+
+			<td class="TOR">99</td>
+
+			<td class="TOR">61.47</td>
+
+			<td class="TOR">89.37</td>
+
+			<td class="TOR">E</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[104203]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="TOR" align="left"><a href="javascript:spielerinfo(104203)">Heiko Kehrer</a></td>
+
+			<td class="TOR">31</td>
+
+			<td class="STU"></td>
+
+			<td class="TOR">99</td>
+
+			<td class="TOR">99</td>
+
+			<td class="TOR">36.65</td>
+
+			<td class="TOR">55.22</td>
+
+			<td class="TOR"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[120513]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="TOR" align="left"><a href="javascript:spielerinfo(120513)">Kuldar Mitt</a></td>
+
+			<td class="TOR">29</td>
+
+			<td class="STU"></td>
+
+			<td class="TOR">99</td>
+
+			<td class="TOR">60</td>
+
+			<td class="TOR">60.12</td>
+
+			<td class="TOR">87.63</td>
+
+			<td class="TOR">E</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[149061]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="TOR" align="left"><a href="javascript:spielerinfo(149061)">Evghenii Bonciucov</a></td>
+
+			<td class="TOR">23</td>
+
+			<td class="STU"></td>
+
+			<td class="TOR">90</td>
+
+			<td class="TOR">99</td>
+
+			<td class="TOR">43.76</td>
+
+			<td class="TOR">73.19</td>
+
+			<td class="TOR"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[169958]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="TOR" align="left"><a href="javascript:spielerinfo(169958)">Ardalan Golcheshmeh</a></td>
+
+			<td class="TOR">20</td>
+
+			<td class="STU">#</td>
+
+			<td class="TOR">90</td>
+
+			<td class="TOR">99</td>
+
+			<td class="TOR">36.06</td>
+
+			<td class="TOR">55.30</td>
+
+			<td class="TOR"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[131349]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(131349)">Alexey Zuyev</a></td>
+
+			<td class="ABW">27</td>
+
+			<td class="STU"></td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">43</td>
+
+			<td class="ABW">60.65</td>
+
+			<td class="ABW">89.59</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[131832]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(131832)">Licínio Maurício</a></td>
+
+			<td class="ABW">27</td>
+
+			<td class="STU">#</td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">42</td>
+
+			<td class="ABW">60.00</td>
+
+			<td class="ABW">87.41</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[139649]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(139649)">Kristo Dragiev</a></td>
+
+			<td class="ABW">26</td>
+
+			<td class="STU"></td>
+
+			<td class="ABW">95</td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">66.88</td>
+
+			<td class="ABW">93.96</td>
+
+			<td class="ABW">L</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[146803]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(146803)">Dhuntiar Konechi</a></td>
+
+			<td class="ABW">24</td>
+
+			<td class="STU"></td>
+
+			<td class="ABW">71</td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">27.65</td>
+
+			<td class="ABW">50.74</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[151229]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(151229)">Space Parks</a></td>
+
+			<td class="ABW">24</td>
+
+			<td class="STU">#</td>
+
+			<td class="ABW">98</td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">54.12</td>
+
+			<td class="ABW">81.78</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[161985]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(161985)">Egnatius Dajan</a></td>
+
+			<td class="ABW">22</td>
+
+			<td class="STU">#</td>
+
+			<td class="ABW">64</td>
+
+			<td class="ABW">50</td>
+
+			<td class="ABW">32.24</td>
+
+			<td class="ABW">46.37</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[169711]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(169711)">Harald Philippi</a></td>
+
+			<td class="ABW">20</td>
+
+			<td class="STU"></td>
+
+			<td class="ABW">96</td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">43.06</td>
+
+			<td class="ABW">63.85</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[169957]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(169957)">Mirko Antersberger</a></td>
+
+			<td class="ABW">20</td>
+
+			<td class="STU"></td>
+
+			<td class="ABW">67</td>
+
+			<td class="ABW">66</td>
+
+			<td class="ABW">40.94</td>
+
+			<td class="ABW">65.33</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[169981]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(169981)">Roman Paduch</a></td>
+
+			<td class="ABW">19</td>
+
+			<td class="STU"></td>
+
+			<td class="ABW">82</td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">28.82</td>
+
+			<td class="ABW">47.19</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[174520]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="ABW" align="left"><a href="javascript:spielerinfo(174520)">Bernd Straka</a></td>
+
+			<td class="ABW">19</td>
+
+			<td class="STU"></td>
+
+			<td class="ABW">85</td>
+
+			<td class="ABW">99</td>
+
+			<td class="ABW">31.00</td>
+
+			<td class="ABW">47.96</td>
+
+			<td class="ABW"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[121743]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="DMI" align="left"><a href="javascript:spielerinfo(121743)">Oskari Konsa</a></td>
+
+			<td class="DMI">29</td>
+
+			<td class="STU"></td>
+
+			<td class="DMI">99</td>
+
+			<td class="DMI">42</td>
+
+			<td class="DMI">62.53</td>
+
+			<td class="DMI">87.81</td>
+
+			<td class="DMI">LS</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[141759]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="DMI" align="left"><a href="javascript:spielerinfo(141759)">Koki Abamelek</a></td>
+
+			<td class="DMI">25</td>
+
+			<td class="STU"></td>
+
+			<td class="DMI">98</td>
+
+			<td class="DMI">99</td>
+
+			<td class="DMI">52.29</td>
+
+			<td class="DMI">80.63</td>
+
+			<td class="DMI">LS</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[151152]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="DMI" align="left"><a href="javascript:spielerinfo(151152)">Dino Scerri</a></td>
+
+			<td class="DMI">24</td>
+
+			<td class="STU"></td>
+
+			<td class="DMI">98</td>
+
+			<td class="DMI">99</td>
+
+			<td class="DMI">54.53</td>
+
+			<td class="DMI">79.07</td>
+
+			<td class="DMI"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[151260]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="DMI" align="left"><a href="javascript:spielerinfo(151260)">Egidijus Davainis</a></td>
+
+			<td class="DMI">23</td>
+
+			<td class="STU"></td>
+
+			<td class="DMI">60</td>
+
+			<td class="DMI">99</td>
+
+			<td class="DMI">45.47</td>
+
+			<td class="DMI">66.70</td>
+
+			<td class="DMI"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[166171]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="DMI" align="left"><a href="javascript:spielerinfo(166171)">Jans Louwman</a></td>
+
+			<td class="DMI">21</td>
+
+			<td class="STU"></td>
+
+			<td class="DMI">95</td>
+
+			<td class="DMI">99</td>
+
+			<td class="DMI">41.76</td>
+
+			<td class="DMI">63.63</td>
+
+			<td class="DMI"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[111260]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="MIT" align="left"><a href="javascript:spielerinfo(111260)">Alain Achten</a></td>
+
+			<td class="MIT">31</td>
+
+			<td class="STU"></td>
+
+			<td class="MIT">99</td>
+
+			<td class="MIT">46</td>
+
+			<td class="MIT">66.59</td>
+
+			<td class="MIT">92.89</td>
+
+			<td class="MIT">S</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[116286]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="MIT" align="left"><a href="javascript:spielerinfo(116286)">Janar Pihel</a></td>
+
+			<td class="MIT">30</td>
+
+			<td class="STU"></td>
+
+			<td class="MIT">99</td>
+
+			<td class="MIT">42</td>
+
+			<td class="MIT">65.12</td>
+
+			<td class="MIT">89.00</td>
+
+			<td class="MIT">SFG</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[121678]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="MIT" align="left"><a href="javascript:spielerinfo(121678)">Tomás Simao</a></td>
+
+			<td class="MIT">29</td>
+
+			<td class="STU"></td>
+
+			<td class="MIT">97</td>
+
+			<td class="MIT">84</td>
+
+			<td class="MIT">67.94</td>
+
+			<td class="MIT">93.59</td>
+
+			<td class="MIT">S</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[138920]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="MIT" align="left"><a href="javascript:spielerinfo(138920)">Oscar Greaves</a></td>
+
+			<td class="MIT">26</td>
+
+			<td class="STU"></td>
+
+			<td class="MIT">99</td>
+
+			<td class="MIT">99</td>
+
+			<td class="MIT">54.35</td>
+
+			<td class="MIT">82.96</td>
+
+			<td class="MIT">SG</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[156048]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="MIT" align="left"><a href="javascript:spielerinfo(156048)">Asko Prints</a></td>
+
+			<td class="MIT">23</td>
+
+			<td class="STU"></td>
+
+			<td class="MIT">99</td>
+
+			<td class="MIT">99</td>
+
+			<td class="MIT">49.47</td>
+
+			<td class="MIT">74.26</td>
+
+			<td class="MIT"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[142133]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="OMI" align="left"><a href="javascript:spielerinfo(142133)">Kauri Salumae</a></td>
+
+			<td class="OMI">25</td>
+
+			<td class="STU"></td>
+
+			<td class="OMI">99</td>
+
+			<td class="OMI">99</td>
+
+			<td class="OMI">60.65</td>
+
+			<td class="OMI">85.59</td>
+
+			<td class="OMI">SF</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[174521]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="OMI" align="left"><a href="javascript:spielerinfo(174521)">Fabian Röwer</a></td>
+
+			<td class="OMI">19</td>
+
+			<td class="STU"></td>
+
+			<td class="OMI">95</td>
+
+			<td class="OMI">99</td>
+
+			<td class="OMI">37.53</td>
+
+			<td class="OMI">62.15</td>
+
+			<td class="OMI"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[176649]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="OMI" align="left"><a href="javascript:spielerinfo(176649)">Ivan Timachev</a></td>
+
+			<td class="OMI">18</td>
+
+			<td class="STU"></td>
+
+			<td class="OMI">95</td>
+
+			<td class="OMI">99</td>
+
+			<td class="OMI">41.41</td>
+
+			<td class="OMI">64.59</td>
+
+			<td class="OMI"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[106235]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="STU" align="left"><a href="javascript:spielerinfo(106235)">Ruslan Hryshukevich</a></td>
+
+			<td class="STU">32</td>
+
+			<td class="STU"></td>
+
+			<td class="STU">99</td>
+
+			<td class="STU">41</td>
+
+			<td class="STU">70.82</td>
+
+			<td class="STU">98.67</td>
+
+			<td class="STU">T</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[126675]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="STU" align="left"><a href="javascript:spielerinfo(126675)">Olev Tikerpää</a></td>
+
+			<td class="STU">28</td>
+
+			<td class="STU"></td>
+
+			<td class="STU">99</td>
+
+			<td class="STU">41</td>
+
+			<td class="STU">60.59</td>
+
+			<td class="STU">86.44</td>
+
+			<td class="STU">T</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[132483]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="STU" align="left"><a href="javascript:spielerinfo(132483)">Camilo Baruco</a></td>
+
+			<td class="STU">27</td>
+
+			<td class="STU">#</td>
+
+			<td class="STU">99</td>
+
+			<td class="STU">40</td>
+
+			<td class="STU">63.59</td>
+
+			<td class="STU">91.15</td>
+
+			<td class="STU">FT</td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[165491]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="STU" align="left"><a href="javascript:spielerinfo(165491)">Ali Uzay</a></td>
+
+			<td class="STU">21</td>
+
+			<td class="STU"></td>
+
+			<td class="STU">98</td>
+
+			<td class="STU">99</td>
+
+			<td class="STU">40.82</td>
+
+			<td class="STU">64.96</td>
+
+			<td class="STU"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[165648]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="STU" align="left"><a href="javascript:spielerinfo(165648)">Ekin Demirpence</a></td>
+
+			<td class="STU">21</td>
+
+			<td class="STU"></td>
+
+			<td class="STU">98</td>
+
+			<td class="STU">99</td>
+
+			<td class="STU">45.41</td>
+
+			<td class="STU">57.48</td>
+
+			<td class="STU"></td>
+
+		</tr>
+		<tr align="right">
+
+			<td><select STYLE="font-size: 8pt;" name="ra[169712]">
+
+				<option value="">-</option>
+
+				<option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option><option value="K">K</option><option value="L">L</option><option value="T">T</option><option value="U">U</option><option value="V">V</option><option value="W">W</option><option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
+
+				</select>
+
+			</td>
+
+			<td class="STU" align="left"><a href="javascript:spielerinfo(169712)">Steffen Fromm</a></td>
+
+			<td class="STU">20</td>
+
+			<td class="STU"></td>
+
+			<td class="STU">59</td>
+
+			<td class="STU">99</td>
+
+			<td class="STU">43.71</td>
+
+			<td class="STU">73.44</td>
+
+			<td class="STU">T</td>
+
+		</tr>
+
+
+		<tr>
+
+			<td colspan="9">&nbsp;</td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan="2">Opt. Skill</td>
+
+			<td colspan="7" align="left">0.00</td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan="2">Skillschnitt</td>
+
+			<td colspan="7" align="left">0.00</td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan="2">Fitness</td>
+
+			<td colspan="7" align="left">0.00</td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan="2">Moral</td>
+
+			<td colspan="7" align="left">0.00</td>
+
+		</tr>
+
+	</table>
+
+</form>
+</div>
+
+</body>
+
+</html>

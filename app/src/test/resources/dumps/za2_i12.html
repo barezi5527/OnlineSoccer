@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<SCRIPT LANGUAGE="JavaScript"><!-- Hide script
+
+function checkza (hnr) {msg=open("","checkza","toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=yes,height=600,width=400");msg.location = "checkza.php"}
+
+function checkzaNeu () {msg=open("","checkza_neu","toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=yes,height=600,width=400");msg.location = "/osneu/checkza"}
+
+function confirmdelete() {
+
+	check = confirm("Aufstellung unwiederruflich verwerfen?");
+
+	if (check == true) {
+
+		document.delete_form.submit();
+
+	} else {
+
+		return false;
+
+	}
+
+}
+
+-->
+
+</script>
+
+<TABLE border=0 cellpadding=5>
+
+ <tr>
+
+   <TD align=middle><a href="?p=0">Aufstellung</a></td>
+
+
+
+   <TD align=middle><a href="?p=1">Aktionen</a></td>
+
+   <TD align=middle><a href="?p=2">Einstellungen</a></td>
+
+
+
+   <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:os_wiki('OS_Hilfesystem_Einstellungen')"><img src="/images/os_hilfe.gif" border=0></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
+   <td align=middle><font size ="+1">Mannschaftsaufstellung</font></td>
+
+   <td>
+
+    <input type=button value="Zugabgabe speichern" onclick="javascript:checkza(1)">
+
+    <input type=button value="Zugabgabe speichern (neu)" onclick="javascript:checkzaNeu()">
+
+   </td>
+
+
+
+ </tr>
+
+</TABLE>
+
+<hr />
+
+<table>
+
+ <tr>
+
+  <td>ZA f&uuml;r ZAT 3 Termin: Dienstag, 08.09.2026 ab 19:30 Uhr Spiel :  </td><td class="">Frei : <a href="javascript:teaminfo(0)"></a> </td>
+
+  <td class="STU">Zugabgabe: Ung&uuml;ltig</td>
+
+ </tr>
+
+</table>
+
+<hr />
+<form method="GET">
+
+<input type="hidden" name="p" value="2">
+
+<table border="0">
+
+	<tr>
+
+		<td>
+
+			<select name="item">
+
+								<option value="0">Einstellungen ausw&auml;hlen</option>
+				<option value="8">Kapit&auml;n</option>
+				<option value="9">Spielmacher</option>
+				<option value="10">Elfmetersch&uuml;tze</option>
+				<option value="11">Freistoss Direkt</option>
+				<option value="12">Freistoss Indirekt</option>
+				<option value="13">Ecke</option>
+				<option value="14">Libero</option>
+				<option value="16">Taktik - Abwehr</option>
+				<option value="17">Taktik - Mittelfeld</option>
+				<option value="18">Taktik - Angriff</option>
+
+
+			</select>
+
+		</td>
+
+		<td>&nbsp;&nbsp;&nbsp;</td>
+
+		<td><input type="Submit" value="   Neue Einstellung starten   "></td>
+
+	</tr>
+
+</table></form>
+
+<hr />
+
+<form method="GET">
+
+	<input type="hidden" name="p" value="2">
+
+	<input type="hidden" name="itemcreate" value="12">
+
+	<table border="0">
+
+				<tr>
+
+			<td><select name="spieler_id">
+
+				<option value="111260">Alain Achten</option><option value="131349">Alexey Zuyev</option><option value="165491">Ali Uzay</option><option value="169958">Ardalan Golcheshmeh</option><option value="156048">Asko Prints</option><option value="174520">Bernd Straka</option><option value="132483">Camilo Baruco</option><option value="146803">Dhuntiar Konechi</option><option value="151152">Dino Scerri</option><option value="151260">Egidijus Davainis</option><option value="161985">Egnatius Dajan</option><option value="165648">Ekin Demirpence</option><option value="149061">Evghenii Bonciucov</option><option value="174521">Fabian Röwer</option><option value="115904">Flavio Zurlinden</option><option value="169711">Harald Philippi</option><option value="104203">Heiko Kehrer</option><option value="176649">Ivan Timachev</option><option value="116286">Janar Pihel</option><option value="166171">Jans Louwman</option><option value="142133">Kauri Salumae</option><option value="141759">Koki Abamelek</option><option value="139649">Kristo Dragiev</option><option value="120513">Kuldar Mitt</option><option value="97944">Lars Vincez</option><option value="131832">Licínio Maurício</option><option value="169957">Mirko Antersberger</option><option value="126675">Olev Tikerpää</option><option value="138920">Oscar Greaves</option><option value="121743">Oskari Konsa</option><option value="169981">Roman Paduch</option><option value="106235">Ruslan Hryshukevich</option><option value="151229">Space Parks</option><option value="169712">Steffen Fromm</option><option value="121678">Tomás Simao</option>
+
+			</select></td>
+
+			<td width="30">&nbsp;</td>
+
+			<td><input type="submit" name="anlegen" value="   Neue Einstellung festlegen   "></td>
+
+		</tr>
+
+		<tr>
+
+			<td colspan="3"><b>Bitte den Spieler ausw&auml;hlen, der indirekter Freistosssch&uuml;tze werden soll</b></td>
+
+		</tr>
+
+	</table>
+
+</form>
+</div>
+
+</body>
+
+</html>

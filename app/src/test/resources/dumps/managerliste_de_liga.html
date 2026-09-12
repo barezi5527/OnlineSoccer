@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Team-/Managerliste - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Team-/Managerliste</h1>
+
+		<form method="GET" action="/osneu/managerliste">
+			<table>
+				<tr>
+					<td>
+						Land:<br />
+						<select name="comboLand">
+							<option value="0">---Land---</option>
+															<option value="95">Andorra</option>
+															<option value="83">Armenien</option>
+															<option value="12">Belgien</option>
+															<option value="66">Bosnien-Herzegowina</option>
+															<option value="42">Bulgarien</option>
+															<option value="8">D&auml;nemark</option>
+															<option value="6" selected>Deutschland</option>
+															<option value="1">England</option>
+															<option value="68">Far&ouml;er</option>
+															<option value="40">Finnland</option>
+															<option value="32">Frankreich</option>
+															<option value="30">Griechenland</option>
+															<option value="5">Irland</option>
+															<option value="29">Island</option>
+															<option value="10">Italien</option>
+															<option value="24">Kroatien</option>
+															<option value="93">Luxemburg</option>
+															<option value="86">Mazedonien</option>
+															<option value="87">Moldawien</option>
+															<option value="11">Niederlande</option>
+															<option value="4">Nordirland</option>
+															<option value="9">Norwegen</option>
+															<option value="14">&Ouml;sterreich</option>
+															<option value="25">Polen</option>
+															<option value="17">Portugal</option>
+															<option value="19">Russland</option>
+															<option value="2">Schottland</option>
+															<option value="27">Schweden</option>
+															<option value="37">Schweiz</option>
+															<option value="41">Serbien und Montenegro</option>
+															<option value="21">Slowenien</option>
+															<option value="13">Spanien</option>
+															<option value="18">Tschechien</option>
+															<option value="20">Ukraine</option>
+															<option value="26">Ungarn</option>
+															<option value="3">Wales</option>
+															<option value="71">Weissrussland</option>
+													</select>
+					</td>
+					<td>
+						Liga:<br />
+						<select name="comboLiga">
+							<option value="0">---Liga---</option>
+															<option value="1">1. Liga</option>
+															<option value="2">2. Liga A</option>
+															<option value="3">2. Liga B</option>
+															<option value="4" selected>3. Liga A</option>
+															<option value="5">3. Liga B</option>
+															<option value="6">3. Liga C</option>
+															<option value="7">3. Liga D</option>
+													</select>
+					</td>
+					<td>
+						&nbsp;<br />
+						<input type="submit" value="Anzeigen" />
+					</td>
+				</tr>
+			</table>
+		</form>
+
+		<br />
+
+					<table class="managerliste">
+				<tr>
+					<th>Manager</th>
+					<th>Verein</th>
+					<th>NMR 5</th>
+					<th>NMR 20</th>
+					<th>NMR Gesamt</th>
+					<th>Wechselsperre</th>
+					<th>Zugabgabe</th>
+				</tr>
+															<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=97">Michael Schunk</a></td>
+							<td><a href="/st.php?c=513" onClick="teaminfo(513);return false;">1911 Baunatal</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>2</td>
+							<td>0</td>
+							<td>---</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=1062">Björn Weyer</a></td>
+							<td><a href="/st.php?c=842" onClick="teaminfo(842);return false;">Adler Koblenz</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>---</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=50">Thomas Becker</a></td>
+							<td><a href="/st.php?c=995" onClick="teaminfo(995);return false;">Germania Münster</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>3</td>
+							<td>0</td>
+							<td>08.09.2026 20:41:26</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=4039">Oliver Maager</a></td>
+							<td><a href="/st.php?c=1001" onClick="teaminfo(1001);return false;">Schüttorfer SV</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>---</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=3660">Björn Hintelmann</a></td>
+							<td><a href="/st.php?c=1002" onClick="teaminfo(1002);return false;">TSV Rheydt</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>1</td>
+							<td>69</td>
+							<td>09.09.2026 06:07:47</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=346">Udo Richebächer</a></td>
+							<td><a href="/st.php?c=1010" onClick="teaminfo(1010);return false;">1.FK Köln</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>08.09.2026 19:58:19</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=4236">Michael Höh</a></td>
+							<td><a href="/st.php?c=1030" onClick="teaminfo(1030);return false;">SV Hannover 09</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>08.09.2026 21:08:14</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=3220">Carsten Funk</a></td>
+							<td><a href="/st.php?c=1032" onClick="teaminfo(1032);return false;">1. FC Offenbach</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>09.09.2026 09:33:26</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=2861">Guido Naumann</a></td>
+							<td><a href="/st.php?c=1033" onClick="teaminfo(1033);return false;">FV Lichtenberg 62</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>41</td>
+							<td>09.09.2026 08:50:40</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=43">Thomas Maaßen</a></td>
+							<td><a href="/st.php?c=1040" onClick="teaminfo(1040);return false;">Franken Nürnberg</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>1</td>
+							<td>0</td>
+							<td>08.09.2026 20:52:31</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=-1">Team ist frei</a></td>
+							<td><a href="/st.php?c=1046" onClick="teaminfo(1046);return false;">SpVgg Regensburg</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>---</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=752">Anna Szolc-Wrobel</a></td>
+							<td><a href="/st.php?c=1049" onClick="teaminfo(1049);return false;">Kickers Nordhorn</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>---</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=753">Helmut Hentschel</a></td>
+							<td><a href="/st.php?c=1061" onClick="teaminfo(1061);return false;">SpVgg Ruhr Bochum</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>---</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=-1">Team ist frei</a></td>
+							<td><a href="/st.php?c=1062" onClick="teaminfo(1062);return false;">1. FC Burghausen</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>---</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=4288">Fritz Keue</a></td>
+							<td><a href="/st.php?c=1064" onClick="teaminfo(1064);return false;">VfL Eisenhüttenstadt</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>53</td>
+							<td>09.09.2026 22:49:10</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=446">Alexander Berghof</a></td>
+							<td><a href="/st.php?c=1905" onClick="teaminfo(1905);return false;">Augsburger SSV</a></td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>0</td>
+							<td>09.09.2026 07:23:10</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=798">Ralf Faissner</a></td>
+							<td><a href="/st.php?c=1941" onClick="teaminfo(1941);return false;">1. FC Mannheim</a></td>
+							<td>0</td>
+							<td>1</td>
+							<td>2</td>
+							<td>0</td>
+							<td>08.09.2026 22:31:23</td>
+						</tr>
+											<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=3536">Tobias Wistuba</a></td>
+							<td><a href="/st.php?c=1953" onClick="teaminfo(1953);return false;">Rheinisch Köln</a></td>
+							<td>0</td>
+							<td>1</td>
+							<td>2</td>
+							<td>69</td>
+							<td>---</td>
+						</tr>
+												</table>
+			</div>
+    </body>
+</html>

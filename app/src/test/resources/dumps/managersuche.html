@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Team-/Managersuche - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Team-/Managersuche</h1>
+
+		<form method="POST" action="/osneu/managersuche">
+			<table>
+				<tr>
+					<td>
+						Manager:<br />
+						<input type="text" name="manager" value="" />
+					</td>
+					<td>
+						Operator:<br />
+						<select name="operator">
+							<option value="and" selected>und</option>
+							<option value="or">oder</option>
+						</select>
+					</td>
+					<td>
+						Team:<br />
+						<input type="text" name="team" value="Magdeburg" />
+					</td>
+					<td>
+						&nbsp;<br />
+						<input type="submit" value="Suchen" />
+					</td>
+				</tr>
+			</table>
+		</form>
+
+		<br />
+
+					<table>
+				<tr>
+					<th>Manager</th>
+					<th>Verein</th>
+				</tr>
+															<tr>
+							<td><a href="/osneu/pm?action=writeNew&amp;receiver_id=1954">Rainer Nürge</a></td>
+							<td>
+																	<a href="/st.php?c=1018" onClick="teaminfo(1018);return false;">FC 1965 Magdeburg</a>
+															</td>
+						</tr>
+												</table>
+			</div>
+    </body>
+</html>

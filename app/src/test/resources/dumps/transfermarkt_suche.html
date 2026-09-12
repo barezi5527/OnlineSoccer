@@ -1,0 +1,717 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<form method="POST">	<table border="0">		<tr><td><b>Internationaler Transfermarkt - Es befinden sich zur Zeit 25 Spieler auf dem Transfermarkt<b></td></tr>		<tr><td>			<select name="alter"><option value="0">Alter</option><option value="1">16-18</option><option value="2">19-20</option><option value="3">21 - 22</option><option value="4">23-24</option><option value="5">25-26</option><option value="6">27-28</option><option value="7">29-30</option><option value="8">31-32</option><option value="9">33+</option></select>			<select name="skill"><option value="0">Skillschnitt</option><option value="1">0-20.00</option><option value="2">20.01 - 30.00</option><option value="3">30.01 - 40.00</option><option value="4">40.01 - 50.00</option><option value="5">50.01 - 60.00</option><option value="6">60.01+</option></select>			<select name="marktwert"><option value="0">Marktwert</option><option value="1">0 - 1.000.000</option><option value="2">1.000.001 - 2.500.000</option><option value="3">2.500.001 - 5.000.000</option><option value="4">5.000.001 - 10.000.000</option><option value="5">10.000.001 - 15.000.000</option><option value="6">15.000.001 - 25.000.000</option><option value="7">25.000.001 - 50.000.000</option><option value="8">50.000.001+</option></select>			<select name="position"><option value="0">Position</option><option value="1">TOR</option><option value="2">ABW</option><option value="3">DMI</option><option value="4">MIT</option><option value="5">OMI</option><option value="6">STU</option></select>			<select name="sortierung"><option value="0">Sortierung</option><option value="11">Alter aufsteigend</option><option value="12">Alter absteigend</option><option value="21">Dauer aufsteigend</option><option value="22">Dauer absteigend</option><option value="31">Marktwert aufsteigend</option><option value="32">Marktwert absteigend</option><option value="41">Opti aufsteigend</option><option value="42">Opti absteigend</option><option value="51">Position aufsteigend</option><option value="52">Position absteigend</option><option value="61">Skill aufsteigend</option><option value="62">Skill absteigend</option></select>			<input type="submit" value="Spieler anzeigen" name="sshow">		</td></tr>	</table></form><hr><table border="0" id="tm" class="sortable">	<tbody><tr>		<td>Name</td>		<td>Alter</td>		<td>Pos</td>		<td>Land</td>		<td>Skill</td>		<td>Opt. Skill</td>		<td>Gebot</td>		<td>Bieter</td>		<td>Gehalt</td>		<td>Dauer</td>		<td>#</td>		<td>Aktion</td>	</tr>		<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(114490);">Salvatore Catone</a></td>
+
+		<td class="OMI">29</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">ITA</td>
+
+		<td class="OMI">38.76</td>
+
+		<td class="OMI">50.93</td>
+
+		<td class="OMI" align="right">1.015.615</td>
+
+		<td class="OMI"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="OMI" align="right">8136</td>
+
+		<td class="OMI">15.09.2026</td>
+
+		<td class="OMI">0</td>
+
+		<td class="OMI"><a href="javascript:bieten(114490)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="TOR"><a href="javascript:spielerinfo(115880);">William Ervine</a></td>
+
+		<td class="TOR">30</td>
+
+		<td class="TOR">TOR</td>
+
+		<td class="TOR">ENG</td>
+
+		<td class="TOR">35.94</td>
+
+		<td class="TOR">58.33</td>
+
+		<td class="TOR" align="right">1.210.721</td>
+
+		<td class="TOR"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="TOR" align="right">6825</td>
+
+		<td class="TOR">15.09.2026</td>
+
+		<td class="TOR">0</td>
+
+		<td class="TOR"><a href="javascript:bieten(115880)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(117389);">Jan Kline</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">SVN</td>
+
+		<td class="STU">43.88</td>
+
+		<td class="STU">73.85</td>
+
+		<td class="STU" align="right">3.613.795</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">25374</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(117389)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(123678);">Mark Drohson</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">GER</td>
+
+		<td class="STU">32.24</td>
+
+		<td class="STU">55.56</td>
+
+		<td class="STU" align="right">1.093.676</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">6069</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(123678)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(123930);">Oqtay Mahmudov</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">AZE</td>
+
+		<td class="STU">53.06</td>
+
+		<td class="STU">79.04</td>
+
+		<td class="STU" align="right">9.604.534</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1923)">Torpedo St Petersburg</a></td>
+
+		<td class="STU" align="right">113030</td>
+
+		<td class="STU">10.09.2026</td>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:bieten(123930)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(124172);">Erico Braschi</a></td>
+
+		<td class="MIT">28</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">ITA</td>
+
+		<td class="MIT">45.24</td>
+
+		<td class="MIT">67.44</td>
+
+		<td class="MIT" align="right">3.429.113</td>
+
+		<td class="MIT"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="MIT" align="right">29017</td>
+
+		<td class="MIT">16.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:bieten(124172)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(124344);">Michael Pinkel</a></td>
+
+		<td class="ABW">27</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">AUT</td>
+
+		<td class="ABW">32.65</td>
+
+		<td class="ABW">51.07</td>
+
+		<td class="ABW" align="right">922.952</td>
+
+		<td class="ABW"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="ABW" align="right">5907</td>
+
+		<td class="ABW">15.09.2026</td>
+
+		<td class="ABW">0</td>
+
+		<td class="ABW"><a href="javascript:bieten(124344)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(126308);">Muzaffer Kurbanoglu</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">TUR</td>
+
+		<td class="STU">40.06</td>
+
+		<td class="STU">60.63</td>
+
+		<td class="STU" align="right">2.021.457</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">15126</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(126308)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(128686);">Keiran Hughes</a></td>
+
+		<td class="MIT">28</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">WAL</td>
+
+		<td class="MIT">39.59</td>
+
+		<td class="MIT">61.81</td>
+
+		<td class="MIT" align="right">1.976.000</td>
+
+		<td class="MIT"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="MIT" align="right">13675</td>
+
+		<td class="MIT">15.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:bieten(128686)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(129292);">Richard Roberts</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">WAL</td>
+
+		<td class="STU">43.53</td>
+
+		<td class="STU">68.89</td>
+
+		<td class="STU" align="right">3.839.873</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">32378</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(129292)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(130411);">Matthias Perthaler</a></td>
+
+		<td class="ABW">26</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">AUT</td>
+
+		<td class="ABW">38.06</td>
+
+		<td class="ABW">56.70</td>
+
+		<td class="ABW" align="right">1.650.925</td>
+
+		<td class="ABW"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="ABW" align="right">13334</td>
+
+		<td class="ABW">15.09.2026</td>
+
+		<td class="ABW">0</td>
+
+		<td class="ABW"><a href="javascript:bieten(130411)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(135167);">Michael Urban</a></td>
+
+		<td class="OMI">26</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">SUI</td>
+
+		<td class="OMI">33.94</td>
+
+		<td class="OMI">52.33</td>
+
+		<td class="OMI" align="right">1.078.364</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(197)">Union Schötz</a></td>
+
+		<td class="OMI" align="right">7615</td>
+
+		<td class="OMI">15.09.2026</td>
+
+		<td class="OMI">1</td>
+
+		<td class="OMI"><a href="javascript:bieten(135167)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(137890);">Julian Fraga</a></td>
+
+		<td class="MIT">26</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">AND</td>
+
+		<td class="MIT">35.18</td>
+
+		<td class="MIT">55.48</td>
+
+		<td class="MIT" align="right">1.328.253</td>
+
+		<td class="MIT"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="MIT" align="right">9347</td>
+
+		<td class="MIT">17.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:bieten(137890)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="TOR"><a href="javascript:spielerinfo(139070);">Nesa Gjalski</a></td>
+
+		<td class="TOR">25</td>
+
+		<td class="TOR">TOR</td>
+
+		<td class="TOR">BIH</td>
+
+		<td class="TOR">34.82</td>
+
+		<td class="TOR">47.70</td>
+
+		<td class="TOR" align="right">975.512</td>
+
+		<td class="TOR"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="TOR" align="right">8460</td>
+
+		<td class="TOR">16.09.2026</td>
+
+		<td class="TOR">0</td>
+
+		<td class="TOR"><a href="javascript:bieten(139070)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(139173);">Dimitrio Kas-Kas</a></td>
+
+		<td class="MIT">25</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">NAM</td>
+
+		<td class="MIT">31.94</td>
+
+		<td class="MIT">50.78</td>
+
+		<td class="MIT" align="right">1.034.130</td>
+
+		<td class="MIT"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="MIT" align="right">7293</td>
+
+		<td class="MIT">17.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:bieten(139173)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(144378);">Dumitru Pani</a></td>
+
+		<td class="OMI">25</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">MDA</td>
+
+		<td class="OMI">43.12</td>
+
+		<td class="OMI">63.30</td>
+
+		<td class="OMI" align="right">3.144.098</td>
+
+		<td class="OMI"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="OMI" align="right">30810</td>
+
+		<td class="OMI">16.09.2026</td>
+
+		<td class="OMI">0</td>
+
+		<td class="OMI"><a href="javascript:bieten(144378)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(152487);">Emiel Van Rossem</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">BEL</td>
+
+		<td class="STU">44.94</td>
+
+		<td class="STU">75.70</td>
+
+		<td class="STU" align="right">7.337.075</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">73176</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(152487)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(153946);">Blagoje Djokic</a></td>
+
+		<td class="OMI">22</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">BIH</td>
+
+		<td class="OMI">35.47</td>
+
+		<td class="OMI">58.04</td>
+
+		<td class="OMI" align="right">2.347.552</td>
+
+		<td class="OMI"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="OMI" align="right">19473</td>
+
+		<td class="OMI">15.09.2026</td>
+
+		<td class="OMI">0</td>
+
+		<td class="OMI"><a href="javascript:bieten(153946)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(154396);">Viorel Schirca</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">MDA</td>
+
+		<td class="STU">38.65</td>
+
+		<td class="STU">53.96</td>
+
+		<td class="STU" align="right">1.990.881</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">21536</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(154396)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(156384);">Adam Petelean</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">ROM</td>
+
+		<td class="STU">35.12</td>
+
+		<td class="STU">55.44</td>
+
+		<td class="STU" align="right">2.081.665</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">17836</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(156384)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(159452);">Hannjo Haberkorn</a></td>
+
+		<td class="MIT">22</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">GER</td>
+
+		<td class="MIT">30.35</td>
+
+		<td class="MIT">48.89</td>
+
+		<td class="MIT" align="right">1.055.263</td>
+
+		<td class="MIT"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="MIT" align="right">7819</td>
+
+		<td class="MIT">16.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:bieten(159452)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(160500);">Gerhard Greco</a></td>
+
+		<td class="ABW">21</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">SUI</td>
+
+		<td class="ABW">30.65</td>
+
+		<td class="ABW">45.67</td>
+
+		<td class="ABW" align="right">976.440</td>
+
+		<td class="ABW"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="ABW" align="right">9021</td>
+
+		<td class="ABW">17.09.2026</td>
+
+		<td class="ABW">0</td>
+
+		<td class="ABW"><a href="javascript:bieten(160500)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(165169);">Adams Schaut</a></td>
+
+		<td class="MIT">21</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">BEL</td>
+
+		<td class="MIT">38.41</td>
+
+		<td class="MIT">68.93</td>
+
+		<td class="MIT" align="right">4.683.927</td>
+
+		<td class="MIT"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="MIT" align="right">40779</td>
+
+		<td class="MIT">15.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:bieten(165169)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(166303);">Enzo Boazza</a></td>
+
+		<td class="STU">21</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">SMR</td>
+
+		<td class="STU">42.94</td>
+
+		<td class="STU">61.70</td>
+
+		<td class="STU" align="right">3.979.630</td>
+
+		<td class="STU"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="STU" align="right">55052</td>
+
+		<td class="STU">15.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:bieten(166303)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(166902);">Keith Lydell</a></td>
+
+		<td class="OMI">20</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">SCO</td>
+
+		<td class="OMI">27.35</td>
+
+		<td class="OMI">46.26</td>
+
+		<td class="OMI" align="right">975.100</td>
+
+		<td class="OMI"><a href="javascript:teaminfo()"></a></td>
+
+		<td class="OMI" align="right">8878</td>
+
+		<td class="OMI">16.09.2026</td>
+
+		<td class="OMI">0</td>
+
+		<td class="OMI"><a href="javascript:bieten(166902)">Gebot</a></td>
+
+	</tr>
+</tbody></table>
+</div>
+
+</body>
+
+</html>

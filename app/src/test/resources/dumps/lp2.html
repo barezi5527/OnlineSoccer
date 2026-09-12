@@ -1,0 +1,752 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<form method="GET"><b><font color="#ffffcc">Pokalspieltage</font></b>
+
+<select size="1" name="landauswahl">
+
+<option value="0">---Landauswahl---</option>
+
+<option value="45">Albanien</option><option value="95">Andorra</option><option value="83">Armenien</option><option value="104">Aserbaidschan</option><option value="12">Belgien</option><option value="66">Bosnien-Herzegowina</option><option value="42">Bulgarien</option><option value="8">D&auml;nemark</option><option value="6" SELECTED>Deutschland</option><option value="1">England</option><option value="57">Estland</option><option value="68">Far&ouml;er</option><option value="40">Finnland</option><option value="32">Frankreich</option><option value="49">Georgien</option><option value="30">Griechenland</option><option value="5">Irland</option><option value="29">Island</option><option value="23">Israel</option><option value="10">Italien</option><option value="105">Kasachstan</option><option value="24">Kroatien</option><option value="97">Lettland</option><option value="92">Liechtenstein</option><option value="72">Litauen</option><option value="93">Luxemburg</option><option value="69">Malta</option><option value="86">Mazedonien</option><option value="87">Moldawien</option><option value="11">Niederlande</option><option value="4">Nordirland</option><option value="9">Norwegen</option><option value="14">&Ouml;sterreich</option><option value="25">Polen</option><option value="17">Portugal</option><option value="28">Rum&auml;nien</option><option value="19">Russland</option><option value="98">San Marino</option><option value="2">Schottland</option><option value="27">Schweden</option><option value="37">Schweiz</option><option value="41">Serbien und Montenegro</option><option value="70">Slowakei</option><option value="21">Slowenien</option><option value="13">Spanien</option><option value="18">Tschechien</option><option value="39">T&uuml;rkei</option><option value="20">Ukraine</option><option value="26">Ungarn</option><option value="3">Wales</option><option value="71">Weissrussland</option><option value="38">Zypern</option>
+
+</select>
+
+<select size="1" name="stauswahl">
+
+<option value="0">---Runde---</option>
+
+<option value="1" SELECTED>1. Runde</option><option value="2">2. Runde</option><option value="3">3. Runde</option><option value="4">Achtelfinale</option><option value="5">Viertelfinale</option><option value="6">Halbfinale</option><option value="7">Finale</option>
+
+</select>
+
+<select size="1" name="saauswahl">
+
+<option value="0">--Saison--</option>
+
+<option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24" SELECTED>24</option>
+
+</select>
+
+&nbsp;<input type="checkbox" name="erganzeigen" value="1" CHECKED>&nbsp;Ergebnisse anzeigen&nbsp;
+
+<input type="submit" value="Statistik ausgeben" name="stataktion">
+
+</form>
+
+<hr>
+
+<br><table style="border-collapse: collapse;"><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="164,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000164.gif" alt="Wappen Eintracht Wuppertal" /></td>
+
+	<td><a href="javascript:teaminfo(164);">Eintracht Wuppertal</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001905.png" alt="Wappen Augsburger SSV" /></td>
+
+	<td><a href="javascript:teaminfo(1905);">Augsburger SSV</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(164,1905,3,24)"></a><a href="javascript:spielpreview(164,1905,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962392)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="183,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000183.gif" alt="Wappen Westfalia Bielefeld" /></td>
+
+	<td><a href="javascript:teaminfo(183);">Westfalia Bielefeld</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00003446.gif" alt="Wappen 1. FC Essen" /></td>
+
+	<td><a href="javascript:teaminfo(3446);">1. FC Essen</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(183,3446,3,24)"></a><a href="javascript:spielpreview(183,3446,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962378)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="222,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000222.png" alt="Wappen Schwarz-Gelb Leipzig" /></td>
+
+	<td><a href="javascript:teaminfo(222);">Schwarz-Gelb Leipzig</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001002.gif" alt="Wappen TSV Rheydt" /></td>
+
+	<td><a href="javascript:teaminfo(1002);">TSV Rheydt</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(222,1002,3,24)"></a><a href="javascript:spielpreview(222,1002,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962391)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="995,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000995.png" alt="Wappen Germania Münster" /></td>
+
+	<td><a href="javascript:teaminfo(995);">Germania Münster</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000477.gif" alt="Wappen Kickers Duisburg" /></td>
+
+	<td><a href="javascript:teaminfo(477);">Kickers Duisburg</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(995,477,3,24)"></a><a href="javascript:spielpreview(995,477,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962370)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="996,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000996.png" alt="Wappen Dynamo Cottbus" /></td>
+
+	<td><a href="javascript:teaminfo(996);">Dynamo Cottbus</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001036.png" alt="Wappen Eintracht Hamburg" /></td>
+
+	<td><a href="javascript:teaminfo(1036);">Eintracht Hamburg</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(996,1036,3,24)"></a><a href="javascript:spielpreview(996,1036,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962371)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1001,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001001.png" alt="Wappen Schüttorfer SV" /></td>
+
+	<td><a href="javascript:teaminfo(1001);">Schüttorfer SV</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001055.png" alt="Wappen Kickers Dresden" /></td>
+
+	<td><a href="javascript:teaminfo(1055);">Kickers Dresden</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1001,1055,3,24)"></a><a href="javascript:spielpreview(1001,1055,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962384)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1005,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001005.png" alt="Wappen Blau Weiss Schalke" /></td>
+
+	<td><a href="javascript:teaminfo(1005);">Blau Weiss Schalke</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000676.png" alt="Wappen Mannheimer SC" /></td>
+
+	<td><a href="javascript:teaminfo(676);">Mannheimer SC</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1005,676,3,24)"></a><a href="javascript:spielpreview(1005,676,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962381)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1006,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001006.png" alt="Wappen FC Paderborn 1907 e.V" /></td>
+
+	<td><a href="javascript:teaminfo(1006);">FC Paderborn 1907 e.V</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001965.png" alt="Wappen Borussia Wolfsburg" /></td>
+
+	<td><a href="javascript:teaminfo(1965);">Borussia Wolfsburg</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1006,1965,3,24)"></a><a href="javascript:spielpreview(1006,1965,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962375)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1016,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001016.png" alt="Wappen Wuppertaler SpVgg" /></td>
+
+	<td><a href="javascript:teaminfo(1016);">Wuppertaler SpVgg</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000779.gif" alt="Wappen Berliner FC Turbine" /></td>
+
+	<td><a href="javascript:teaminfo(779);">Berliner FC Turbine</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1016,779,3,24)"></a><a href="javascript:spielpreview(1016,779,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962393)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1018,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001018.gif" alt="Wappen FC 1965 Magdeburg" /></td>
+
+	<td><a href="javascript:teaminfo(1018);">FC 1965 Magdeburg</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001010.png" alt="Wappen 1.FK Köln" /></td>
+
+	<td><a href="javascript:teaminfo(1010);">1.FK Köln</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1018,1010,3,24)"></a><a href="javascript:spielpreview(1018,1010,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962389)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1022,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001022.png" alt="Wappen ESV Osterfeld" /></td>
+
+	<td><a href="javascript:teaminfo(1022);">ESV Osterfeld</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001009.png" alt="Wappen TuS Emden" /></td>
+
+	<td><a href="javascript:teaminfo(1009);">TuS Emden</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1022,1009,3,24)"></a><a href="javascript:spielpreview(1022,1009,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962394)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1024,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001024.png" alt="Wappen VfL Fohlen Mönchengladbach 09" /></td>
+
+	<td><a href="javascript:teaminfo(1024);">VfL Fohlen Mönchengladbach 09</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00003450.png" alt="Wappen FC Mainz 09" /></td>
+
+	<td><a href="javascript:teaminfo(3450);">FC Mainz 09</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1024,3450,3,24)"></a><a href="javascript:spielpreview(1024,3450,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962376)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1034,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001034.gif" alt="Wappen FC Blau-Gelb Halle" /></td>
+
+	<td><a href="javascript:teaminfo(1034);">FC Blau-Gelb Halle</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001027.png" alt="Wappen ASV Homburg" /></td>
+
+	<td><a href="javascript:teaminfo(1027);">ASV Homburg</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1034,1027,3,24)"></a><a href="javascript:spielpreview(1034,1027,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962395)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1050,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001050.png" alt="Wappen Bonner SpVgg" /></td>
+
+	<td><a href="javascript:teaminfo(1050);">Bonner SpVgg</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000512.gif" alt="Wappen 1. FC Marl Hüls" /></td>
+
+	<td><a href="javascript:teaminfo(512);">1. FC Marl Hüls</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1050,512,3,24)"></a><a href="javascript:spielpreview(1050,512,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962377)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1053,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001053.gif" alt="Wappen SpVgg Saarbrücken" /></td>
+
+	<td><a href="javascript:teaminfo(1053);">SpVgg Saarbrücken</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000997.gif" alt="Wappen Niederrhein Düsseldorf" /></td>
+
+	<td><a href="javascript:teaminfo(997);">Niederrhein Düsseldorf</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1053,997,3,24)"></a><a href="javascript:spielpreview(1053,997,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962374)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1054,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001054.png" alt="Wappen Hanse BBC Berlin" /></td>
+
+	<td><a href="javascript:teaminfo(1054);">Hanse BBC Berlin</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000063.png" alt="Wappen OSV Rostock" /></td>
+
+	<td><a href="javascript:teaminfo(63);">OSV Rostock</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1054,63,3,24)"></a><a href="javascript:spielpreview(1054,63,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962382)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1057,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001057.png" alt="Wappen Wacker Fulda" /></td>
+
+	<td><a href="javascript:teaminfo(1057);">Wacker Fulda</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000381.png" alt="Wappen Schleswig Kiel" /></td>
+
+	<td><a href="javascript:teaminfo(381);">Schleswig Kiel</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1057,381,3,24)"></a><a href="javascript:spielpreview(1057,381,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962373)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1062,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001062.png" alt="Wappen 1. FC Burghausen" /></td>
+
+	<td><a href="javascript:teaminfo(1062);">1. FC Burghausen</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000847.png" alt="Wappen MSV Neugersdorf" /></td>
+
+	<td><a href="javascript:teaminfo(847);">MSV Neugersdorf</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1062,847,3,24)"></a><a href="javascript:spielpreview(1062,847,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962388)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1063,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001063.png" alt="Wappen Bavaria Aschaffenburg" /></td>
+
+	<td><a href="javascript:teaminfo(1063);">Bavaria Aschaffenburg</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000774.gif" alt="Wappen Trafo Dresden" /></td>
+
+	<td><a href="javascript:teaminfo(774);">Trafo Dresden</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1063,774,3,24)"></a><a href="javascript:spielpreview(1063,774,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962380)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1849,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001849.png" alt="Wappen Concordia Leipzig" /></td>
+
+	<td><a href="javascript:teaminfo(1849);">Concordia Leipzig</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001023.png" alt="Wappen SG Bayreuth 07" /></td>
+
+	<td><a href="javascript:teaminfo(1023);">SG Bayreuth 07</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1849,1023,3,24)"></a><a href="javascript:spielpreview(1849,1023,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962383)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1940,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001940.png" alt="Wappen FC Franconia Hof" /></td>
+
+	<td><a href="javascript:teaminfo(1940);">FC Franconia Hof</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000827.png" alt="Wappen OS Bavaria München" /></td>
+
+	<td><a href="javascript:teaminfo(827);">OS Bavaria München</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1940,827,3,24)"></a><a href="javascript:spielpreview(1940,827,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962385)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1941,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001941.png" alt="Wappen 1. FC Mannheim" /></td>
+
+	<td><a href="javascript:teaminfo(1941);">1. FC Mannheim</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000650.gif" alt="Wappen GW Hauenstein" /></td>
+
+	<td><a href="javascript:teaminfo(650);">GW Hauenstein</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1941,650,3,24)"></a><a href="javascript:spielpreview(1941,650,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962387)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1959,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001959.png" alt="Wappen SC Adler Frankfurt" /></td>
+
+	<td><a href="javascript:teaminfo(1959);">SC Adler Frankfurt</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000080.gif" alt="Wappen TSV 1999 Wehen" /></td>
+
+	<td><a href="javascript:teaminfo(80);">TSV 1999 Wehen</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1959,80,3,24)"></a><a href="javascript:spielpreview(1959,80,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962372)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1961,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001961.png" alt="Wappen Schwaben Stuttgart" /></td>
+
+	<td><a href="javascript:teaminfo(1961);">Schwaben Stuttgart</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001030.png" alt="Wappen SV Hannover 09" /></td>
+
+	<td><a href="javascript:teaminfo(1030);">SV Hannover 09</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1961,1030,3,24)"></a><a href="javascript:spielpreview(1961,1030,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962390)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="1966,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001966.gif" alt="Wappen 1.FC Trier" /></td>
+
+	<td><a href="javascript:teaminfo(1966);">1.FC Trier</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00000842.jpg" alt="Wappen Adler Koblenz" /></td>
+
+	<td><a href="javascript:teaminfo(842);">Adler Koblenz</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(1966,842,3,24)"></a><a href="javascript:spielpreview(1966,842,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962379)">0 Vorbericht(e)</a></td>
+
+</tr><tr>
+
+	<td><input type="checkbox" class=".live" name="live" value="3438,3" /></td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00003438.gif" alt="Wappen Aachener BSC" /></td>
+
+	<td><a href="javascript:teaminfo(3438);">Aachener BSC</a></td>
+
+	<td>&nbsp;-&nbsp;</td>
+
+	<td><img width="20" height="20" align="middle" valign="middle" src="images/wappen/00001068.png" alt="Wappen Kickers Darmstadt" /></td>
+
+	<td><a href="javascript:teaminfo(1068);">Kickers Darmstadt</a></td>
+
+	<td>&nbsp;</td>
+
+	<td></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td><a href="javascript:os_bericht(3438,1068,3,24)"></a><a href="javascript:spielpreview(3438,1068,3)">Vorschau</a></td>
+
+	<td>&nbsp;&nbsp;&nbsp;</td>
+
+	<td class="noprint"><a href="javascript:kommentar(1962386)">0 Vorbericht(e)</a></td>
+
+</tr></table>
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Freie Teams - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Freie Teams</h1>
+		<p>Zur Zeit sind 213 Teams frei.</p>
+
+					<form method="POST" action="/osneu/freieteams">
+				<input type="hidden" name="action" value="loadTeamListe" />
+				Land:
+				<select name="comboLand">
+					<option value="0">---Land---</option>
+											<option value="95">Andorra (5)</option>
+											<option value="83">Armenien (6)</option>
+											<option value="12">Belgien (9)</option>
+											<option value="66">Bosnien-Herzegowina (6)</option>
+											<option value="42">Bulgarien (5)</option>
+											<option value="8">D&auml;nemark (2)</option>
+											<option value="6" selected>Deutschland (6)</option>
+											<option value="1">England (5)</option>
+											<option value="68">Far&ouml;er (2)</option>
+											<option value="40">Finnland (5)</option>
+											<option value="32">Frankreich (5)</option>
+											<option value="30">Griechenland (12)</option>
+											<option value="5">Irland (1)</option>
+											<option value="29">Island (3)</option>
+											<option value="10">Italien (3)</option>
+											<option value="24">Kroatien (6)</option>
+											<option value="93">Luxemburg (1)</option>
+											<option value="86">Mazedonien (7)</option>
+											<option value="87">Moldawien (7)</option>
+											<option value="11">Niederlande (8)</option>
+											<option value="4">Nordirland (4)</option>
+											<option value="9">Norwegen (1)</option>
+											<option value="14">&Ouml;sterreich (16)</option>
+											<option value="25">Polen (12)</option>
+											<option value="17">Portugal (8)</option>
+											<option value="19">Russland (14)</option>
+											<option value="2">Schottland (7)</option>
+											<option value="27">Schweden (5)</option>
+											<option value="37">Schweiz (4)</option>
+											<option value="41">Serbien und Montenegro (1)</option>
+											<option value="21">Slowenien (5)</option>
+											<option value="13">Spanien (8)</option>
+											<option value="18">Tschechien (6)</option>
+											<option value="20">Ukraine (1)</option>
+											<option value="26">Ungarn (6)</option>
+											<option value="3">Wales (5)</option>
+											<option value="71">Weissrussland (6)</option>
+									</select>
+				<input type="submit" value="Anzeigen" />
+			</form>
+
+			<br />
+
+			<table>
+				<tr>
+					<th>Verein</th>
+					<th>Land</th>
+					<th>Liga</th>
+				</tr>
+															<tr>
+							<td><a href="/st.php?c=1062" onClick="teaminfo(1062);return false;">1. FC Burghausen</a></td>
+							<td>Deutschland</td>
+							<td>3. Liga A</td>
+						</tr>
+											<tr>
+							<td><a href="/st.php?c=1849" onClick="teaminfo(1849);return false;">Concordia Leipzig</a></td>
+							<td>Deutschland</td>
+							<td>3. Liga B</td>
+						</tr>
+											<tr>
+							<td><a href="/st.php?c=1034" onClick="teaminfo(1034);return false;">FC Blau-Gelb Halle</a></td>
+							<td>Deutschland</td>
+							<td>2. Liga A</td>
+						</tr>
+											<tr>
+							<td><a href="/st.php?c=1056" onClick="teaminfo(1056);return false;">FC Spree Berlin</a></td>
+							<td>Deutschland</td>
+							<td>3. Liga B</td>
+						</tr>
+											<tr>
+							<td><a href="/st.php?c=1054" onClick="teaminfo(1054);return false;">Hanse BBC Berlin</a></td>
+							<td>Deutschland</td>
+							<td>3. Liga B</td>
+						</tr>
+											<tr>
+							<td><a href="/st.php?c=1046" onClick="teaminfo(1046);return false;">SpVgg Regensburg</a></td>
+							<td>Deutschland</td>
+							<td>3. Liga A</td>
+						</tr>
+												</table>
+			</div>
+    </body>
+</html>

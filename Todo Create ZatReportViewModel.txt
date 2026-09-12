@@ -1,0 +1,6 @@
+▼Todo
+[•] Create ZatReportViewModel.kt
+[ ] Create ZatReportScreen.kt
+[ ] Modify TeamScreen.kt to add ZAT_REPORT tab
+[ ] Update AppRoot.kt with new routes
+[ ] Build and verify compilation

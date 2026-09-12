@@ -1,0 +1,305 @@
+package com.onlinesoccer.app.data.repository
+
+import com.onlinesoccer.app.data.model.LetzteAktionenArt
+import java.io.File
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * Regressionstests für die öffentlichen Listen-Screens gegen echte Server-Dumps
+ * (`app/src/test/resources/dumps/freieteams*.html`, `managerliste*.html`).
+ */
+class ServerRepositoryParseTest {
+
+    private val repo = ServerRepository(okhttp3.OkHttpClient())
+
+    private fun dump(name: String): String =
+        File("src/test/resources/dumps/$name.html").readText()
+
+    @Test
+    fun freieTeams_ohneLand_liefertAnzahlLaenderUndKeineZeilen() {
+        val daten = repo.parseFreieTeams(dump("freieteams"))
+
+        assertEquals("Zur Zeit sind 213 Teams frei.", daten.anzahlText)
+        assertEquals("37 Länder", 37, daten.laender.size)
+        assertTrue("ohne Land keine Zeilen", daten.zeilen.isEmpty())
+    }
+
+    @Test
+    fun freieTeams_mitLand_parstZeilenInklusiveTeamIds() {
+        val daten = repo.parseFreieTeams(dump("freieteams_de"))
+
+        assertTrue(daten.zeilen.isNotEmpty())
+        val burghausen = daten.zeilen.first { it.verein == "1. FC Burghausen" }
+        assertEquals(1062L, burghausen.teamId)
+        assertEquals("Deutschland", burghausen.land)
+        assertEquals("3. Liga A", burghausen.liga)
+        assertTrue(daten.laender.all { it.id != "0" })
+    }
+
+    @Test
+    fun freieTeams_laenderLabelsEnthaltenAnzahl() {
+        val daten = repo.parseFreieTeams(dump("freieteams"))
+
+        val deutschland = daten.laender.first { it.label.startsWith("Deutschland") }
+        assertEquals("6", deutschland.id)
+    }
+
+    @Test
+    fun managerliste_ohneFilter_keineZeilenAbEx12HeaderUnkritisch() {
+        val daten = repo.parseManagerliste(dump("managerliste"))
+
+        assertTrue(daten.laender.isNotEmpty())
+        assertTrue("7 Ligas", daten.ligas.size == 7)
+        assertTrue(daten.zeilen.isEmpty())
+    }
+
+    @Test
+    fun managerliste_mitLandKeineLiga_liefertKeinTrefferZeilenLeer() {
+        val daten = repo.parseManagerliste(dump("managerliste_de"))
+
+        assertTrue(daten.zeilen.isEmpty())
+    }
+
+    @Test
+    fun managerliste_mitLandUndLiga_parstZeilen() {
+        val daten = repo.parseManagerliste(dump("managerliste_de_liga"))
+
+        assertTrue(daten.zeilen.isNotEmpty())
+        val schunk = daten.zeilen.first { it.manager == "Michael Schunk" }
+        assertEquals(97L, schunk.managerId)
+        assertEquals(513L, schunk.teamId)
+        assertEquals("1911 Baunatal", schunk.team)
+        assertEquals("2", schunk.nmrGesamt)
+        assertEquals("---", schunk.zugabgabe)
+
+        val frei = daten.zeilen.first { it.manager == "Team ist frei" }
+        assertEquals(-1L, frei.managerId)
+        assertEquals(1046L, frei.teamId)
+    }
+
+    @Test
+    fun freieZweitteams_ohneLand_liefertAnzahlUndLaender() {
+        val daten = repo.parseFreieZweitteams(dump("fzt"))
+
+        assertEquals("Derzeit sind 56 Zweitteams zur Bewerbung freigegeben", daten.anzahlText)
+        assertTrue("29 Länder", daten.laender.size == 29)
+        assertEquals("6", daten.laender.first { it.label.startsWith("Deutschland") }.id)
+        assertTrue("ohne Land keine Zeilen", daten.zeilen.isEmpty())
+    }
+
+    @Test
+    fun freieZweitteams_mitLand_parstZeilen() {
+        val daten = repo.parseFreieZweitteams(dump("fzt_de"))
+
+        val magdeburg = daten.zeilen.firstOrNull { it.verein == "FC 1965 Magdeburg" }
+        assertTrue("Magdeburg-Zeile", magdeburg != null)
+        assertEquals(1018L, magdeburg!!.teamId)
+        assertEquals("Deutschland", magdeburg.land)
+        assertEquals("2. Liga A", magdeburg.liga)
+    }
+
+    @Test
+    fun managersuche_liefertTrefferzeilenMitIds() {
+        val daten = repo.parseManagerSuche(dump("managersuche"))
+
+        val treffer = daten.zeilen.firstOrNull { it.manager == "Rainer Nürge" }
+        assertTrue("Treffer vorhanden", treffer != null)
+        assertEquals(1954L, treffer!!.managerId)
+        assertEquals(1018L, treffer.teamId)
+        assertEquals("FC 1965 Magdeburg", treffer.team)
+    }
+
+    @Test
+    fun managersuche_keinTreffer_liefertLeereZeilen() {
+        val daten = repo.parseManagerSuche(dump("managersuche_leer"))
+
+        assertTrue(daten.zeilen.isEmpty())
+    }
+
+    @Test
+    fun transferliste_formular_liefertFilterOhneZeilen() {
+        val ergebnis = repo.parseTransferliste(dump("transferliste"))
+
+        assertTrue(ergebnis.filter.isNotEmpty())
+        assertTrue("10 Filterfelder", ergebnis.filter.size == 10)
+        assertTrue("ohne Suche keine Zeilen", ergebnis.zeilen.isEmpty())
+        assertTrue(!ergebnis.gesucht)
+        assertNotNull(ergebnis.hinweis)
+    }
+
+    @Test
+    fun transferliste_suche_parstZeilenUndPagination() {
+        val ergebnis = repo.parseTransferliste(dump("transferliste_suche"))
+
+        assertTrue(ergebnis.gesucht)
+        assertEquals(227, ergebnis.treffer)
+        assertEquals(10, ergebnis.gesamtSeiten)
+        assertTrue("Zeilen vorhanden", ergebnis.zeilen.isNotEmpty())
+        assertTrue("ab 20 Zeilen", ergebnis.zeilen.size >= 20)
+
+        val kiikeri = ergebnis.zeilen.first { it.name == "Juhani Kiikeri" }
+        assertEquals(130312L, kiikeri.spielerId)
+        assertEquals(1078L, kiikeri.teamId)
+        assertEquals("FIN", kiikeri.land)
+    }
+
+    @Test
+    fun transfermarkt_formular_liefertFilterOhneEintraege() {
+        val ergebnis = repo.parseTransfermarkt(dump("transfermarkt"))
+
+        assertTrue(ergebnis.filter.isNotEmpty())
+        assertTrue("5 Filterfelder", ergebnis.filter.size == 5)
+        assertTrue(ergebnis.eintraege.isEmpty())
+        assertTrue(!ergebnis.gesucht)
+    }
+
+    @Test
+    fun transfermarkt_suche_parstEintraegeMitGeboten() {
+        val ergebnis = repo.parseTransfermarkt(dump("transfermarkt_suche"))
+
+        assertTrue(ergebnis.gesucht)
+        assertTrue("Einträge vorhanden", ergebnis.eintraege.isNotEmpty())
+
+        val catone = ergebnis.eintraege.first { it.name == "Salvatore Catone" }
+        assertEquals(114490L, catone.spielerId)
+        assertEquals("1.015.615", catone.gebot)
+
+        val mahmudov = ergebnis.eintraege.first { it.name == "Oqtay Mahmudov" }
+        assertEquals(1923L, mahmudov.bieterTeamId)
+        assertTrue("Bieter", mahmudov.bieter.contains("Torpedo"))
+    }
+
+    @Test
+    fun eigeneGebote_leereListe_liefertSummeUndKeineZeilen() {
+        val ergebnis = repo.parseEigeneGebote(dump("eigenegebote"))
+
+        assertTrue(ergebnis.zeilen.isEmpty())
+        assertEquals("0", ergebnis.summe)
+    }
+
+    @Test
+    fun leihUebersicht_parstAbschnitteUndGeliehenenSpieler() {
+        val ergebnis = repo.parseLeihUebersicht(dump("leihuebersicht"))
+
+        assertTrue("keine verliehenen Spieler", ergebnis.verliehen.isEmpty())
+        assertEquals(1, ergebnis.geliehen.size)
+
+        val vincez = ergebnis.geliehen.first()
+        assertEquals(97944L, vincez.spielerId)
+        assertEquals("Lars Vincez", vincez.name)
+        assertEquals("33", vincez.alter)
+        assertEquals("SUI", vincez.land)
+        assertEquals("STU", vincez.position)
+        assertEquals("61.47", vincez.skill)
+        assertEquals("89.37", vincez.optSkill)
+        assertEquals("146.561", vincez.leihgebuehr)
+        assertEquals("Adler Koblenz", vincez.leihclub)
+        assertEquals(842L, vincez.leihclubId)
+    }
+
+    @Test
+    fun letzteTransfers_parstBloeckeMitSpielernUndZahlungen() {
+        val ergebnis = repo.parseLetzteAktionen(dump("lasttrans"), LetzteAktionenArt.TRANSFERS)
+
+        assertTrue("Blöcke vorhanden", ergebnis.zeilen.size >= 30)
+
+        val bregovic = ergebnis.zeilen.first { it.spieler == "Marko Bregovic" }
+        assertEquals(171277L, bregovic.spielerId)
+        assertEquals("MIT", bregovic.position)
+        assertEquals("10.09.2026 08:01", bregovic.datum)
+        assertEquals("Vitoria Lourinhanense", bregovic.von)
+        assertEquals(3459L, bregovic.vonId)
+        assertEquals("Atletico Benito", bregovic.zu)
+        assertEquals(3376L, bregovic.zuId)
+        assertEquals("4.245.998 Euro", bregovic.betrag)
+        assertTrue("Zahlungsdetails", bregovic.anmerkung.contains("Gesamt"))
+    }
+
+    @Test
+    fun letzteLeihen_parstSpielerTeamsBetragUndDauer() {
+        val ergebnis = repo.parseLetzteAktionen(dump("lastleih"), LetzteAktionenArt.LEIHEN)
+
+        val hindersberg = ergebnis.zeilen.first { it.spieler == "Andreas Hindsberg" }
+        assertEquals(127213L, hindersberg.spielerId)
+        assertEquals("09.09.2026 08:59", hindersberg.datum)
+        assertEquals("FC Helsingoer", hindersberg.von)
+        assertEquals(725L, hindersberg.vonId)
+        assertEquals("SC Äänekosk", hindersberg.zu)
+        assertEquals(1090L, hindersberg.zuId)
+        assertEquals("140.064", hindersberg.betrag)
+        assertEquals("72 ZATs", hindersberg.dauer)
+    }
+
+    @Test
+    fun letzteVermoegensmarktKaeufe_parstZeilenMitTeamBetrag() {
+        val ergebnis = repo.parseLetzteAktionen(dump("lastvm"), LetzteAktionenArt.VM)
+
+        val rogochiy = ergebnis.zeilen.first { it.spieler == "Lev Rogochiy" }
+        assertEquals(171222L, rogochiy.spielerId)
+        assertEquals("Zorynik Kirovograd", rogochiy.von)
+        assertEquals("CF Castellon", rogochiy.zu)
+        assertEquals(376L, rogochiy.zuId)
+        assertEquals("3.841.344", rogochiy.betrag)
+    }
+
+    @Test
+    fun letzteTransfermarktKaeufe_parstZeilenMitTeamUndPreis() {
+        val ergebnis = repo.parseLetzteAktionen(dump("lasttm"), LetzteAktionenArt.TM)
+
+        val bajtera = ergebnis.zeilen.first { it.spieler == "Pedro Bajtera" }
+        assertEquals(154073L, bajtera.spielerId)
+        assertEquals("Real Cadiz", bajtera.team)
+        assertEquals(1452L, bajtera.teamId)
+        assertEquals("980.810", bajtera.betrag)
+    }
+
+    @Test
+    fun letzteSchnelltransfers_parstZeilenMitTeamZielUndZahlung() {
+        val ergebnis = repo.parseLetzteAktionen(dump("lastblitz"), LetzteAktionenArt.BLITZ)
+
+        val ivanov = ergebnis.zeilen.first { it.spieler == "Valerian Ivanov" }
+        assertEquals(169963L, ivanov.spielerId)
+        assertEquals("SpVgg Saarbrücken", ivanov.team)
+        assertEquals(1053L, ivanov.teamId)
+        assertEquals("Madagaskar", ivanov.ziel)
+        assertEquals("1.518.940", ivanov.betrag)
+    }
+
+    @Test
+    fun gebotInfo_parstKennzahlenUndSubmitFormular() {
+        val info = repo.parseGebotInfo(dump("gebot"), 114490L)
+
+        assertEquals(114490L, info.spielerId)
+        assertEquals("Salvatore Catone", info.name)
+        assertEquals("29", info.alter)
+        assertEquals("Italien", info.nationalitaet)
+        assertEquals("OMI", info.position)
+        assertEquals("1.354.153", info.marktwert)
+        assertEquals("15.09.2026", info.angeboteBis)
+        assertEquals("1.015.615", info.hoechstgebot)
+        assertEquals("8.136", info.gehalt)
+        assertEquals("Gebot", info.submitName)
+        assertEquals("Gebot abgeben als SC Viktoria Ulm", info.submitValue)
+    }
+
+    @Test
+    fun parseGebotErgebnis_erkenntFehlerhinweis() {
+        val fehler = repo.parseGebotErgebnis("<html><body>Du bist gesperrt und kannst kein Gebot abgeben.</body></html>")
+
+        assertEquals(false, fehler.erfolg)
+        assertTrue(fehler.meldung.contains("gesperrt"))
+    }
+
+    @Test
+    fun parseGebotErgebnis_wertetGebotsantwortAlsErfolg() {
+        val ergebnis = repo.parseGebotErgebnis(
+            "<html><body><p>Ihr Gebot wurde erfolgreich abgegeben.</p></body></html>",
+        )
+
+        assertEquals(true, ergebnis.erfolg)
+        assertTrue(ergebnis.meldung.contains("Gebot"))
+    }
+}

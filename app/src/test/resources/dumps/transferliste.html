@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Transferliste - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Transferliste</h1>
+
+		<form method="GET" action="/osneu/transferliste">
+			<input type="hidden" name="gesucht" value="1" />
+
+			<p>
+									Zur Zeit befinden sich 1330 Spieler auf der internationalen Transferliste.
+							</p>
+
+			<table>
+				<tr><td>
+					<select name="alter">
+						<option value="0">Alter</option>
+						<option value="1">16-18</option>
+						<option value="2">19-20</option>
+						<option value="3">21-22</option>
+						<option value="4">23-24</option>
+						<option value="5">25-26</option>
+						<option value="6">27-28</option>
+						<option value="7">29-30</option>
+						<option value="8">31-32</option>
+						<option value="9">33+</option>
+					</select>
+					<select name="skill">
+						<option value="0">Skillschnitt</option>
+						<option value="1">0-20,00</option>
+						<option value="2">20,01-30,00</option>
+						<option value="3">30,01-40,00</option>
+						<option value="4">40,01-50,00</option>
+						<option value="5">50,01-60,00</option>
+						<option value="6">60,01+</option>
+					</select>
+					<select name="opti">
+						<option value="0">Opt.Skillschnitt</option>
+						<option value="1">0-40,00</option>
+						<option value="2">40,01-50,00</option>
+						<option value="3">50,01-60,00</option>
+						<option value="4">60,01-70,00</option>
+						<option value="5">70,01-80,00</option>
+						<option value="6">80,01-90,00</option>
+						<option value="7">90,01+</option>
+					</select>
+					<select name="abloese">
+						<option value="0">Ablöse</option>
+						<option value="1">0-1.000.000</option>
+						<option value="2">1.000.001-2.500.000</option>
+						<option value="3">2.500.001-5.000.000</option>
+						<option value="4">5.000.001-10.000.000</option>
+						<option value="5">10.000.001-15.000.000</option>
+						<option value="6">15.000.001-25.000.000</option>
+						<option value="7">25.000.001-50.000.000</option>
+						<option value="8">50.000.001+</option>
+					</select>
+					<select name="position">
+						<option value="0">Position</option>
+													<option value="1">TOR</option>
+													<option value="2">ABW</option>
+													<option value="3">DMI</option>
+													<option value="4">MIT</option>
+													<option value="5">OMI</option>
+													<option value="6">STU</option>
+											</select>
+					<select name="tstatus">
+						<option value="0">Status</option>
+						<option value="1">A</option>
+						<option value="2">T</option>
+					</select>
+					<select name="tdetail">
+						<option value="0">Transferdetails</option>
+						<option value="1">Kauf</option>
+						<option value="2">Tausch</option>
+						<option value="4">Leihe</option>
+						<option value="3">Kauf/Tausch</option>
+						<option value="5">Kauf/Leihe</option>
+						<option value="6">Tausch/Leihe</option>
+						<option value="7">Kauf/Tausch/Leihe</option>
+					</select>
+					<select name="sortierung">
+						<option value="0">Sortierung</option>
+						<option value="11">Alter aufsteigend</option>
+						<option value="12">Alter absteigend</option>
+						<option value="21">Dauer aufsteigend</option>
+						<option value="22">Dauer absteigend</option>
+						<option value="71">Ablöse aufsteigend</option>
+						<option value="72">Ablöse absteigend</option>
+						<option value="41">Opti aufsteigend</option>
+						<option value="42">Opti absteigend</option>
+						<option value="51">Position aufsteigend</option>
+						<option value="52">Position absteigend</option>
+						<option value="61">Skill aufsteigend</option>
+						<option value="62">Skill absteigend</option>
+						<option value="81">MW aufsteigend</option>
+						<option value="82">MW absteigend</option>
+					</select>
+					<select name="tinfo">
+						<option value="0">Transferinfo</option>
+						<option value="1">Nicht anzeigen</option>
+						<option value="2">Anzeigen</option>
+					</select>
+					<select name="proSeite">
+													<option value="25" selected>25 pro Seite</option>
+													<option value="50">50 pro Seite</option>
+													<option value="75">75 pro Seite</option>
+													<option value="100">100 pro Seite</option>
+											</select>
+					<input type="submit" value="Anzeigen" />
+				</td></tr>
+			</table>
+		</form>
+
+		<hr />
+
+					<b>Bitte wähle oben Kriterien für die anzuzeigenden Spieler des Transfermarktes aus!</b>
+			</div>
+    </body>
+</html>

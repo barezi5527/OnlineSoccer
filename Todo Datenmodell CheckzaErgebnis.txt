@@ -1,0 +1,8 @@
+▼Todo
+[✓] Datenmodell CheckzaErgebnis erstellen
+[✓] Parser parseCheckzaErgebnis in ZugabgabeRepository
+[✓] UI: CheckzaReportDialog Composable erstellen
+[✓] ZatViewModel an CheckzaErgebnis anpassen
+[✓] ZatScreen mit Dialog-Integration anpassen
+[✓] Dump + Unit-Test fuer Parser
+[•] Build & Lint verifizieren

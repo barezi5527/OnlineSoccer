@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Stadionausbau - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Stadionausbau</h1>
+				<table border="0">
+			<tr>
+				<td>Fassungsvermögen:</td><td>90.500</td>
+			</tr>
+			<tr>
+				<td>Sitzplätze:</td><td>90.500</td><td>&nbsp;</td><td>davon überdacht:</td><td>&nbsp;</td><td>90.500</td>
+			</tr>
+			<tr>
+				<td>Stehplätze:</td><td>0</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td>davon überdacht:</td><td>0</td>
+			</tr>
+			<tr>
+				<td>Anzeigetafel:</td><td>Multimediawürfel</td><td>&nbsp;</td><td>Rasenheizung:</td><td>installiert</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+			</tr>
+			<tr>
+				<td>Kontostand:</td><td>10.982.835</td>
+			</tr>
+		</table>
+		<hr />
+		<h2>Stationaus- oder Umbau in Auftrag geben</h2>
+				<form method="POST" action="/osneu/stadion">
+					<input type="hidden" value="doAngebot" name="action" />
+			<table border="0">
+				<tr>
+					<td>Stehplätze bauen (2.859 pro Platz):</td>
+					<td><input type="number" name="NeuSteh" min="0" max="10000" placeholder="0" size="6"  value="0" /></td>
+					<td>(max. 10.000)</td>
+				</tr>
+				<tr>
+					<td>Sitzplätze bauen (3.109 pro Platz):</td>
+					<td><input type="number" name="NeuSitz" min="0" max="10000" placeholder="0" size="6"  value="0" /></td>
+					<td>(max. 10.000)</td>
+				</tr>
+				<tr>
+					<td>Überdachte Stehplätze bauen (3.259 pro Platz):</td>
+					<td><input type="number" name="NeuUSteh" min="0" max="10000" placeholder="0" size="6"  value="0" /></td>
+					<td>(max. 10.000)</td>
+				</tr>
+				<tr>
+					<td>Überdachte Sitzplätze bauen (3.509 pro Platz):</td>
+					<td><input type="number" name="NeuUSitz" min="0" max="10000" placeholder="0" size="6"  value="0" /></td>
+					<td>(max. 10.000)</td>
+				</tr>
+				<tr>
+					<td>Stehplätze Überdachen (600 pro Platz):</td>
+					<td><input type="number" name="USteh" min="0" max="0" placeholder="0" size="6" readonly="readonly" value="0" /></td>
+					<td>(max. 0)</td>
+				</tr>
+				<tr>
+					<td>Sitzplätze Überdachen (600 pro Platz):</td>
+					<td><input type="number" name="USitz" min="0" max="0" placeholder="0" size="6" readonly="readonly" value="0" /></td>
+					<td>(max. 0)</td>
+				</tr>
+				<tr>
+					<td>Stehplätze zu Sitzplätze umbauen (400 pro Platz):</td>
+					<td><input type="number" name="StehZuSitz" max="0" min="0" placeholder="0" size="6" readonly="readonly" value="0" /></td>
+					<td>(max. 0)</td>
+				</tr>
+				<tr>
+					<td>Überdachte Stehplätze zu Sitzplätze umbauen (400 pro Platz):</td>
+					<td><input type="number" name="UStehZuSitz" max="0" min="0" placeholder="0" size="6" readonly="readonly" value="0" /></td>
+					<td>(max. 0)</td>
+				</tr>
+				<tr>
+					<td>Anzeigetafel:</td>
+					<td><select name="tafel">
+																																																														<option value="4">Multimediawürfel</option>
+																</select></td>
+				</tr>
+				<tr>
+					<td>Rasenheizung:</td>
+					<td><select name="heizung">
+																													<option value="1">installiert</option>
+																</select></td>
+				</tr>
+									<tr><td>&nbsp;</td><td><input type="submit" value="Angebote einholen" /></td><td><input type="reset" value="Zurücksetzen" /></td></tr>
+							</table>
+				</form>
+					</div>
+    </body>
+</html>

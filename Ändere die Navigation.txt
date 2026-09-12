@@ -1,0 +1,45 @@
+Ändere die Navigation im Team-Bereich:
+
+Die Inhalte des aktuell über das Drei-Punkte-Menü (⋮) erreichbaren Menüs sollen in eine NEUE horizontale Menüleiste umgewandelt werden.
+
+WICHTIG: Diese neue Menüleiste muss OBERHALB der bereits bestehenden Menüleiste „Kader | Verträge | Stärken | Statistik | …“ platziert werden.
+
+Die neue Menüleiste enthält die bisherigen Einträge des ⋮-Menüs:
+
+Jugendteam | Jugendscouting | Training | Trainer | Verträge verlängern | Stadionausbau | Kontoauszug | Steuerübersicht | Teamübersicht (Website)
+
+Anordnung:
+
+Header
+↓
+NEUE Menüleiste:
+Jugendteam | Jugendscouting | Training | Trainer | Verträge verlängern | Stadionausbau | Kontoauszug | Steuerübersicht | Teamübersicht (Website)
+↓
+BESTEHENDE Menüleiste:
+Kader | Verträge | Stärken | Statistik | …
+↓
+Team-/Kaderinhalt
+
+Die neue Menüleiste soll optisch genauso aufgebaut sein wie die bestehende Menüleiste:
+- gleiche Button-Gestaltung
+- gleiche Höhe
+- gleiche abgerundeten Ecken
+- gleiche Abstände
+- horizontal scrollbar
+- aktiver Menüpunkt soll genauso hervorgehoben werden wie bei der bestehenden Menüleiste
+
+Das bisherige Drei-Punkte-Menü (⋮) soll entfernt werden, da dessen Inhalte jetzt direkt als horizontale Menüleiste verfügbar sind.
+
+Die bestehende Menüleiste „Kader | Verträge | Stärken | Statistik | …“ darf funktional NICHT verändert werden.
+
+Alle bisherigen Funktionen und Navigationen der Einträge müssen vollständig erhalten bleiben.
+
+Die beiden Menüleisten sollen direkt untereinander stehen. Der Team-Inhalt darunter wird entsprechend etwas nach unten verschoben.
+
+Responsive:
+- Smartphone Hochformat: beide Leisten horizontal scrollbar
+- Smartphone Querformat: beide Leisten horizontal scrollbar
+- Tablet: beide Leisten sauber und vollständig nutzbar
+- keine Änderung an der unteren Hauptnavigation
+
+Bitte ausschließlich diese Navigationsänderung durchführen und das restliche Team-UI nicht unnötig verändern.

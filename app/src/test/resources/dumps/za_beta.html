@@ -1,0 +1,465 @@
+
+<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" xml:lang="de">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+	<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.21/jquery-ui.min.js" type="text/javascript"></script>-->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="js/osfunc.js"></script>
+	<style>
+	body { background-color: #111166; }
+	.player { width: 200px;height: 40px;font-size: 20px; text-align: center; border: 1px solid #cacaca; background: url('images/za/bg.png') repeat-x scroll top left transparent; color: #fff;  float: left; }
+	.player div {
+		float: left;
+	}
+	.player .right {
+		width: 155px;
+		overflow: hidden;
+	}
+	.player .number {font-weight: bold; font-size: 30px; margin: 2px 0px 0px 5px; width: 40px; cursor: move;}
+	.nocursor .number { cursor: auto; color: orange }
+	.player .name {	padding: 0px; text-align: left; font-size: 14px; margin: 2px 0px 0px 5px; width: 200px; white-spaces:nobreak}
+	.tor .name a {
+		color: #FF0;
+		text-decoration: none;
+	}
+	.abw .name a {
+		color: #0F0;
+		text-decoration: none;
+	}
+	.dmi .name a {
+		color: #36F;
+		text-decoration: none;
+	}
+	.mit .name a {
+		color: #6FF;
+		text-decoration: none;
+	}
+	.omi .name a {
+		color: #F6F;
+		text-decoration: none;
+	}
+	.stu .name a {
+		color: #F00;
+		text-decoration: none;
+	}
+	.player .stats {
+		font-size: 13px;
+		color: #fff;
+		margin: 0px 5px;
+		padding: 0px;
+		text-align: left;
+	}
+	.helper {width: 50px;height: 50px;text-align: center; border: none; font-weight: bold; color: #116; background: url('images/za/Trikot-os-blau.png') no-repeat scroll top left transparent; cursor: move; z-index: 3; }
+	.helper .number {
+		font-size: 30px;
+		color: #eee;
+		font-weight: bold;
+		margin: 5px;
+		text-shadow: 0 -1px #000, 1px 0 #000, 0 1px #000, -1px 0 #000;
+	}
+	
+	.abwhelper {
+		background: url('images/za/Trikot-gruen.png') no-repeat scroll top left transparent;
+	}
+	
+	.mithelper {
+		background: url('images/za/Trikot-blau.png') no-repeat scroll top left transparent;
+	}
+	
+	.stuhelper {
+		background: url('images/za/Trikot-rot.png') no-repeat scroll top left transparent;
+	}
+	
+	.torhelper {
+		background: url('images/za/Trikot-gelb.png') no-repeat scroll top left transparent;
+	}
+	
+	.ersatzhelper {
+		background: url('images/za/Trikot-os-blau.png') no-repeat scroll top left transparent;
+	}
+	
+	#sortable {
+		width: 404px;
+		margin-top: 50px;
+	}
+	#goal {
+		color: #fff;
+	}
+	
+	/* TABS */
+	
+	ul.ui-tabs-nav {
+		width: 1027px;
+		height: 40px;
+		margin: 0px;
+		padding: 0px;
+	}
+	
+	ul.ui-tabs-nav li {
+		display: block;
+		float: left;
+		width: 337px;
+		height: 40px;
+		border: 2px inset #CACACA;
+		font-size: 30px;
+		background: url("images/za/bg.png") repeat-x scroll left top transparent;
+		text-align: center;
+	}
+	
+	ul.ui-tabs-nav li.ui-tabs-selected {
+		border: 2px ridge #CACACA;
+	}
+	
+	ul.ui-tabs-nav li a {
+		color: #fff;
+		text-decoration: none;
+	}
+	
+	ul.ui-tabs-nav li a:hover {
+		color: #CACACA;
+		text-decoration: underline;
+	}
+	
+	div.ui-tabs-hide {
+		display: none;
+	}	
+	</style>
+	<script>
+	var lastclear = '';
+	function loadAufstellung() {
+			}
+	
+	function moveFieldClone(sp, top, left) {
+		if (!sp.hasClass('nocursor') && !sp.hasClass('amateur'))
+				sp.toggleClass('nocursor');
+		if ($(sp).hasClass("amateur")) {
+			for (var i = 1; i<= 99; i++) {
+				if ( $('#helper_amateur_'+i).length == 0) break;
+			}
+			$item = $( "<div class='helper amateur' origin='"+$(sp).attr('id')+"' title='Amateur' id='helper_amateur_"+i+"'>"+$(sp).children('.number')[0].outerHTML+"</div>" );
+		} else {
+			$item = $( "<div class='helper "+$(sp).attr('id')+"' origin='"+$(sp).attr('id')+"' title='"+$(sp).find("p.name a").html()+"' id='helper_"+$(sp).attr('id')+"'>"+$(sp).children('.number')[0].outerHTML+"</div>" );
+		}
+		top = top * 45;
+		left = left * 45;
+		var h = $('#field').innerHeight()-6;
+		top = Math.round((h/15)*Math.round(top/(h/15)));
+		var w = $('#field').innerWidth() - 5;
+		left = Math.round((w/11)*Math.round(left/(w/11)));
+		if (top >= Math.round(h/15)*10) $item.toggleClass('abwhelper');
+		else if (top >= Math.round(h/15)*5) $item.toggleClass('mithelper');
+		else $item.toggleClass('stuhelper');
+		$item.css('top',top);
+		$item.css('left',left);
+		$item.css('position','absolute');
+		$('#field').append($item);
+		
+	}
+	function moveOneDropClone(sp, nr) {
+		if (!sp.hasClass('nocursor') && !sp.hasClass('amateur'))
+			sp.toggleClass('nocursor');
+		if ($(sp).hasClass("amateur")) {
+			for (var i = 1; i<= 99; i++) {
+				if ( $('#helper_amateur_'+i).length == 0) break;
+			}
+			$item = $( "<div class='helper amateur' origin='"+$(sp).attr('id')+"' title='Amateur' id='helper_amateur_"+i+"'>"+$(sp).children('.number')[0].outerHTML+"</div>" );
+		} else {
+			$item = $( "<div class='helper "+$(sp).attr('id')+"' origin='"+$(sp).attr('id')+"' title='"+$(sp).find("p.name a").html()+"' id='helper_"+$(sp).attr('id')+"'>"+$(sp).children('.number')[0].outerHTML+"</div>" );
+		}			
+		if (nr == 5 || nr == 6) $item.toggleClass('torhelper');
+		else $item.toggleClass('ersatzhelper');
+		$item.css('position','absolute');
+		$item.css('top',1);
+		$item.css('left',1);
+		$('.oneDrop').eq(nr).append($item);
+	}
+	$(function() {	
+		$('#sortable > div').draggable({connectToSortable:'#sortable', revert: 'invalid', cursorAt: {top:25, left: 25}, handle: 'div.number', helper: function( event ) {
+			var $a = $(this);
+			if ($(this).hasClass("amateur")) {
+				for (var i = 1; i<= 99; i++) {
+					if ( $('#helper_amateur_'+i).length == 0) break;
+				}
+				return $( "<div class='helper amateur' origin='"+event.currentTarget.id+"' title='Amateur' id='helper_amateur_"+i+"'>"+event.currentTarget.childNodes[0].outerHTML+"</div>" );
+			} else {
+				return $( "<div class='helper "+event.currentTarget.id+"' origin='"+event.currentTarget.id+"' title='"+$(event.currentTarget).find("p.name a").html()+"' id='helper_"+event.currentTarget.id+"'>"+event.currentTarget.childNodes[0].outerHTML+"</div>" );
+			}
+		}, start: function ( event ) {
+			if ($('.'+event.currentTarget.id).length > 1) {return false; }
+		}});
+		$('#sort').sortable();
+		$('#field').droppable({
+			drop: function( event, ui ) {
+				if (ui.draggable.hasClass('helper')) 
+				{
+					var $item = ui.draggable;
+				} else {
+					var $item = ui.helper.clone();
+					if (!ui.draggable.hasClass('nocursor') && !ui.draggable.hasClass('amateur'))
+						ui.draggable.toggleClass('nocursor');
+				}
+				var left = ui.offset.left - $('#field').position().left;
+				var w = $('#field').innerWidth() - 5;
+				left = Math.round((w/11)*Math.round(left/(w/11)));
+				if (left > (w/11)*10) left = (w/11)*10;
+				if (left < 0) left = 0;
+				$item.css('left',left);
+				var top = ui.offset.top - 50- $('#field').position().top;
+				var h = $('#field').innerHeight()-6;
+				top = Math.round((h/15)*Math.round(top/(h/15)));
+				if (top > (h/15)*14) top = (h/15)*14;
+				if (top < 0) top = 0;
+				$item.css('top',top);
+
+				if (top >= Math.round(h/15)*10) $item.toggleClass('abwhelper');
+				else if (top >= Math.round(h/15)*5) $item.toggleClass('mithelper');
+				else $item.toggleClass('stuhelper');
+				
+				$(this).find('.helper').each(function(id, elem) {
+					if ($(this).position().top == top && $(this).position().left == left && elem.id != $item.attr('id')) {
+						$(this).dblclick();
+					}
+				})
+				$('#'+$item.attr('id')).remove();
+
+				$(this).append($item[0].outerHTML);
+				if ($(this).children().length > 10) alert('Es sind mehr als 10 Spieler am Feld aufgestellt!');
+				countSpieler();
+				initJs();
+			}
+		});
+		$('.oneDrop').droppable({
+			drop: function( event, ui ) {
+				if (ui.draggable.hasClass('helper')) 
+				{
+					$item = ui.draggable;
+				} else {
+					var $item = ui.helper.clone();
+					if (!ui.draggable.hasClass('nocursor') && !ui.draggable.hasClass('amateur'))
+						ui.draggable.toggleClass('nocursor');
+				}
+				$item.css('left',1);
+				$item.css('top',1);
+				
+				if ($(this).attr('id') == 'goal' || $(this).attr('id') == 'ersatz_goal') {
+					$item.toggleClass('torhelper');
+				} else {
+					$item.toggleClass('ersatzhelper');
+				}
+				
+				$('#'+$item.attr('id')).remove();
+				if ($(this).children().length > 0) {
+					$(this).find('.helper').dblclick();
+				}
+				$(this).html($item[0].outerHTML);
+				countSpieler();
+				initJs();
+			}
+		});
+		$('input[name="delete"]').click(function() {
+			$('div.helper').dblclick();
+		});
+		
+		$('input[name="save"]').click(function() {
+			//alert('Speichern [nur Demo!]');
+			var aufstellung = new Array();
+			var error = false;
+			var tor = $('#goal').children();
+			if (tor.length != 1) { alert('Du musst einen Torwart aufstellen!'); error = true; }
+			else aufstellung.push(new Array($(tor).eq(0).attr('origin'),0,0));
+			var feld = $('#field').children();
+			if (feld.length != 10) { alert('Du musst genau 10 Feldspieler aufstellen!'); error = true; }
+			else {
+				for (var i = 0; i<10; i++) {
+					var s = feld.eq(i);
+					var pos = s.position();
+					var left = Math.round(pos.left/45)+1;
+					var top = Math.round(pos.top/45)+1;
+					aufstellung.push(new Array($(s).attr('origin'),left,top));
+				};
+			}
+			var ersatz = $('#ersatz div').children('.helper');
+			if (ersatz.length != 6) { alert('Du musst genau 6 Ersatzspieler aufstellen!'); error = true; }
+			else $.each($(ersatz), function(i,v) {
+				aufstellung.push(new Array($(v).attr('origin'),i*(-1),-1));
+			});
+			
+			if (error == false) {
+				$('input[name="aufstellung"]').val(JSON.stringify(aufstellung));
+				$('input[name="aufstellung"]').parent('form').submit();
+			}
+		});
+		$('#tabs').tabs();
+		loadAufstellung();
+		initJs();
+	});
+	
+	function countSpieler() {
+		var spieler = 0;
+		var alter = 0;
+		var skill = 0;
+		var opti = 0;
+		
+		$('#field').children().each(function() {
+			spieler = spieler + 1;
+			var origin = $(this).attr('origin');
+			alter = alter + parseFloat($('#'+origin).find('.alter').html());
+			skill = skill + parseFloat($('#'+origin).find('.skill').html());
+			opti = opti + parseFloat($('#'+origin).find('.opti').html());
+		});
+		
+		$('#goal').children().each(function() {
+			spieler = spieler + 1;
+			var origin = $(this).attr('origin');
+			alter = alter + parseFloat($('#'+origin).find('.alter').html());
+			skill = skill + parseFloat($('#'+origin).find('.skill').html());
+			opti = opti + parseFloat($('#'+origin).find('.opti').html());
+		});
+		
+		if (spieler == 0) {
+			var alterCount = 0;
+			var skillCount = 0;
+			var optiCount = 0;
+		} else {
+			var alterCount = Math.round(100 * (alter / spieler))/100;
+			var skillCount = Math.round(100 * (skill / spieler))/100;
+			var optiCount = Math.round(100 * (opti / spieler))/100;
+		}
+		
+		$('span.aufgestelltCount').html(spieler);
+		$('span.alterCount').html(alterCount);
+		$('span.skillCount').html(skillCount);
+		$('span.optiCount').html(optiCount);
+	}
+	
+	function initJs() {
+		$(".helper").dblclick(function() {
+			var $id = $(this).attr('origin');
+			if ($('#'+$id).hasClass('nocursor'))
+				$('#'+$id).toggleClass('nocursor');
+			var l = $(this).offset().left;
+			var t = $(this).offset().top;
+			
+			var o = $(this).attr('origin');
+			//alert(o);
+			var nl = $('#'+o).offset().left;
+			var nt = $('#'+o).offset().top;
+			var diffl = nl - l;
+			var difft = nt - t;
+			
+			//alert(t + ' : ' + l + ' / ' + nt + ' : ' + nl + ' / ' + difft + ' : '+diffl);
+			
+			$(this).animate({
+				left: '+='+diffl,
+				top: '+='+difft
+			}, 500, function() {
+				$(this).remove();
+			});
+			setTimeout(function(){countSpieler();}, 600);
+		});
+		$('.helper').draggable({cursorAt: {top:25, left: 25}, start: function( event ) {
+			clearClass($(this));
+		}, revert: function(is_valid_drop){
+			$(this).toggleClass(lastclear);
+			return true;
+		}
+		});
+	}
+	
+	function clearClass($item) {
+		if ($item.hasClass('abwhelper')) {
+			$item.toggleClass('abwhelper');
+			lastclear = 'abwhelper';
+		}
+		
+		if ($item.hasClass('mithelper')) {
+			$item.toggleClass('mithelper');
+			lastclear = 'mithelper';
+		}
+		
+		if ($item.hasClass('stuhelper')) {
+			$item.toggleClass('stuhelper');
+			lastclear = 'stuhelper';
+		}
+		
+		if ($item.hasClass('torhelper')) {
+			$item.toggleClass('torhelper');
+			lastclear = 'torhelper';
+		}
+		
+		if ($item.hasClass('ersatzhelper')) {
+			$item.toggleClass('ersatzhelper');
+			lastclear = 'ersatzhelper';
+		}
+	}
+</script>
+</head>
+<body>
+	<p><span style="color: red; font-weight: bold; font-size: 24px">ACHTUNG! Diese Seiten sind noch in Entwicklung und k&ouml;nnen daher Fehler aufweisen! <br />
+	Bitte die Zugabgabe in jedem Fall im Orginal-Formular nachpr&uuml;fen!</span></p>
+	<p style="color: white">Eine Kurzanleitung:
+	<ul style="color: white">
+	<li>Ausgew&auml;hlten Spieler &uuml;ber Druck auf die R&uuml;ckennummer ausw&auml;hlen. Es sollte ein Trikot unter der Maus erscheinen.</li>
+	<li>Maus gedr&uuml;ckt halten und Spieler an die gew&uuml;nschte Position ziehen.</li>
+	<li>Der Torwart sizt unten, zentral unterhalb des Feldes, die St&uuml;rmer stehen oben.</li>
+	<li>Die Ersatzspieler k&ouml;nnen links neben dem Feld auf den mit den Trikots markierten Feldern platziert werden, Der Ersatztorwart steht dabei ganz unten.</li>
+	<li>Um die Aufstellung abzuschlie&szlig;en unten auf "Aufstellung speichern" dr&uuml;cken. Es m&uuml;ssen daf&uuml;r alle Positionen besetzt sein.</li>
+	<li>Ein Spieler der auf die Position eines anderen Spielers gezogen wird ersetzt diesen, die Spieler tauschen nicht Platz</li>
+	<li>Ein Spieler kann mit einem Doppelklick vom Spielfeld gel&ouml;scht werden</li>
+	<li>Wenn die Maus &uuml;ber das Spielertrikot gezogen wird erscheint der Name des Spielers</li>
+	<li>Legende zu den Spielerdaten: Alter / Skill / Opti / FIT / MOR</li>
+	<li>Legende f&uuml;r die Spielerpositionen: Gelb: Torwart / Ersatztorwart, Gr&uuml;n: Abwehr, Hellblau: Mittelfeld, Rot: Sturm, Dunkelblau: Ersatzspieler</li>
+	<li>Positionsbezogene Abz&uuml;ge werden f&uuml;r die Durchschnittswerte nicht beachtet.</li>
+	</ul>
+	</p>
+	<form method = "POST" action="zugabgabe_beta.php" style="display: none">
+		<input type="hidden" name="aufstellung" value="" />
+	</form>
+	<div id="tabs">
+		<ul>
+			<li><a href="#aufstellung">Aufstellung</a></li>
+			<li><a href="#einstellungen">Einstellungen</a></li>
+			<li><a href="#aktionen">Aktionen</a></li>
+		</ul>
+		<div id="aufstellung">
+				<div style="width: 1027px; height: 780px; float: left; background: url('images/za/Spielfeld.png') no-repeat scroll top left transparent;">
+				<div id="ersatz" style="float: left; width: 80px; height: 430px; margin-top: 332px;">
+					<div class="drop oneDrop" style="position: relative; width:52px; height: 52px; margin-bottom: 18px"></div>
+					<div class="drop oneDrop" style="position: relative; width:52px; height: 52px; margin-bottom: 18px"></div>
+					<div class="drop oneDrop" style="position: relative; width:52px; height: 52px; margin-bottom: 18px"></div>
+					<div class="drop oneDrop" style="position: relative; width:52px; height: 52px; margin-bottom: 18px"></div>
+					<div class="drop oneDrop" style="position: relative; width:52px; height: 52px; margin-bottom: 18px"></div>
+					<div class="drop oneDrop" id="ersatz_goal" style="position: relative; width:52px; height: 52px; margin-bottom: 18px"></div>
+				</div>
+				<div style="float: left; width: 503px; height: 782px;margin-right: 40px; ">
+					<div class="drop" id="field" style="width: 503px; height: 682px; position: relative; margin-top: 50px;" >
+						
+					</div>
+					<div style="width: 503px;">
+						<div class="drop oneDrop" id="goal" style="width: 52px; height: 52px; margin: 0px 225px; position: relative; z-index: 2;">
+						</div>
+					</div>
+				</div>
+				<div id="sortable" style="position: relative;float: left;width: 404px" >
+					<div class="player tor" id="player_97944"><div class="number">1</div><div class="right"><p class="name"><a href="sp.php?s=97944" onclick="spielerinfo(97944); return false">Lars Vincez</a></p><p class="stats"><span class="alter">33</span>j / <span class="skill">61.47</span> / <span class="opti">89.37</span>/ <span class="fit">99</span> / <span class="mor">85</span></p></div></div><div class="player tor" id="player_104203"><div class="number">12</div><div class="right"><p class="name"><a href="sp.php?s=104203" onclick="spielerinfo(104203); return false">Heiko Kehrer</a></p><p class="stats"><span class="alter">31</span>j / <span class="skill">36.65</span> / <span class="opti">55.22</span>/ <span class="fit">99</span> / <span class="mor">99</span></p></div></div><div class="player tor" id="player_120513"><div class="number">1</div><div class="right"><p class="name"><a href="sp.php?s=120513" onclick="spielerinfo(120513); return false">Kuldar Mitt</a></p><p class="stats"><span class="alter">29</span>j / <span class="skill">60.12</span> / <span class="opti">87.63</span>/ <span class="fit">60</span> / <span class="mor">99</span></p></div></div><div class="player tor" id="player_149061"><div class="number">34</div><div class="right"><p class="name"><a href="sp.php?s=149061" onclick="spielerinfo(149061); return false">Evghenii Bonciucov</a></p><p class="stats"><span class="alter">23</span>j / <span class="skill">43.76</span> / <span class="opti">73.19</span>/ <span class="fit">99</span> / <span class="mor">90</span></p></div></div><div class="player tor" id="player_169958"><div class="number">35</div><div class="right"><p class="name"><a href="sp.php?s=169958" onclick="spielerinfo(169958); return false">Ardalan Golcheshmeh</a></p><p class="stats"><span class="alter">20</span>j / <span class="skill">36.06</span> / <span class="opti">55.30</span>/ <span class="fit">99</span> / <span class="mor">90</span></p></div></div><div class="player abw" id="player_115904"><div class="number">2</div><div class="right"><p class="name"><a href="sp.php?s=115904" onclick="spielerinfo(115904); return false">Flavio Zurlinden</a></p><p class="stats"><span class="alter">30</span>j / <span class="skill">67.71</span> / <span class="opti">93.00</span>/ <span class="fit">-1</span> / <span class="mor">99</span></p></div></div><div class="player abw" id="player_131349"><div class="number">3</div><div class="right"><p class="name"><a href="sp.php?s=131349" onclick="spielerinfo(131349); return false">Alexey Zuyev</a></p><p class="stats"><span class="alter">27</span>j / <span class="skill">60.65</span> / <span class="opti">89.59</span>/ <span class="fit">43</span> / <span class="mor">99</span></p></div></div><div class="player abw" id="player_131832"><div class="number">4</div><div class="right"><p class="name"><a href="sp.php?s=131832" onclick="spielerinfo(131832); return false">Licínio Maurício</a></p><p class="stats"><span class="alter">27</span>j / <span class="skill">60.00</span> / <span class="opti">87.41</span>/ <span class="fit">42</span> / <span class="mor">99</span></p></div></div><div class="player abw" id="player_139649"><div class="number">5</div><div class="right"><p class="name"><a href="sp.php?s=139649" onclick="spielerinfo(139649); return false">Kristo Dragiev</a></p><p class="stats"><span class="alter">26</span>j / <span class="skill">66.88</span> / <span class="opti">93.96</span>/ <span class="fit">99</span> / <span class="mor">95</span></p></div></div><div class="player abw" id="player_146803"><div class="number">22</div><div class="right"><p class="name"><a href="sp.php?s=146803" onclick="spielerinfo(146803); return false">Dhuntiar Konechi</a></p><p class="stats"><span class="alter">24</span>j / <span class="skill">27.65</span> / <span class="opti">50.74</span>/ <span class="fit">99</span> / <span class="mor">71</span></p></div></div><div class="player abw" id="player_151229"><div class="number">13</div><div class="right"><p class="name"><a href="sp.php?s=151229" onclick="spielerinfo(151229); return false">Space Parks</a></p><p class="stats"><span class="alter">24</span>j / <span class="skill">54.12</span> / <span class="opti">81.78</span>/ <span class="fit">99</span> / <span class="mor">98</span></p></div></div><div class="player abw" id="player_161985"><div class="number">23</div><div class="right"><p class="name"><a href="sp.php?s=161985" onclick="spielerinfo(161985); return false">Egnatius Dajan</a></p><p class="stats"><span class="alter">22</span>j / <span class="skill">32.24</span> / <span class="opti">46.37</span>/ <span class="fit">50</span> / <span class="mor">64</span></p></div></div><div class="player abw" id="player_169711"><div class="number">24</div><div class="right"><p class="name"><a href="sp.php?s=169711" onclick="spielerinfo(169711); return false">Harald Philippi</a></p><p class="stats"><span class="alter">20</span>j / <span class="skill">43.06</span> / <span class="opti">63.85</span>/ <span class="fit">99</span> / <span class="mor">96</span></p></div></div><div class="player abw" id="player_169957"><div class="number">25</div><div class="right"><p class="name"><a href="sp.php?s=169957" onclick="spielerinfo(169957); return false">Mirko Antersberger</a></p><p class="stats"><span class="alter">20</span>j / <span class="skill">40.94</span> / <span class="opti">65.33</span>/ <span class="fit">66</span> / <span class="mor">67</span></p></div></div><div class="player abw" id="player_169981"><div class="number">26</div><div class="right"><p class="name"><a href="sp.php?s=169981" onclick="spielerinfo(169981); return false">Roman Paduch</a></p><p class="stats"><span class="alter">19</span>j / <span class="skill">28.82</span> / <span class="opti">47.19</span>/ <span class="fit">99</span> / <span class="mor">82</span></p></div></div><div class="player abw" id="player_174520"><div class="number">28</div><div class="right"><p class="name"><a href="sp.php?s=174520" onclick="spielerinfo(174520); return false">Bernd Straka</a></p><p class="stats"><span class="alter">19</span>j / <span class="skill">31.00</span> / <span class="opti">47.96</span>/ <span class="fit">99</span> / <span class="mor">85</span></p></div></div><div class="player dmi" id="player_121743"><div class="number">6</div><div class="right"><p class="name"><a href="sp.php?s=121743" onclick="spielerinfo(121743); return false">Oskari Konsa</a></p><p class="stats"><span class="alter">29</span>j / <span class="skill">62.53</span> / <span class="opti">87.81</span>/ <span class="fit">42</span> / <span class="mor">99</span></p></div></div><div class="player dmi" id="player_141759"><div class="number">18</div><div class="right"><p class="name"><a href="sp.php?s=141759" onclick="spielerinfo(141759); return false">Koki Abamelek</a></p><p class="stats"><span class="alter">25</span>j / <span class="skill">52.29</span> / <span class="opti">80.63</span>/ <span class="fit">99</span> / <span class="mor">98</span></p></div></div><div class="player dmi" id="player_151152"><div class="number">19</div><div class="right"><p class="name"><a href="sp.php?s=151152" onclick="spielerinfo(151152); return false">Dino Scerri</a></p><p class="stats"><span class="alter">24</span>j / <span class="skill">54.53</span> / <span class="opti">79.07</span>/ <span class="fit">99</span> / <span class="mor">98</span></p></div></div><div class="player dmi" id="player_151260"><div class="number">20</div><div class="right"><p class="name"><a href="sp.php?s=151260" onclick="spielerinfo(151260); return false">Egidijus Davainis</a></p><p class="stats"><span class="alter">23</span>j / <span class="skill">45.47</span> / <span class="opti">66.70</span>/ <span class="fit">99</span> / <span class="mor">60</span></p></div></div><div class="player dmi" id="player_166171"><div class="number">21</div><div class="right"><p class="name"><a href="sp.php?s=166171" onclick="spielerinfo(166171); return false">Jans Louwman</a></p><p class="stats"><span class="alter">21</span>j / <span class="skill">41.76</span> / <span class="opti">63.63</span>/ <span class="fit">99</span> / <span class="mor">95</span></p></div></div><div class="player mit" id="player_111260"><div class="number">7</div><div class="right"><p class="name"><a href="sp.php?s=111260" onclick="spielerinfo(111260); return false">Alain Achten</a></p><p class="stats"><span class="alter">31</span>j / <span class="skill">66.59</span> / <span class="opti">92.89</span>/ <span class="fit">46</span> / <span class="mor">99</span></p></div></div><div class="player mit" id="player_116286"><div class="number">8</div><div class="right"><p class="name"><a href="sp.php?s=116286" onclick="spielerinfo(116286); return false">Janar Pihel</a></p><p class="stats"><span class="alter">30</span>j / <span class="skill">65.12</span> / <span class="opti">89.00</span>/ <span class="fit">42</span> / <span class="mor">99</span></p></div></div><div class="player mit" id="player_121678"><div class="number">10</div><div class="right"><p class="name"><a href="sp.php?s=121678" onclick="spielerinfo(121678); return false">Tomás Simao</a></p><p class="stats"><span class="alter">29</span>j / <span class="skill">67.94</span> / <span class="opti">93.59</span>/ <span class="fit">84</span> / <span class="mor">97</span></p></div></div><div class="player mit" id="player_138920"><div class="number">14</div><div class="right"><p class="name"><a href="sp.php?s=138920" onclick="spielerinfo(138920); return false">Oscar Greaves</a></p><p class="stats"><span class="alter">26</span>j / <span class="skill">54.35</span> / <span class="opti">82.96</span>/ <span class="fit">99</span> / <span class="mor">99</span></p></div></div><div class="player mit" id="player_156048"><div class="number">29</div><div class="right"><p class="name"><a href="sp.php?s=156048" onclick="spielerinfo(156048); return false">Asko Prints</a></p><p class="stats"><span class="alter">23</span>j / <span class="skill">49.47</span> / <span class="opti">74.26</span>/ <span class="fit">99</span> / <span class="mor">99</span></p></div></div><div class="player omi" id="player_142133"><div class="number">16</div><div class="right"><p class="name"><a href="sp.php?s=142133" onclick="spielerinfo(142133); return false">Kauri Salumae</a></p><p class="stats"><span class="alter">25</span>j / <span class="skill">60.65</span> / <span class="opti">85.59</span>/ <span class="fit">99</span> / <span class="mor">99</span></p></div></div><div class="player omi" id="player_174521"><div class="number">30</div><div class="right"><p class="name"><a href="sp.php?s=174521" onclick="spielerinfo(174521); return false">Fabian Röwer</a></p><p class="stats"><span class="alter">19</span>j / <span class="skill">37.53</span> / <span class="opti">62.15</span>/ <span class="fit">99</span> / <span class="mor">95</span></p></div></div><div class="player omi" id="player_176649"><div class="number">0</div><div class="right"><p class="name"><a href="sp.php?s=176649" onclick="spielerinfo(176649); return false">Ivan Timachev</a></p><p class="stats"><span class="alter">18</span>j / <span class="skill">41.41</span> / <span class="opti">64.59</span>/ <span class="fit">99</span> / <span class="mor">95</span></p></div></div><div class="player stu" id="player_106235"><div class="number">9</div><div class="right"><p class="name"><a href="sp.php?s=106235" onclick="spielerinfo(106235); return false">Ruslan Hryshukevich</a></p><p class="stats"><span class="alter">32</span>j / <span class="skill">70.82</span> / <span class="opti">98.67</span>/ <span class="fit">41</span> / <span class="mor">99</span></p></div></div><div class="player stu" id="player_126675"><div class="number">11</div><div class="right"><p class="name"><a href="sp.php?s=126675" onclick="spielerinfo(126675); return false">Olev Tikerpää</a></p><p class="stats"><span class="alter">28</span>j / <span class="skill">60.59</span> / <span class="opti">86.44</span>/ <span class="fit">41</span> / <span class="mor">99</span></p></div></div><div class="player stu" id="player_132483"><div class="number">15</div><div class="right"><p class="name"><a href="sp.php?s=132483" onclick="spielerinfo(132483); return false">Camilo Baruco</a></p><p class="stats"><span class="alter">27</span>j / <span class="skill">63.59</span> / <span class="opti">91.15</span>/ <span class="fit">40</span> / <span class="mor">99</span></p></div></div><div class="player stu" id="player_165491"><div class="number">31</div><div class="right"><p class="name"><a href="sp.php?s=165491" onclick="spielerinfo(165491); return false">Ali Uzay</a></p><p class="stats"><span class="alter">21</span>j / <span class="skill">40.82</span> / <span class="opti">64.96</span>/ <span class="fit">99</span> / <span class="mor">98</span></p></div></div><div class="player stu" id="player_165648"><div class="number">32</div><div class="right"><p class="name"><a href="sp.php?s=165648" onclick="spielerinfo(165648); return false">Ekin Demirpence</a></p><p class="stats"><span class="alter">21</span>j / <span class="skill">45.41</span> / <span class="opti">57.48</span>/ <span class="fit">99</span> / <span class="mor">98</span></p></div></div><div class="player stu" id="player_169712"><div class="number">33</div><div class="right"><p class="name"><a href="sp.php?s=169712" onclick="spielerinfo(169712); return false">Steffen Fromm</a></p><p class="stats"><span class="alter">20</span>j / <span class="skill">43.71</span> / <span class="opti">73.44</span>/ <span class="fit">99</span> / <span class="mor">59</span></p></div></div>					
+					<div class="player amateur" id="player_0"><div class="number">A</div><div class="right"><p class="name">Amateur</p><p class="stats"><span class="alter">18</span>j / <span class="skill">20.00</skill> / <span class="opti">20.00</spani> / <span class="fit">99</span> / <span class="mor">99</span></p></div></div>
+				</div>
+			</div>
+			<div style="width: 503px; text-align:center; margin-left: 80px;">
+				<input type="button" name="save" value="Aufstellung speichern" />
+				<input type="button" name="delete" value="Aufstellung l&ouml;schen" />
+			</div>
+			<div style="width: 503px; text-align:center; margin-left: 80px; color: #fff;">
+				Aufgestellt: <span class="aufgestelltCount">0</span> | &#216;Alter: <span class="alterCount">0</span> | &#216;Skill: <span class="skillCount">0</span> | &#216;Opti: <span class="optiCount">0</span>
+			</div>
+		</div>
+		<div id="einstellungen">
+		</div>
+		<div id="aktionen">
+		</div>
+	</div>
+</body>
+</html>
