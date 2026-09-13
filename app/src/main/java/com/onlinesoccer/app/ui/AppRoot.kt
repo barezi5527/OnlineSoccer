@@ -256,11 +256,8 @@ private fun MainScaffold(
                 currentRoute = currentRoute,
                 onSelectTab = { tab ->
                     navController.navigate(tab.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
+                        popUpTo(navController.graph.findStartDestination().id)
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
             )
@@ -283,11 +280,8 @@ private fun MainScaffold(
                     },
                     onZugabgabeClick = {
                         navController.navigate(Routes.ZAT) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
+                            popUpTo(navController.graph.findStartDestination().id)
                             launchSingleTop = true
-                            restoreState = true
                         }
                     },
                     onServerBereicheClick = {
