@@ -48,9 +48,18 @@ enum class LigaTabellenKlasse(val cssKlasse: String, val label: String) {
     ;
 
     companion object {
-        /** Liest die CSS-Klasse eines `<tr>` der Ligatabelle in die Farbklasse um. */
-        fun vonCssKlasse(cssKlasse: String?): LigaTabellenKlasse? =
-            entries.firstOrNull { it.cssKlasse == cssKlasse?.trim() }
+        /**
+         * Liest die CSS-Klassen eines `<tr>` der Ligatabelle in die Farbklasse um.
+         * Der Server markiert jede Zeile server-seitig mit der für die jeweilige Liga
+         * geltenden Platzbedeutung – die Zeile kann dabei zusätzlich Formatierungs-
+         * klassen (z. B. `lineover`) tragen, daher wird jede Einzelklasse geprüft.
+         * Unbekannte Klassen (z. B. das neutrale `tabelle`) ergeben `null`.
+         */
+        fun vonCssKlasse(cssKlasse: String?): LigaTabellenKlasse? {
+            if (cssKlasse.isNullOrBlank()) return null
+            val einzelne = cssKlasse.trim().split(Regex("\\s+"))
+            return entries.firstOrNull { it.cssKlasse in einzelne }
+        }
     }
 }
 

@@ -99,6 +99,95 @@ class BewerbeRepositoryParseTest {
     }
 
     @Test
+    fun zeilenKlasse_mehrereCssKlassenWieAufDerWebsite() {
+        assertEquals(LigaTabellenKlasse.OSCQ, LigaTabellenKlasse.vonCssKlasse("oscq lineover"))
+        assertEquals(LigaTabellenKlasse.OSE, LigaTabellenKlasse.vonCssKlasse("ose lineover"))
+        assertEquals(LigaTabellenKlasse.OSEQ, LigaTabellenKlasse.vonCssKlasse("oseq lineover"))
+        assertEquals(LigaTabellenKlasse.AB, LigaTabellenKlasse.vonCssKlasse("ab lineover"))
+        assertEquals(LigaTabellenKlasse.OSC, LigaTabellenKlasse.vonCssKlasse("osc"))
+        assertEquals(null, LigaTabellenKlasse.vonCssKlasse("tabelle"))
+        assertEquals(null, LigaTabellenKlasse.vonCssKlasse("   "))
+        assertEquals(null, LigaTabellenKlasse.vonCssKlasse(null))
+    }
+
+    @Test
+    fun tabelle_1LigaPlatzbedeutungenStattFesterPlatzNummern() {
+        // Echtes Server-Beispiel (Deutschland, 1. Liga): Die Grenzen weichen von einer
+        // fest kodierten „1=OSC, 2=OSCQ" ab – die App muss die je Zeile gelieferte
+        // Bedeutung übernehmen statt feste Tabellenplätze anzunehmen.
+        val tabelle = repo.parseLigatabelle(
+            """
+            <select name="ligaauswahl"><option value="1" selected>1. Liga</option></select>
+            <select name="landauswahl"><option value="6" selected>Deutschland</option></select>
+            <select name="tabauswahl"><option value="0" selected>Gesamttabelle</option></select>
+            <select name="saauswahl"><option value="23" selected>Saison 23</option></select>
+            <table id="kader1" class="sortable">
+              <tr align="center" id="tabelle"><td>#</td><td></td><td>Club</td><td>Punkte</td></tr>
+              <tr align="right" class="osc"><td>1.</td><td></td><td><a href="javascript:teaminfo(300)">FC Stuttgart-Degerloch</a></td><td>65</td></tr>
+              <tr align="right" class="oscq lineover"><td>2.</td><td></td><td><a href="javascript:teaminfo(676)">Mannheimer SC</a></td><td>60</td></tr>
+              <tr align="right" class="ose lineover"><td>3.</td><td></td><td><a href="javascript:teaminfo(613)">SGE Frankfurt</a></td><td>54</td></tr>
+              <tr align="right" class="oseq lineover"><td>4.</td><td></td><td><a href="javascript:teaminfo(1035)">Fortuna Velbert</a></td><td>54</td></tr>
+              <tr align="right" class="oseq"><td>5.</td><td></td><td><a href="javascript:teaminfo(1043)">Preußen Dortmund</a></td><td>54</td></tr>
+              <tr align="right" class="tabelle"><td>6.</td><td></td><td><a href="javascript:teaminfo(222)">Schwarz-Gelb Leipzig</a></td><td>52</td></tr>
+              <tr align="right" class="ab"><td>15.</td><td></td><td><a href="javascript:teaminfo(1940)">FC Franconia Hof</a></td><td>41</td></tr>
+              <tr align="right" class="ab"><td>16.</td><td></td><td><a href="javascript:teaminfo(1966)">1.FC Trier</a></td><td>36</td></tr>
+              <tr align="right" class="ab"><td>17.</td><td></td><td><a href="javascript:teaminfo(477)">Kickers Duisburg</a></td><td>36</td></tr>
+              <tr align="right" class="ab"><td>18.</td><td></td><td><a href="javascript:teaminfo(1961)">Schwaben Stuttgart</a></td><td>34</td></tr>
+            </table>
+            <table border="0">
+              <tr class="osc"><td>Aufstiegsplatz / OSC</td></tr>
+              <tr class="oscq"><td>Relegationsplatz (Auf) / OSCQ</td></tr>
+              <tr class="ose"><td>OSE</td></tr>
+              <tr class="oseq"><td>OSEQ</td></tr>
+              <tr class="rele"><td>Relegationsplatz (Ab)</td></tr>
+              <tr class="ab"><td>Abstiegsplatz</td></tr>
+            </table>
+            """.trimIndent(),
+        )
+        assertNotNull("1. Liga parse failed", tabelle)
+        assertEquals("zeilen ohne Legend-Tabelle", 10, tabelle!!.zeilen.size)
+        assertEquals(LigaTabellenKlasse.OSC, tabelle.zeilenKlasse[0])
+        assertEquals(LigaTabellenKlasse.OSCQ, tabelle.zeilenKlasse[1])
+        assertEquals(LigaTabellenKlasse.OSE, tabelle.zeilenKlasse[2])
+        assertEquals(LigaTabellenKlasse.OSEQ, tabelle.zeilenKlasse[3])
+        assertEquals(LigaTabellenKlasse.OSEQ, tabelle.zeilenKlasse[4])
+        assertEquals(null, tabelle.zeilenKlasse[5])
+        assertEquals(LigaTabellenKlasse.AB, tabelle.zeilenKlasse[6])
+        assertEquals(LigaTabellenKlasse.AB, tabelle.zeilenKlasse[7])
+        assertEquals(LigaTabellenKlasse.AB, tabelle.zeilenKlasse[8])
+        assertEquals(LigaTabellenKlasse.AB, tabelle.zeilenKlasse[9])
+    }
+
+    @Test
+    fun tabelle_leereLigaMeldetNichtDieLegendeAlsTabelle() {
+        // Server-Beispiel (Deutschland, 3. Liga D, noch nicht gestartet): Die einzige
+        // Tabelle mit Farbklassen ist die Legende – die darf nicht als Haupttabelle
+        // missverstanden werden, sondern es bleibt eine leere Tabellenansicht.
+        val tabelle = repo.parseLigatabelle(
+            """
+            <select name="ligaauswahl"><option value="7" selected>3. Liga D</option></select>
+            <select name="landauswahl"><option value="6" selected>Deutschland</option></select>
+            <select name="tabauswahl"><option value="0" selected>Gesamttabelle</option></select>
+            <select name="saauswahl"><option value="23" selected>Saison 23</option></select>
+            <table id="kader1" class="sortable">
+              <tr align="center" id="tabelle"><td>#</td><td></td><td>Club</td><td>Punkte</td></tr>
+            </table>
+            <table border="0">
+              <tr class="osc"><td>Aufstiegsplatz / OSC</td></tr>
+              <tr class="oscq"><td>Relegationsplatz (Auf) / OSCQ</td></tr>
+              <tr class="ose"><td>OSE</td></tr>
+              <tr class="oseq"><td>OSEQ</td></tr>
+              <tr class="rele"><td>Relegationsplatz (Ab)</td></tr>
+              <tr class="ab"><td>Abstiegsplatz</td></tr>
+            </table>
+            """.trimIndent(),
+        )
+        assertNotNull("leere 3. Liga parse failed", tabelle)
+        assertTrue("Legende nicht als Zeilen übernommen", tabelle!!.zeilen.isEmpty())
+        assertTrue("Header der Ligatabelle erhalten", tabelle.header.any { it == "Club" })
+    }
+
+    @Test
     fun pokalRundenMitSpielen() {
         val pokal = runCatching { repo.parsePokal(dump("lp2")) }.getOrNull()
         assertNotNull("lp2 parse failed", pokal)

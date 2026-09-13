@@ -38,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.theme.ligaTabellenZeilenHintergrund
 import com.onlinesoccer.app.data.model.LigaOption
 import com.onlinesoccer.app.data.model.LigaSpiel
 import com.onlinesoccer.app.data.model.LigaSpieltag
@@ -247,7 +247,7 @@ private fun TabelleAnsicht(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .background(tabellenZeilenHintergrund(klasse)),
+                            .background(ligaTabellenZeilenHintergrund(klasse)),
                     ) {
                         cols.forEach { sp ->
                             val clickable = sp.team && teamId != null
@@ -269,18 +269,6 @@ private fun TabelleAnsicht(
         }
         TabellenLegende()
     }
-}
-
-/** Zeilenfarbe der Ligatabelle – identisch zur Website (`os_styles.css`), sehr dezent (ca. 35% Opazität). */
-@Composable
-private fun tabellenZeilenHintergrund(klasse: LigaTabellenKlasse?): Color = when (klasse) {
-    LigaTabellenKlasse.OSC -> Color(0x59006400) // darkgreen, 35% opacity
-    LigaTabellenKlasse.OSCQ -> Color(0x596B8E23) // oliv, 35% opacity
-    LigaTabellenKlasse.OSE -> Color(0x59556B2F) // darkolivegreen, 35% opacity
-    LigaTabellenKlasse.OSEQ -> Color(0x598B864E) // rgb(139,134,78), 35% opacity
-    LigaTabellenKlasse.RELE -> Color(0x59AA5656) // rgb(170,86,86), 35% opacity
-    LigaTabellenKlasse.AB -> Color(0x59B22222) // rgb(178,34,34), 35% opacity
-    null -> Color.Transparent
 }
 
 /** Kurzbezeichnung für die Legende unter der Tabelle. */
@@ -322,7 +310,7 @@ private fun TabellenLegende() {
 private fun Legendeneintrag(klasse: LigaTabellenKlasse, modifier: Modifier = Modifier) {
     Row(
         modifier
-            .background(tabellenZeilenHintergrund(klasse), RoundedCornerShape(4.dp))
+            .background(ligaTabellenZeilenHintergrund(klasse), RoundedCornerShape(4.dp))
             .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

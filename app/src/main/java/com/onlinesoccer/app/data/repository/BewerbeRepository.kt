@@ -94,8 +94,15 @@ class BewerbeRepository @Inject constructor(
         val saison = selectedInt("saauswahl")
 
         // Haupttabelle (meiste Zeilen) – der Header ist eine <td>-Zeile ohne <th>.
-        val haupt = doc.select("table").filter { it.select("tr").isNotEmpty() }
-            .maxByOrNull { it.select("tr").size } ?: return null
+        // Bevorzugt wird die eigentliche Ligatabelle (`id="kader1"`); nur falls sie
+        // fehlt, fällt die Wahl auf die Tabelle mit den meisten Zeilen und Vereins-
+        // Links. Die Legenden-Tabelle (gleiche Farbklassen, aber ohne Vereine) wird
+        // so nie fälschlich als Ligatabelle übernommen.
+        val haupt = doc.select("table#kader1").firstOrNull()
+            ?: doc.select("table")
+                .filter { it.select("tr").isNotEmpty() && it.select("a[href*='teaminfo']").isNotEmpty() }
+                .maxByOrNull { it.select("tr").size }
+            ?: return null
         val rows = haupt.select("tr").filter { it.select("td").isNotEmpty() }
         if (rows.isEmpty()) return null
         val kopfIndex = rows.indexOfFirst { it.select("th").isNotEmpty() }.let { if (it < 0) 0 else it }
