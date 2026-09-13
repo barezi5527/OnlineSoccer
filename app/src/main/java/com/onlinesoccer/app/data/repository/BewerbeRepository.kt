@@ -7,6 +7,7 @@ import com.onlinesoccer.app.data.model.LigaOption
 import com.onlinesoccer.app.data.model.LigaSaison
 import com.onlinesoccer.app.data.model.LigaSpiel
 import com.onlinesoccer.app.data.model.LigaSpieltag
+import com.onlinesoccer.app.data.model.LigaTabellenKlasse
 import com.onlinesoccer.app.data.model.LigaTabelle
 import com.onlinesoccer.app.data.model.PokalAnsicht
 import com.onlinesoccer.app.data.model.PokalRunde
@@ -106,6 +107,7 @@ class BewerbeRepository @Inject constructor(
                 Regex("teaminfo\\((\\d+)\\)").find(a.attr("href"))?.groupValues?.get(1)?.toLongOrNull()
             }
         }
+        val klassen = dataRows.map { tr -> LigaTabellenKlasse.vonCssKlasse(tr.className()) }
         val eigenZeile = eigeneTeamId?.let { own ->
             teamIds.indexOfFirst { it == own.toLong() }.takeIf { it >= 0 }
         }
@@ -114,6 +116,7 @@ class BewerbeRepository @Inject constructor(
             header = header,
             zeilen = dataRows.map { tr -> tr.select("td").map { it.text().trim() } },
             zeilenTeamIds = teamIds,
+            zeilenKlasse = klassen,
             eigenZeile = eigenZeile,
             saisonen = saisonen,
             saison = saison,

@@ -37,12 +37,31 @@ data class LigaSpieltag(
     val spiele: List<LigaSpiel> = emptyList(),
 )
 
+/** Farbklasse einer Ligatabellen-Zeile – wie die Website (`lt.php`) sie per CSS-Klasse markiert. */
+enum class LigaTabellenKlasse(val cssKlasse: String, val label: String) {
+    OSC("osc", "Aufstiegsplatz / OSC"),
+    OSCQ("oscq", "Relegationsplatz (Auf) / OSCQ"),
+    OSE("ose", "OSE"),
+    OSEQ("oseq", "OSEQ"),
+    RELE("rele", "Relegationsplatz (Ab)"),
+    AB("ab", "Abstiegsplatz"),
+    ;
+
+    companion object {
+        /** Liest die CSS-Klasse eines `<tr>` der Ligatabelle in die Farbklasse um. */
+        fun vonCssKlasse(cssKlasse: String?): LigaTabellenKlasse? =
+            entries.firstOrNull { it.cssKlasse == cssKlasse?.trim() }
+    }
+}
+
 /** Ligatabelle (`lt.php`): generische Zeile. */
 data class LigaTabelle(
     val header: List<String> = emptyList(),
     val zeilen: List<List<String>> = emptyList(),
     /** Team-ID je Tabellenzeile (aus `teaminfo(H)`-Links), parallel zu `zeilen`. */
     val zeilenTeamIds: List<Long?> = emptyList(),
+    /** Farbklasse (Aufstieg/Abstieg u. a.) je Tabellenzeile, parallel zu `zeilen`. */
+    val zeilenKlasse: List<LigaTabellenKlasse?> = emptyList(),
     val eigenZeile: Int? = null,
     val saisonen: List<LigaSaison> = emptyList(),
     val saison: Int = 0,

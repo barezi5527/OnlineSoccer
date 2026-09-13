@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.data.repository
 
+import com.onlinesoccer.app.data.model.LigaTabellenKlasse
 import com.onlinesoccer.app.feature.bewerbe.kompakteTabellenSpalten
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -81,6 +82,20 @@ class BewerbeRepositoryParseTest {
         )
         assertEquals("eigene Zeile hat Team-Id 3449", 3449L, tabelle.zeilenTeamIds[tabelle.eigenZeile!!])
         assertTrue("alle Team-Ids gefüllt", tabelle.zeilenTeamIds.all { it != null })
+    }
+
+    @Test
+    fun tabelle_zeilenKlasseWieAufDerWebsite() {
+        val tabelle = runCatching { repo.parseLigatabelle(dump("lt"), 3449) }.getOrNull()
+        assertNotNull("lt parse failed", tabelle)
+        assertEquals("je Zeile eine Farbklasse", tabelle!!.zeilen.size, tabelle.zeilenKlasse.size)
+        assertEquals("Platz 1 = Aufstiegsplatz/OSC", LigaTabellenKlasse.OSC, tabelle.zeilenKlasse[0])
+        assertEquals("Platz 2 = Aufstiegsplatz/OSC", LigaTabellenKlasse.OSC, tabelle.zeilenKlasse[1])
+        assertEquals("Platz 15 = Abstiegsplatz", LigaTabellenKlasse.AB, tabelle.zeilenKlasse[14])
+        assertEquals("Platz 16 = Abstiegsplatz", LigaTabellenKlasse.AB, tabelle.zeilenKlasse[15])
+        assertEquals("Platz 17 = Abstiegsplatz", LigaTabellenKlasse.AB, tabelle.zeilenKlasse[16])
+        assertEquals("Platz 18 = Abstiegsplatz", LigaTabellenKlasse.AB, tabelle.zeilenKlasse[17])
+        assertTrue("mittlere Plätze ohne Farbklasse", tabelle.zeilenKlasse.drop(2).dropLast(4).all { it == null })
     }
 
     @Test

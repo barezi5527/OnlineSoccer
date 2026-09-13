@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.LigaOption
 import com.onlinesoccer.app.data.model.LigaSpiel
 import com.onlinesoccer.app.data.model.LigaSpieltag
+import com.onlinesoccer.app.data.model.LigaTabellenKlasse
 import com.onlinesoccer.app.data.model.LigaTabelle
 import com.onlinesoccer.app.data.model.PokalAnsicht
 import com.onlinesoccer.app.ui.HubTabs
@@ -218,7 +219,8 @@ private fun TabelleAnsicht(
         )
         Column(
             Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .weight(1f)
                 .then(if (!fülltBreite) Modifier.horizontalScroll(horizontalScroll) else Modifier),
         ) {
             Row {
@@ -240,12 +242,12 @@ private fun TabelleAnsicht(
                     .verticalScroll(verticalScroll),
             ) {
                 tabelle.zeilen.forEachIndexed { i, zeile ->
-                    val isEigen = tabelle.eigenZeile == i
                     val teamId = tabelle.zeilenTeamIds.getOrNull(i)
+                    val klasse = tabelle.zeilenKlasse.getOrNull(i)
                     Row(
-                        Modifier.background(
-                            if (isEigen) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                        ),
+                        Modifier
+                            .fillMaxWidth()
+                            .background(tabellenZeilenHintergrund(klasse)),
                     ) {
                         cols.forEach { sp ->
                             val clickable = sp.team && teamId != null
@@ -265,6 +267,71 @@ private fun TabelleAnsicht(
                 }
             }
         }
+        TabellenLegende()
+    }
+}
+
+/** Zeilenfarbe der Ligatabelle – identisch zur Website (`os_styles.css`), sehr dezent (ca. 35% Opazität). */
+@Composable
+private fun tabellenZeilenHintergrund(klasse: LigaTabellenKlasse?): Color = when (klasse) {
+    LigaTabellenKlasse.OSC -> Color(0x59006400) // darkgreen, 35% opacity
+    LigaTabellenKlasse.OSCQ -> Color(0x596B8E23) // oliv, 35% opacity
+    LigaTabellenKlasse.OSE -> Color(0x59556B2F) // darkolivegreen, 35% opacity
+    LigaTabellenKlasse.OSEQ -> Color(0x598B864E) // rgb(139,134,78), 35% opacity
+    LigaTabellenKlasse.RELE -> Color(0x59AA5656) // rgb(170,86,86), 35% opacity
+    LigaTabellenKlasse.AB -> Color(0x59B22222) // rgb(178,34,34), 35% opacity
+    null -> Color.Transparent
+}
+
+/** Kurzbezeichnung für die Legende unter der Tabelle. */
+private fun legendeLabel(klasse: LigaTabellenKlasse): String = when (klasse) {
+    LigaTabellenKlasse.OSC -> "Aufstieg/OSC"
+    LigaTabellenKlasse.OSCQ -> "Rel. Auf/OSCQ"
+    LigaTabellenKlasse.OSE -> "OSE"
+    LigaTabellenKlasse.OSEQ -> "OSEQ"
+    LigaTabellenKlasse.RELE -> "Rel. Ab"
+    LigaTabellenKlasse.AB -> "Abstieg"
+}
+
+/** Legende der Platz-Farben unter der Ligatabelle (wie auf der Website). */
+@Composable
+private fun TabellenLegende() {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        LigaTabellenKlasse.entries.take(3).forEach { klasse ->
+            Legendeneintrag(klasse, Modifier.weight(1f))
+        }
+    }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        LigaTabellenKlasse.entries.drop(3).forEach { klasse ->
+            Legendeneintrag(klasse, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun Legendeneintrag(klasse: LigaTabellenKlasse, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .background(tabellenZeilenHintergrund(klasse), RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            legendeLabel(klasse),
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

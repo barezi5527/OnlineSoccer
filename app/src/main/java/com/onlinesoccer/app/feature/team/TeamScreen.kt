@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.theme.trikotFarbe
 import com.onlinesoccer.app.data.model.KaderSpieler
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
 import com.onlinesoccer.app.data.model.SpielerPosition
@@ -582,14 +583,4 @@ internal fun posName(position: SpielerPosition): String = when (position) {
     SpielerPosition.OMI -> "Off. Mittelfeld"
     SpielerPosition.STU -> "Sturm"
     SpielerPosition.AMATEUR -> "Amateur"
-}
-
-internal fun trikotFarbe(position: SpielerPosition): Color = when (position) {
-    SpielerPosition.TOR -> Color(0xFFF9A825)
-    SpielerPosition.ABW -> Color(0xFF43A047)
-    SpielerPosition.DMI -> Color(0xFF1E88E5)
-    SpielerPosition.MIT -> Color(0xFF36BFF9)
-    SpielerPosition.OMI -> Color(0xFFE040FB)
-    SpielerPosition.STU -> Color(0xFFE53935)
-    SpielerPosition.AMATEUR -> Color(0xFF9E9E9E)
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +28,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT
+import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT_AKZENT
+import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT_SEKUNDAER
+import com.onlinesoccer.app.core.ui.theme.positionsKachelFarbe
 import com.onlinesoccer.app.data.model.TransferMarktEintrag
 import com.onlinesoccer.app.feature.server.FehlerBox
 
@@ -88,22 +93,23 @@ private fun Inhalt(
 ) {
     val ergebnis = uiState.ergebnis
 
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        item {
-            TransferFilterPanel(
-                filter = ergebnis.filter,
-                wahl = uiState.wahl,
-                onFilterWaehlen = onFilterWaehlen,
-                onAnzeigen = onAnzeigen,
-                anzeigenLabel = "Spieler anzeigen",
-            )
-        }
+    Column(Modifier.fillMaxSize()) {
+        TransferFilterPanel(
+            filter = ergebnis.filter,
+            wahl = uiState.wahl,
+            onFilterWaehlen = onFilterWaehlen,
+            onAnzeigen = onAnzeigen,
+            anzeigenLabel = "Spieler anzeigen",
+        )
 
-        ergebnis.hinweis?.let {
+        LazyColumn(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ergebnis.hinweis?.let {
             item {
                 Text(it, style = MaterialTheme.typography.bodyMedium)
             }
@@ -130,6 +136,7 @@ private fun Inhalt(
                 TransferMarktKarte(eintrag, onSpielerClick, onTeamClick)
             }
         }
+        }
     }
 }
 
@@ -139,7 +146,10 @@ private fun TransferMarktKarte(
     onSpielerClick: (Long) -> Unit,
     onTeamClick: (Long) -> Unit,
 ) {
-    Card(Modifier.fillMaxWidth()) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = positionsKachelFarbe(eintrag.position)),
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -151,6 +161,7 @@ private fun TransferMarktKarte(
                 Modifier.clickable { onSpielerClick(eintrag.spielerId) },
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
+                color = KACHEL_TEXT,
             )
 
             val kern = listOf(eintrag.alter, eintrag.position, eintrag.land).filter { it.isNotBlank() }
@@ -158,7 +169,7 @@ private fun TransferMarktKarte(
                 Text(
                     kern.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = KACHEL_TEXT_SEKUNDAER,
                 )
             }
 
@@ -170,6 +181,7 @@ private fun TransferMarktKarte(
                 Text(
                     skillZeilen.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
+                    color = KACHEL_TEXT,
                 )
             }
 
@@ -180,20 +192,21 @@ private fun TransferMarktKarte(
                             eintrag.dauer.takeIf { it.isNotBlank() }?.let { "bis $it" }).joinToString(" · ")
                     }",
                     style = MaterialTheme.typography.bodySmall,
+                    color = KACHEL_TEXT,
                 )
                 if (eintrag.bieterTeamId != null) {
                     Text(
                         "von " + eintrag.bieter,
                         Modifier.clickable { eintrag.bieterTeamId?.let(onTeamClick) },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = KACHEL_TEXT_AKZENT,
                         fontWeight = FontWeight.Medium,
                     )
                 } else {
                     Text(
                         eintrag.bieter,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = KACHEL_TEXT_SEKUNDAER,
                     )
                 }
             } else {
@@ -206,7 +219,7 @@ private fun TransferMarktKarte(
                     Text(
                         basis.joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = KACHEL_TEXT_SEKUNDAER,
                     )
                 }
             }

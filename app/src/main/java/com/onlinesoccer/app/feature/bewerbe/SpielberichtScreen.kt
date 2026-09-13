@@ -43,9 +43,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.theme.trikotFarbe
 import com.onlinesoccer.app.data.model.BerichtEreignisTyp
 import com.onlinesoccer.app.data.model.BerichtAufstellung
 import com.onlinesoccer.app.data.model.BerichtEinstellungen
+import com.onlinesoccer.app.data.model.SpielerPosition
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.widget.Toast
@@ -390,10 +392,10 @@ private fun FormationSpielfeld(aufstellung: BerichtAufstellung?) {
 }
 
 private fun markerColor(position: String?): Color = when (position) {
-    "Sturm" -> Color(0xFFE53935)
-    "Mittelfeld" -> Color(0xFF29B6F6)
-    "Abwehr" -> Color(0xFF43A047)
-    "Torwart" -> Color(0xFFFFB300)
+    "Sturm" -> trikotFarbe(SpielerPosition.STU)
+    "Mittelfeld" -> trikotFarbe(SpielerPosition.MIT)
+    "Abwehr" -> trikotFarbe(SpielerPosition.ABW)
+    "Torwart" -> trikotFarbe(SpielerPosition.TOR)
     else -> Color(0xFFE0E0E0)
 }
 
