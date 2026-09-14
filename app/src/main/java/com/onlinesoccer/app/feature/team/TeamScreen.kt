@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,16 +40,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.theme.PositionsBadge
 import com.onlinesoccer.app.core.ui.theme.trikotFarbe
 import com.onlinesoccer.app.data.model.KaderSpieler
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
@@ -62,117 +67,80 @@ import com.onlinesoccer.app.feature.taktik.TaktikViewModel
 import com.onlinesoccer.app.feature.team.friendly.FreundschaftScreen
 import com.onlinesoccer.app.ui.HubTabs
 
-private enum class TeamBereich { KADER, VERTRAEGE, STAERKEN, STATISTIK, TEAMINFO, TAKTIK, FREUNDSCHAFT }
+private enum class TeamBereich { MANNSCHAFT, TAKTIK, FREUNDSCHAFT, TEAMINFORMATIONEN }
 
 @Composable
 fun TeamScreen(
     onSpielerClick: (Long) -> Unit,
     onSeiteClick: (String) -> Unit,
+    onTeaminformationenClick: () -> Unit,
     viewModel: TeamViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var bereich by remember { mutableStateOf(TeamBereich.KADER) }
+    var bereich by remember { mutableStateOf(TeamBereich.MANNSCHAFT) }
 
-    LaunchedEffect(bereich, uiState.statistikGesamt) {
+    LaunchedEffect(bereich) {
         when (bereich) {
-            TeamBereich.KADER -> if (uiState.kader.isEmpty()) viewModel.ladeKader()
-            TeamBereich.VERTRAEGE -> if (uiState.vertraege == null) viewModel.ladeVertraege()
-            TeamBereich.STAERKEN -> if (uiState.staerken == null) viewModel.ladeStaerken()
-            TeamBereich.STATISTIK -> viewModel.ladeStatistik(uiState.statistikGesamt)
-            TeamBereich.TEAMINFO -> if (uiState.teaminfo == null) viewModel.ladeTeaminfo()
-            TeamBereich.TAKTIK -> Unit
-            TeamBereich.FREUNDSCHAFT -> Unit
+            TeamBereich.MANNSCHAFT -> if (uiState.kader.isEmpty()) viewModel.ladeKader()
+            else -> Unit
         }
     }
 
     Column(Modifier.fillMaxSize()) {
         HubTabs(
             tabs = remember { listOf(
+                "Mannschaft" to TeamBereich.MANNSCHAFT,
                 "Training" to "training.php",
                 "Trainer" to "trainer.php",
                 "Taktik-Editor" to TeamBereich.TAKTIK,
                 "Verträge verlängern" to "vt.php",
                 "Freundschaftsspiele" to TeamBereich.FREUNDSCHAFT,
+                "Teaminformationen" to TeamBereich.TEAMINFORMATIONEN,
             ) },
             selected = bereich,
             onSelect = { value ->
                 when (value) {
                     is String -> onSeiteClick(value)
-                    is TeamBereich -> bereich = value
+                    is TeamBereich -> when (value) {
+                        TeamBereich.TEAMINFORMATIONEN -> onTeaminformationenClick()
+                        else -> bereich = value
+                    }
                 }
             },
             compact = true,
         )
 
-        HubTabs(
-            tabs = remember { listOf(
-                "Kader" to TeamBereich.KADER,
-                "Stärken" to TeamBereich.STAERKEN,
-                "Verträge" to TeamBereich.VERTRAEGE,
-                "Statistik" to TeamBereich.STATISTIK,
-                "Teaminfo" to TeamBereich.TEAMINFO,
-            ) },
-            selected = bereich,
-            onSelect = { bereich = it as TeamBereich },
-            compact = true,
-        )
-
         Box(Modifier.fillMaxWidth().weight(1f)) {
             when {
-                bereich == TeamBereich.TAKTIK -> TeamTaktikEditor()
-                bereich == TeamBereich.FREUNDSCHAFT -> FreundschaftScreen()
-                uiState.ladend && !hatDaten(bereich, uiState) -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                uiState.fehler != null && !hatDaten(bereich, uiState) -> {
-                    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(uiState.fehler.orEmpty(), color = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.height(12.dp))
-                        FilledTonalButton(onClick = { neuLaden(bereich, viewModel) }) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Spacer(Modifier.padding(start = 4.dp))
-                            Text("Erneut versuchen")
+                bereich == TeamBereich.MANNSCHAFT -> when {
+                    uiState.ladend && uiState.kader.isEmpty() -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
                         }
                     }
+                    uiState.fehler != null && uiState.kader.isEmpty() -> {
+                        Column(
+                            Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(uiState.fehler.orEmpty(), color = MaterialTheme.colorScheme.error)
+                            Spacer(Modifier.height(12.dp))
+                            FilledTonalButton(onClick = viewModel::ladeKader) {
+                                Icon(Icons.Default.Refresh, contentDescription = null)
+                                Spacer(Modifier.padding(start = 4.dp))
+                                Text("Erneut versuchen")
+                            }
+                        }
+                    }
+                    else -> KaderAnsicht(uiState, viewModel, onSpielerClick)
                 }
-                else -> when (bereich) {
-                    TeamBereich.KADER -> KaderAnsicht(uiState, viewModel, onSpielerClick)
-                    TeamBereich.VERTRAEGE -> VertraegeAnsicht(uiState.vertraege.orEmpty(), onSpielerClick)
-                    TeamBereich.STAERKEN -> StaerkenAnsicht(uiState.staerken.orEmpty())
-                    TeamBereich.STATISTIK -> StatistikAnsicht(
-                        uiState.statistik.orEmpty(),
-                        uiState.statistikGesamt,
-                        viewModel::ladeStatistik,
-                    )
-                    TeamBereich.TEAMINFO -> TeaminfoAnsicht(uiState.teaminfo)
-                    TeamBereich.TAKTIK -> TeamTaktikEditor()
-                    TeamBereich.FREUNDSCHAFT -> FreundschaftScreen()
-                }
+                bereich == TeamBereich.TAKTIK -> TeamTaktikEditor()
+                bereich == TeamBereich.FREUNDSCHAFT -> FreundschaftScreen()
+                else -> Unit
             }
         }
     }
-}
-
-private fun hatDaten(bereich: TeamBereich, uiState: TeamUiState): Boolean = when (bereich) {
-    TeamBereich.KADER -> uiState.kader.isNotEmpty()
-    TeamBereich.VERTRAEGE -> uiState.vertraege != null
-    TeamBereich.STAERKEN -> uiState.staerken != null
-    TeamBereich.STATISTIK -> uiState.statistik != null
-    TeamBereich.TEAMINFO -> uiState.teaminfo != null
-    TeamBereich.TAKTIK -> true
-    TeamBereich.FREUNDSCHAFT -> true
-}
-
-private fun neuLaden(bereich: TeamBereich, viewModel: TeamViewModel) = when (bereich) {
-    TeamBereich.KADER -> viewModel.ladeKader()
-    TeamBereich.VERTRAEGE -> viewModel.ladeVertraege()
-    TeamBereich.STAERKEN -> viewModel.ladeStaerken()
-    TeamBereich.STATISTIK -> viewModel.ladeStatistik(viewModel.uiState.value.statistikGesamt)
-    TeamBereich.TEAMINFO -> viewModel.ladeTeaminfo()
-    TeamBereich.TAKTIK -> Unit
-    TeamBereich.FREUNDSCHAFT -> Unit
 }
 
 @Composable
@@ -194,7 +162,7 @@ private fun TeamTaktikEditor(
 }
 
 @Composable
-private fun KaderAnsicht(
+internal fun KaderAnsicht(
     uiState: TeamUiState,
     viewModel: TeamViewModel,
     onSpielerClick: (Long) -> Unit,
@@ -310,7 +278,7 @@ fun SpielerZeile(
             Column(Modifier.weight(1f)) {
                 Text(spieler.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
-                    "${posName(spieler.position)} · ${spieler.alter} Jahre",
+                    "${posName(spieler.position)} · ${spieler.alter?.let { "$it Jahre" } ?: "Alter k. A."}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -379,7 +347,7 @@ private fun SperreStatus(sperre: String) {
 }
 
 @Composable
-private fun VertraegeAnsicht(
+internal fun VertraegeAnsicht(
     vertraege: List<VertragZeile>,
     onSpielerClick: (Long) -> Unit,
 ) {
@@ -391,7 +359,13 @@ private fun VertraegeAnsicht(
         items(vertraege, key = { it.pid }) { v ->
             Card(Modifier.fillMaxWidth().clickable { onSpielerClick(v.pid) }) {
                 Column(Modifier.padding(12.dp)) {
-                    Text(v.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (v.position != SpielerPosition.AMATEUR) {
+                            PositionsBadge(v.position)
+                            Spacer(Modifier.width(6.dp))
+                        }
+                        Text(v.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                    }
                     Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Gehalt", style = MaterialTheme.typography.labelSmall)
@@ -416,62 +390,24 @@ private fun VertraegeAnsicht(
 }
 
 @Composable
-private fun StaerkenAnsicht(staerken: List<StaerkeZeile>) {
+internal fun StaerkenAnsicht(staerken: List<StaerkeZeile>) {
     val skills = staerken.firstOrNull()?.werte?.keys?.toList().orEmpty()
     if (skills.isEmpty()) {
         Text("Keine Stärkenwerte gefunden.", Modifier.padding(24.dp))
         return
     }
-    Column(Modifier.fillMaxSize()) {
-        Text(
-            "${staerken.size} Spieler · ${skills.size} Einzelwerte",
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            Modifier
-                .weight(1f)
-                .horizontalScroll(rememberScrollState())
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Column(Modifier.width(130.dp)) {
-                Text("Spieler", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                staerken.forEach { s ->
-                    Text(
-                        s.name,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(vertical = 9.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            skills.forEach { skill ->
-                Column(Modifier.width(52.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        skill,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        minLines = 2,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    staerken.forEach { s ->
-                        Text(
-                            s.werte[skill] ?: "–",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(vertical = 7.dp),
-                        )
-                    }
-                }
-            }
-        }
-    }
+    SynchronWerteTabelle(
+        pids = staerken.map { it.pid },
+        namen = staerken.map { it.name },
+        positionen = staerken.map { it.position },
+        kopfzeilen = skills,
+        wert = { zeile, spalte -> staerken[zeile].werte[skills[spalte]] ?: "–" },
+        zusatzInfo = "${staerken.size} Spieler · ${skills.size} Einzelwerte",
+    )
 }
 
 @Composable
-private fun StatistikAnsicht(
+internal fun StatistikAnsicht(
     statistik: List<StatistikZeile>,
     gesamt: Boolean,
     onGesamt: (Boolean) -> Unit,
@@ -495,40 +431,140 @@ private fun StatistikAnsicht(
             Text("Keine Statistik gefunden.", Modifier.padding(24.dp))
             return
         }
-        Row(
-            Modifier
-                .weight(1f)
-                .horizontalScroll(rememberScrollState())
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Column(Modifier.width(130.dp)) {
-                Text("Spieler", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                statistik.forEach { s ->
-                    Text(
-                        s.name,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(vertical = 9.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+        SynchronWerteTabelle(
+            pids = statistik.map { it.pid },
+            namen = statistik.map { it.name },
+            positionen = statistik.map { it.position },
+            kopfzeilen = header,
+            wert = { zeile, spalte -> statistik[zeile].werte[header[spalte]] ?: "–" },
+            zusatzInfo = "${statistik.size} Spieler · ${header.size} Statistikwerte",
+        )
+    }
+}
+
+private val NAME_SPALTE = 144.dp
+private val WERT_SPALTE = 60.dp
+private val ZEILEN_HOEHE = 40.dp
+
+/**
+ * Synchron scrolldende Wertetabelle mit fixierter Kopfzeile und fixierter Namensspalte.
+ * Eine angetippte Spielerzeile wird zeilenübergreifend markiert (gute Lesbarkeit).
+ */
+@Composable
+private fun SynchronWerteTabelle(
+    pids: List<Long>,
+    namen: List<String>,
+    kopfzeilen: List<String>,
+    wert: (zeile: Int, spalte: Int) -> String,
+    zusatzInfo: String = "",
+    positionen: List<SpielerPosition>? = null,
+) {
+    if (pids.isEmpty()) {
+        Text("Keine Daten gefunden.", Modifier.padding(24.dp))
+        return
+    }
+
+    var markierterPid by rememberSaveable { mutableStateOf<Long?>(null) }
+    val vertScroll = rememberScrollState()
+    val horizScroll = rememberScrollState()
+
+    Column(Modifier.fillMaxSize()) {
+        if (zusatzInfo.isNotBlank()) {
+            Text(
+                zusatzInfo,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant)) {
+            TabellenKopfZelle("Spieler", NAME_SPALTE)
+            Row(Modifier.horizontalScroll(horizScroll)) {
+                kopfzeilen.forEach { kopf ->
+                    TabellenKopfZelle(kopf, WERT_SPALTE)
                 }
             }
-            header.forEach { kopf ->
-                Column(Modifier.width(52.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        kopf,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        minLines = 2,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    statistik.forEach { s ->
+        }
+
+        Row(Modifier.weight(1f).fillMaxWidth()) {
+            Column(
+                Modifier
+                    .width(NAME_SPALTE)
+                    .verticalScroll(vertScroll),
+            ) {
+                namen.forEachIndexed { zeile, name ->
+                    val pid = pids[zeile]
+                    val markiert = pid == markierterPid
+                    val position = positionen?.getOrNull(zeile)
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(ZEILEN_HOEHE)
+                            .background(zeilenFarbe(zeile, markiert))
+                            .clickable { markierterPid = pid },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (markiert) {
+                            Box(
+                                Modifier
+                                    .fillMaxHeight()
+                                    .width(3.dp)
+                                    .background(MaterialTheme.colorScheme.primary),
+                            )
+                        }
+                        if (position != null && position != SpielerPosition.AMATEUR) {
+                            Spacer(Modifier.width(6.dp))
+                            PositionsBadge(position)
+                        }
                         Text(
-                            s.werte[kopf] ?: "–",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(vertical = 7.dp),
+                            name,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (markiert) FontWeight.Bold else FontWeight.Normal,
+                            color = if (markiert) MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 6.dp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
+                    }
+                }
+            }
+
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                Row(Modifier.horizontalScroll(horizScroll)) {
+                    Column(Modifier.verticalScroll(vertScroll)) {
+                        pids.forEachIndexed { zeile, pid ->
+                            val markiert = pid == markierterPid
+                            Row(
+                                Modifier
+                                    .height(ZEILEN_HOEHE)
+                                    .background(zeilenFarbe(zeile, markiert))
+                                    .clickable { markierterPid = pid },
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                kopfzeilen.forEachIndexed { spalte, _ ->
+                                    Box(
+                                        Modifier
+                                            .width(WERT_SPALTE)
+                                            .fillMaxHeight(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            wert(zeile, spalte),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = if (markiert) FontWeight.SemiBold else FontWeight.Normal,
+                                            color = if (markiert) MaterialTheme.colorScheme.onPrimaryContainer
+                                            else MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Clip,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -537,7 +573,35 @@ private fun StatistikAnsicht(
 }
 
 @Composable
-private fun TeaminfoAnsicht(teaminfo: Teaminfo?) {
+private fun TabellenKopfZelle(text: String, breite: Dp) {
+    Box(
+        Modifier
+            .width(breite)
+            .height(ZEILEN_HOEHE)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun zeilenFarbe(zahl: Int, markiert: Boolean): Color = when {
+    markiert -> MaterialTheme.colorScheme.primaryContainer
+    zahl % 2 == 1 -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)
+    else -> Color.Transparent
+}
+
+@Composable
+internal fun TeaminfoAnsicht(teaminfo: Teaminfo?) {
     if (teaminfo == null) {
         Text("Keine Team-Informationen gefunden.", Modifier.padding(24.dp))
         return

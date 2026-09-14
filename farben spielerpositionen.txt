@@ -1,0 +1,56 @@
+Ja, ich verstehe genau, was du meinst. 👍
+
+Du möchtest die **Kästchen rechts neben jedem Spieler** in der ZAT-Aufstellung:
+
+* **etwas kleiner** als aktuell
+* weiterhin rechtsbündig
+* Inhalt wie `T`, `U`, `-` **horizontal und vertikal exakt zentriert**
+* die Kästchen sollen je nach **Spielerposition automatisch die Standard-Positionsfarbe** bekommen:
+
+  * **TOR** → Torwart-Farbe
+  * **ABW** → Abwehr-Farbe
+  * **DMI** → DMI-Farbe
+  * **MIT** → Mittelfeld-Farbe
+  * **OMI** → OMI-Farbe
+  * **STU** → Sturm-Farbe
+* Wichtig: **Nicht die aktuelle Auswahl-/Statusfarbe verändern**, sondern die bereits in der App bzw. Website verwendeten **Standardfarben der Positionen** übernehmen.
+* Die Farben sollten auch im **Dark Mode** passend und dezent funktionieren.
+
+### Prompt für OpenCode
+
+**ZAT – Positionskästchen rechts neben den Spielern optimieren**
+Bitte überarbeite in der **ZAT-Aufstellung / Mannschaftskader-Liste** die kleinen Kästchen rechts neben jedem Spieler.
+
+**Aktueller Zustand:** Die Kästchen sind momentan relativ groß und haben einen neutralen Rahmen. Darin stehen z. B. `T`, `U` oder `-`.
+
+**Gewünschte Änderung:**
+
+1. Die Kästchen rechts neben den Spielern sollen **etwas kleiner und kompakter** werden, damit sie optisch weniger dominant sind und besser zur Mannschaftskader-Liste passen.
+
+2. Der Inhalt des Kästchens (`T`, `U`, `-` usw.) muss **horizontal und vertikal exakt mittig** ausgerichtet sein.
+
+3. Die Kästchen sollen automatisch anhand der **Position des jeweiligen Spielers** eingefärbt werden.
+
+Verwende dafür die bereits vorhandenen bzw. auf der Website verwendeten **Standard-Positionsfarben**:
+
+* **TOR** → Standardfarbe Torwart
+* **ABW** → Standardfarbe Abwehr
+* **DMI** → Standardfarbe DMI
+* **MIT** → Standardfarbe Mittelfeld
+* **OMI** → Standardfarbe OMI
+* **STU** → Standardfarbe Sturm
+
+Bitte **keine neuen Farben erfinden**, sondern zuerst im bestehenden Projekt bzw. anhand der Online-Soccer-Website prüfen, welche Positionsfarben bereits für diese Positionen verwendet werden. Diese vorhandenen Farben sollen konsistent wiederverwendet werden.
+
+4. Die Darstellung muss für **Light Mode und Dark Mode** funktionieren. Im Dark Mode sollen die Positionsfarben gegebenenfalls etwas abgedunkelt/dezenter dargestellt werden, ohne die Positionserkennung zu verlieren.
+
+5. Die Kästchen sollen weiterhin klar als interaktives Element erkennbar sein und dürfen nicht mit dem Namen oder den Spielerinformationen kollidieren.
+
+6. Bitte auf **Smartphone und Tablet** prüfen und die Größe responsiv sinnvoll gestalten.
+
+prüfe deine ergebnis durch mehrere agents
+
+**Wichtig:** Keine anderen Bereiche der ZAT-Aufstellung verändern. Nur die Darstellung und Positionserkennung dieser rechten Kästchen anpassen.
+
+Vor der Änderung bitte den bestehenden Code und die vorhandene Positionsfarben-Logik prüfen und möglichst die bereits vorhandenen Komponenten/Styles wiederverwenden, statt eine parallele Farblogik einzubauen.
+

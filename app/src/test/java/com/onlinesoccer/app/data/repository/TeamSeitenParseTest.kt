@@ -152,6 +152,30 @@ class TeamSeitenParseTest {
     }
 
     @Test
+    fun stadion_mitLaufendemAusbau_zeigtHinweisAlsErstenAbschnitt() {
+        val ansicht = repo.parseStadion(dump("stadion_ausbau"))
+
+        assertEquals("Stadionausbau", ansicht.titel)
+        val ausbau = ansicht.abschnitte.first()
+        assertEquals("Laufender Stadionausbau", ausbau.titel)
+        assertTrue("Baufirma als Merkpunkt", ausbau.punkte.any { it.contains("Flott & Teuer") })
+        assertTrue("Neu gebaute Plätze", ausbau.punkte.any { it.startsWith("1000 überdachte Sitzplätze") })
+        assertTrue("Reduzierte Stadionkapazität", ausbau.punkte.any { it.startsWith("Während des Ausbaus reduziert sich") })
+        assertTrue("Zustand weiterhin vorhanden", ansicht.abschnitte.any { it.titel == "Aktueller Stadion-Zustand" })
+        assertTrue("Ausbaumöglichkeiten weiterhin vorhanden", ansicht.abschnitte.any { it.titel == "Ausbaumöglichkeiten" })
+    }
+
+    @Test
+    fun stadion_ohneLaufendenAusbau_zeigtKeinenHinweisAbschnitt() {
+        val ansicht = repo.parseStadion(dump("stadion"))
+
+        assertTrue(
+            "Ohne laufenden Ausbau kein Hinweis-Abschnitt",
+            ansicht.abschnitte.none { it.titel == "Laufender Stadionausbau" },
+        )
+    }
+
+    @Test
     fun konto_liefertBuchungen() {
         val ansicht = repo.parseKonto(dump("ka"))
 

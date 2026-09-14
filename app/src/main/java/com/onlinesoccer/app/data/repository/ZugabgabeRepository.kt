@@ -571,7 +571,7 @@ class ZugabgabeRepository @Inject constructor(
                 ?: div.selectFirst("p.name")?.text()
                 ?: "Unbekannt"
             val stats = div.selectFirst(".stats")
-            val alter = stats?.selectFirst(".alter")?.text()?.toIntOrNull() ?: 0
+            val alter = stats?.selectFirst(".alter")?.text()?.toIntOrNull()?.takeIf { it in 15..60 }
             val skill = stats?.selectFirst(".skill")?.text()?.toDoubleOrNull() ?: 0.0
             val opti = stats?.selectFirst(".opti")?.text()?.toDoubleOrNull() ?: 0.0
             val fit = stats?.selectFirst(".fit")?.text()?.toIntOrNull() ?: 0
@@ -748,7 +748,7 @@ class ZugabgabeRepository @Inject constructor(
                 pid = pid,
                 name = name,
                 nummer = "",
-                alter = 0,
+                alter = null,
                 skill = 0.0,
                 opti = 0.0,
                 fit = 0,

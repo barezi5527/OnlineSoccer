@@ -1,5 +1,76 @@
 package com.onlinesoccer.app.data.model
 
+/** Eintrag im Teaminformationen-Menü (dynamisch von der Website geparst). */
+data class TeamInfoMenuEintrag(
+    val label: String,
+    val path: String,
+    val showteamS: String? = null,
+    val tabellenplatzTeamId: Long? = null,
+)
+
+/** Zeile des Saisonplans (`showteam.php?s=6`). */
+data class SaisonplanEintrag(
+    val zat: String,
+    val spielart: String,
+    val gegner: String,
+    val ergebnis: String,
+    val berichtUrl: String? = null,
+    val gegnerTeamId: Long? = null,
+)
+
+/** Saisonplan inkl. verfügbarer Saisons (aus dem `<select name="saison">` der Website). */
+data class SaisonplanDaten(
+    val saisons: List<Int> = emptyList(),
+    val gewaehlteSaison: Int? = null,
+    val eintraege: List<SaisonplanEintrag> = emptyList(),
+)
+
+/** Zeile der Vereinshistorie (`showteam.php?s=7`). */
+data class VereinshistorieEintrag(
+    val saison: String,
+    val zat: String,
+    val spielerAnzahl: String,
+    val avgSkill: String,
+    val avgOpti: String,
+    val avgAlter: String,
+    val avgMW: String,
+    val sumMW: String,
+    val avgGehalt: String,
+    val sumGehalt: String,
+    val manager: String,
+)
+
+/** Ein Transfer-Eintrag (`showteam.php?s=8`). */
+data class TransferhistorieBlock(
+    val datum: String,
+    val team1: String,
+    val team2: String,
+    val team1Id: Long? = null,
+    val team2Id: Long? = null,
+    val details: List<String>,
+)
+
+/** Zeile der Leihtabelle (`showteam.php?s=9`). */
+data class LeihhistorieEintrag(
+    val datum: String,
+    val spieler: String,
+    val spielerPid: Long? = null,
+    val von: String,
+    val zu: String,
+    val zahlung: String,
+    val dauer: String,
+)
+
+/** Zeile der Saisonhistorie (`showteam.php?s=10`). */
+data class SaisonhistorieEintrag(
+    val saison: String,
+    val liga: String,
+    val tabelle: String,
+    val pokal: String,
+    val ose: String,
+    val osc: String,
+)
+
 /** Eine generische Tabellenansicht (Header + Datenzeilen) für die Team-/Liga-Tabellen. */
 data class WertTabelle(
     val header: List<String> = emptyList(),
@@ -17,6 +88,7 @@ data class WertTabelle(
 data class VertragZeile(
     val pid: Long,
     val name: String,
+    val position: SpielerPosition = SpielerPosition.AMATEUR,
     val gehalt: String? = null,
     val laufzeit: String? = null,
     val marktwert: String? = null,
@@ -27,6 +99,7 @@ data class VertragZeile(
 data class StaerkeZeile(
     val pid: Long,
     val name: String,
+    val position: SpielerPosition = SpielerPosition.AMATEUR,
     val werte: Map<String, String> = emptyMap(),
 )
 
@@ -34,6 +107,7 @@ data class StaerkeZeile(
 data class StatistikZeile(
     val pid: Long,
     val name: String,
+    val position: SpielerPosition = SpielerPosition.AMATEUR,
     val werte: Map<String, String> = emptyMap(),
 )
 

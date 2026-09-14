@@ -1,6 +1,8 @@
 package com.onlinesoccer.app.core.network
 
+import com.onlinesoccer.app.core.ui.theme.positionVonText
 import com.onlinesoccer.app.data.model.SeitenAnsicht
+import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.data.model.WertTabelle
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
@@ -15,6 +17,8 @@ data class TabellenZeile(
     val sid: String? = null,
     val vorschau: String? = null,
     val berichtUrl: String? = null,
+    /** Spielerposition aus den CSS-Klassen der Namenszelle (z. B. `TOR`, `STU`). */
+    val position: SpielerPosition? = null,
 )
 
 data class GeparsteTabelle(
@@ -80,8 +84,13 @@ object HtmlTools {
             sid = sid,
             vorschau = vorschau,
             berichtUrl = berichtUrl,
+            position = positionVonCssKlasse(link?.parent()?.className().orEmpty()),
         )
     }
+
+    /** Ermittelt die Spielerposition aus den CSS-Klassen einer Namenszelle. */
+    private fun positionVonCssKlasse(klassen: String): SpielerPosition? =
+        klassen.split("\\s+".toRegex()).firstNotNullOfOrNull { positionVonText(it) }
 
     /** Extrahiert eine Titelzeile (h1/h2/h3) mit dem ZAT-/Spieltagbezug. */
     fun ueberschriften(doc: org.jsoup.nodes.Document): List<String> =

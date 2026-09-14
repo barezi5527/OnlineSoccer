@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,10 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.core.ui.theme.KACHEL_BADGE_HINTERGRUND
 import com.onlinesoccer.app.core.ui.theme.KACHEL_BADGE_TEXT
-import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT
-import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT_AKZENT
-import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT_SEKUNDAER
-import com.onlinesoccer.app.core.ui.theme.positionsKachelFarbe
+import com.onlinesoccer.app.core.ui.theme.PositionsBadge
 import com.onlinesoccer.app.data.model.TransferListeErgebnis
 import com.onlinesoccer.app.data.model.TransferListeZeile
 import com.onlinesoccer.app.feature.server.FehlerBox
@@ -206,7 +202,6 @@ private fun TransferListeKarte(
 ) {
     Card(
         Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = positionsKachelFarbe(zeile.position)),
     ) {
         Column(
             Modifier
@@ -215,6 +210,8 @@ private fun TransferListeKarte(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                PositionsBadge(zeile.position)
+                Spacer(Modifier.padding(start = 8.dp))
                 Text(
                     zeile.name,
                     Modifier
@@ -222,7 +219,7 @@ private fun TransferListeKarte(
                         .clickable { onSpielerClick(zeile.spielerId) },
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
-                    color = KACHEL_TEXT,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.padding(start = 8.dp))
                 TransferBadge(zeile.status, zeile.details)
@@ -233,7 +230,7 @@ private fun TransferListeKarte(
                 Text(
                     kern.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT_SEKUNDAER,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -245,7 +242,7 @@ private fun TransferListeKarte(
                 Text(
                     skillZeilen.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -254,14 +251,14 @@ private fun TransferListeKarte(
                     zeile.team,
                     Modifier.clickable { zeile.teamId?.let(onTeamClick) },
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT_AKZENT,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium,
                 )
             } else if (zeile.team.isNotBlank()) {
                 Text(
                     zeile.team,
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT_SEKUNDAER,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -273,7 +270,7 @@ private fun TransferListeKarte(
                 Text(
                     preise.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT_SEKUNDAER,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

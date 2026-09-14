@@ -5,7 +5,7 @@ data class KaderSpieler(
     val pid: Long,
     val name: String,
     val nummer: String,
-    val alter: Int,
+    val alter: Int?,
     val position: SpielerPosition,
     val skill: Double,
     val opti: Double,

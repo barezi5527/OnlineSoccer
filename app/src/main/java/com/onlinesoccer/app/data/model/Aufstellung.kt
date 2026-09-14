@@ -44,7 +44,7 @@ data class AufstellungSpieler(
     val pid: Long,
     val name: String,
     val nummer: String,
-    val alter: Int,
+    val alter: Int?,
     val skill: Double,
     val opti: Double,
     val fit: Int,

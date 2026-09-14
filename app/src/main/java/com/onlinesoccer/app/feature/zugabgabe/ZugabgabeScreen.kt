@@ -30,6 +30,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -37,6 +38,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.theme.kastenTextFarbe
 import com.onlinesoccer.app.core.ui.theme.trikotFarbe
 import com.onlinesoccer.app.data.model.Aufstellung
 import com.onlinesoccer.app.data.model.AufstellungSlot
@@ -601,21 +604,29 @@ private fun KaderZuordnung(
                     )
                 }
             }
+            val hintergrund = trikotFarbe(spieler.position)
             ExposedDropdownMenuBox(
                 expanded = offen,
                 onExpandedChange = { offen = it },
+                modifier = Modifier.size(36.dp),
             ) {
-                OutlinedTextField(
-                    value = gewaehlt?.let { kaderSlotLabel(it) } ?: "-",
-                    onValueChange = {},
-                    readOnly = true,
-                    singleLine = true,
-                    modifier = Modifier
-                        .width(56.dp)
-                        .menuAnchor(),
-                    textStyle = MaterialTheme.typography.bodySmall,
-                )
-                ExposedDropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = !speichernd)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(hintergrund)
+                        .clickable(enabled = !speichernd) { offen = true },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        gewaehlt?.let { kaderSlotLabel(it) } ?: "-",
+                        color = kastenTextFarbe(hintergrund),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
                     DropdownMenuItem(
                         text = { Text("-") },
                         onClick = {
@@ -857,7 +868,7 @@ private fun SpielerZellSheet(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "${positionsName(belegt.position)} · Alter ${belegt.alter} · Skill ${belegt.skill} · Opti ${belegt.opti}",
+                    "${positionsName(belegt.position)} · Alter ${belegt.alter ?: "k. A."} · Skill ${belegt.skill} · Opti ${belegt.opti}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text("Spielerdetails", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp))
@@ -918,7 +929,7 @@ private fun SpielerZellSheet(
                             Column(Modifier.weight(1f)) {
                                 Text(kandidat.name, fontWeight = FontWeight.Medium)
                                 Text(
-                                    "${positionsName(kandidat.position)} · ${kandidat.alter} · ${kandidat.skill} · ${kandidat.opti} · Fit ${kandidat.fit} · Mor ${kandidat.mor}",
+                                    "${positionsName(kandidat.position)} · ${kandidat.alter ?: "k. A."} · ${kandidat.skill} · ${kandidat.opti} · Fit ${kandidat.fit} · Mor ${kandidat.mor}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )

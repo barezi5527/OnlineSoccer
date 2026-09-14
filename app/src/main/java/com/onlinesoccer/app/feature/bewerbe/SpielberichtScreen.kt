@@ -270,6 +270,7 @@ private fun AufstellungsVergleich(
             Box(Modifier.weight(1f)) { SpielerListe(heimAufstellung) }
             Box(Modifier.weight(1f)) { SpielerListe(gastAufstellung) }
         }
+        EinstellungenTabelle(heim, gast, heimAufstellung?.einstellungen ?: BerichtEinstellungen(), gastAufstellung?.einstellungen ?: BerichtEinstellungen())
     }
 }
 
@@ -427,9 +428,23 @@ private fun EinstellungenTabelle(
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth()) {
-                Spacer(Modifier.weight(1f))
-                Text(heim ?: "Heim", modifier = Modifier.weight(0.7f), textAlign = TextAlign.End, style = MaterialTheme.typography.labelSmall)
-                Text(gast ?: "Gast", modifier = Modifier.weight(0.7f), textAlign = TextAlign.End, style = MaterialTheme.typography.labelSmall)
+                Spacer(Modifier.weight(0.8f))
+                Text(
+                    heim ?: "Heim",
+                    modifier = Modifier.weight(1.1f),
+                    textAlign = TextAlign.End,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                Text(
+                    gast ?: "Gast",
+                    modifier = Modifier.weight(1.1f),
+                    textAlign = TextAlign.End,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
             }
             EinstellungZeile("Einsatz", heimWerte.einsatz, gastWerte.einsatz)
             EinstellungZeile("Härte", heimWerte.haerte, gastWerte.haerte)
@@ -444,9 +459,31 @@ private fun EinstellungenTabelle(
 @Composable
 private fun EinstellungZeile(label: String, heim: String?, gast: String?) {
     Row(Modifier.fillMaxWidth()) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-        Text(heim ?: "–", modifier = Modifier.weight(0.7f), textAlign = TextAlign.End, style = MaterialTheme.typography.bodySmall)
-        Text(gast ?: "–", modifier = Modifier.weight(0.7f), textAlign = TextAlign.End, style = MaterialTheme.typography.bodySmall)
+        Text(
+            label,
+            modifier = Modifier.weight(0.8f),
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
+        Text(
+            heim ?: "–",
+            modifier = Modifier.weight(1.1f),
+            textAlign = TextAlign.End,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
+        Text(
+            gast ?: "–",
+            modifier = Modifier.weight(1.1f),
+            textAlign = TextAlign.End,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
     }
 }
 

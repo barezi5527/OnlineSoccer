@@ -64,10 +64,10 @@ import com.onlinesoccer.app.feature.server.ZweitteamsScreen
 import com.onlinesoccer.app.feature.spiele.SpieleScreen
 import com.onlinesoccer.app.feature.team.SeiteScreen
 import com.onlinesoccer.app.feature.team.SpielerkarteScreen
-import com.onlinesoccer.app.feature.team.TeamScreen
 import com.onlinesoccer.app.feature.team.VereinBereichScreen
 import com.onlinesoccer.app.feature.team.VereinScreen
 import com.onlinesoccer.app.data.model.LetzteAktionenArt
+import com.onlinesoccer.app.data.model.TeamInfoMenuEintrag
 import com.onlinesoccer.app.feature.transfers.EigeneGeboteScreen
 import com.onlinesoccer.app.feature.transfers.LeihUebersichtScreen
 import com.onlinesoccer.app.feature.transfers.LetzteAktionenScreen
@@ -77,6 +77,9 @@ import com.onlinesoccer.app.feature.transfers.TransferMarktScreen
 import com.onlinesoccer.app.feature.transfers.TransferStatusScreen
 import com.onlinesoccer.app.feature.transfers.TransfersScreen
 import com.onlinesoccer.app.feature.zat.ZatScreen
+import com.onlinesoccer.app.feature.team.TeaminformationenContentScreen
+import com.onlinesoccer.app.feature.team.TeaminformationenScreen
+import com.onlinesoccer.app.feature.team.TeamScreen
 import kotlin.math.roundToInt
 
 object Routes {
@@ -92,6 +95,8 @@ object Routes {
     const val SPIELER_QUELLE_TM = "tm"
     const val VEREIN = "verein/{teamId}"
     const val VEREIN_BEREICH = "verein-bereich"
+    const val TEAMINFO = "teaminfo"
+    const val TEAMINFO_CONTENT = "teaminfo-content/{eintragId}?teamId={teamId}&label={label}"
     const val BERICHT = "bericht?sid={sid}&url={url}"
     const val SEITE = "seite/{path}"
     const val SERVER_SEITE = "server-seite/{path}"
@@ -151,7 +156,7 @@ private fun routeFuerBereich(bereich: TransferBereich): String = when (bereich) 
     TransferBereich.LETZTE_BLITZ -> Routes.LETZTE_AKTIONEN.replace("{art}", LetzteAktionenArt.BLITZ.routeId)
 }
 
-private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null): String {
+private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null, label: String? = null): String {
     val basis = when (route) {
         Routes.DASHBOARD -> "Dashboard"
         Routes.TEAM -> "Team"
@@ -163,6 +168,8 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.SPIELER -> "Spielerkarte"
         Routes.VEREIN -> "Verein"
         Routes.VEREIN_BEREICH -> "Verein"
+        Routes.TEAMINFO -> "Teaminformationen"
+        Routes.TEAMINFO_CONTENT -> label?.takeIf { it.isNotBlank() }?.let { Uri.decode(it) } ?: "Teaminformationen"
         Routes.BERICHT -> "Spielbericht"
         Routes.SEITE -> "Team"
         Routes.SERVER_SEITE -> "Weitere Bereiche"
@@ -204,6 +211,17 @@ private fun MainScaffold(
             .replace("{teamId}", teamId?.toString().orEmpty())
             .replace("{quelle}", quelle)
 
+    /** Route zu einem Teaminformationen-Unterpunkt; `null`, wenn kein bekannter Typ vorliegt. */
+    fun buildTeaminfoContentRoute(eintrag: TeamInfoMenuEintrag): String? {
+        val id = eintrag.showteamS?.let { "s$it" }
+            ?: eintrag.tabellenplatzTeamId?.let { "tp" }
+            ?: return null
+        return Routes.TEAMINFO_CONTENT
+            .replace("{eintragId}", id)
+            .replace("{teamId}", eintrag.tabellenplatzTeamId?.toString() ?: "0")
+            .replace("{label}", Uri.encode(eintrag.label))
+    }
+
     /** Baue Bericht-Route aus Sid und/oder statischer URL; `sid` hat Vorrang. */
     fun buildBerichtRoute(sid: String?, url: String?): String? {
         val s = parseSid(sid)
@@ -217,7 +235,14 @@ private fun MainScaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(titelFuer(currentRoute, demo, art = backStackEntry?.arguments?.getString("art")))
+                    Text(
+                        titelFuer(
+                            currentRoute,
+                            demo,
+                            art = backStackEntry?.arguments?.getString("art"),
+                            label = backStackEntry?.arguments?.getString("label"),
+                        ),
+                    )
                 },
                 actions = {
                     IconButton(onClick = onThemeCycle) {
@@ -362,6 +387,55 @@ private fun MainScaffold(
                     onSeiteClick = { path ->
                         navController.navigate(Routes.SEITE.replace("{path}", Uri.encode(path))) {
                             launchSingleTop = true
+                        }
+                    },
+                    onTeaminformationenClick = {
+                        navController.navigate(Routes.TEAMINFO) { launchSingleTop = true }
+                    },
+                )
+            }
+            composable(Routes.TEAMINFO) {
+                TeaminformationenScreen(
+                    onClose = { navController.popBackStack() },
+                    onEintragClick = { eintrag ->
+                        val route = buildTeaminfoContentRoute(eintrag)
+                        if (route != null) {
+                            navController.navigate(route) { launchSingleTop = true }
+                        } else {
+                            navController.navigate(
+                                Routes.SEITE.replace("{path}", Uri.encode(eintrag.path)),
+                            ) { launchSingleTop = true }
+                        }
+                    },
+                )
+            }
+            composable(
+                Routes.TEAMINFO_CONTENT,
+                arguments = listOf(
+                    navArgument("eintragId") { type = androidx.navigation.NavType.StringType; defaultValue = "" },
+                    navArgument("teamId") { type = androidx.navigation.NavType.LongType; defaultValue = 0L },
+                    navArgument("label") { type = androidx.navigation.NavType.StringType; defaultValue = "" },
+                ),
+            ) { entry ->
+                TeaminformationenContentScreen(
+                    eintragId = entry.arguments?.getString("eintragId"),
+                    teamId = (entry.arguments?.getLong("teamId") ?: 0L).takeIf { it > 0 },
+                    titel = Uri.decode(entry.arguments?.getString("label").orEmpty())
+                        .ifBlank { "Teaminformationen" },
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onTeamClick = { teamId ->
+                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onBerichtClick = { sid ->
+                        buildBerichtRoute(sid, null)?.let { route ->
+                            navController.navigate(route) { launchSingleTop = true }
                         }
                     },
                 )

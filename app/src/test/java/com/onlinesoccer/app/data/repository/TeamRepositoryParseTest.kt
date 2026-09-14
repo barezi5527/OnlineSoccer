@@ -4,6 +4,7 @@ import com.onlinesoccer.app.data.model.SonderFaehigkeit
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -158,5 +159,118 @@ class TeamRepositoryParseTest {
         assertTrue("Stärken gefüllt", profil.staerken.size >= 18)
         assertTrue("Statistik Karriere gefüllt", profil.statistikGesamt.isNotEmpty())
         assertEquals("3", profil.statistikGesamt["Tore (FS)"])
+    }
+
+    @Test
+    fun statistik_zweizeiligeKopfzeile_liefertKombinierteSpalten() {
+        val statistik = repo.parseStatistik(dump("showteam_s3_statistik"))
+
+        val byPid = statistik.associateBy { it.pid }
+        val faber = byPid[1L]!!
+        assertEquals("Christoph Faber", faber.name)
+        // Werte den kombinierten Spalten (Gruppe/Unter-Spalte) korrekt zugeordnet.
+        assertEquals("5", faber.werte["Spiele/LI"])
+        assertEquals("2", faber.werte["Spiele/LP"])
+        assertEquals("1", faber.werte["Spiele/IP"])
+        assertEquals("3", faber.werte["Spiele/FS"])
+        assertEquals("4", faber.werte["Tore/LI"])
+        assertEquals("2", faber.werte["Tore/FS"])
+        assertEquals("1", faber.werte["Vorlagen/FS"])
+        assertEquals("11", faber.werte["Score/LI"])
+        assertEquals("4", faber.werte["Score/FS"])
+        assertEquals("1", faber.werte["Gelb/LI"])
+        assertEquals("1", faber.werte["Gelb/FS"])
+        assertEquals("0", faber.werte["Rot/FS"])
+        // Meta-Spalten (Name/Land/U) dürfen nicht als Datenwert erscheinen.
+        assertFalse(faber.werte.containsKey("Name"))
+        assertFalse(faber.werte.containsKey("Land"))
+        assertFalse(faber.werte.containsKey("U"))
+
+        val fries = byPid[2L]!!
+        assertEquals("Marcel Fries", fries.name)
+        assertEquals("7", fries.werte["Spiele/LI"])
+        assertEquals("2", fries.werte["Vorlagen/LI"])
+        assertEquals("9", fries.werte["Score/LI"])
+        assertEquals("3", fries.werte["Gelb/LI"])
+    }
+
+    @Test
+    fun statistik_liestPositionAusDerNamenszellenKlasse() {
+        val statistik = repo.parseStatistik(dump("showteam_s3_statistik"))
+
+        val byPid = statistik.associateBy { it.pid }
+        assertEquals(
+            "Christoph Faber ist Torwart (CSS-Klasse TOR)",
+            com.onlinesoccer.app.data.model.SpielerPosition.TOR,
+            byPid[1L]?.position,
+        )
+        assertEquals(
+            "Marcel Fries ist Abwehr (CSS-Klasse ABW)",
+            com.onlinesoccer.app.data.model.SpielerPosition.ABW,
+            byPid[2L]?.position,
+        )
+    }
+
+    @Test
+    fun staerken_faelltZurueckAufPositionsspalte() {
+        val html = """
+            <table>
+              <tr><th>#</th><th>Name</th><th>Land</th><th>Pos</th><th>Abstoss</th></tr>
+              <tr>
+                <td>1</td>
+                <td><a href="sp.php?s=1">Tim Torwart</a></td><td>GER</td><td>TW</td><td>55</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><a href="sp.php?s=2">Sam Sturm</a></td><td>GER</td><td>ST</td><td>33</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><a href="sp.php?s=3">Ken Kein</a></td><td>GER</td><td>?</td><td>22</td>
+              </tr>
+            </table>
+        """.trimIndent()
+
+        val staerken = repo.parseStaerken(html)
+
+        assertEquals(
+            "TW -> Torwart",
+            com.onlinesoccer.app.data.model.SpielerPosition.TOR,
+            staerken.first { it.pid == 1L }.position,
+        )
+        assertEquals(
+            "ST -> Sturm",
+            com.onlinesoccer.app.data.model.SpielerPosition.STU,
+            staerken.first { it.pid == 2L }.position,
+        )
+        assertEquals(
+            "Unbekannter Pos-Code -> Amateur",
+            com.onlinesoccer.app.data.model.SpielerPosition.AMATEUR,
+            staerken.first { it.pid == 3L }.position,
+        )
+        assertEquals("55", staerken.first { it.pid == 1L }.werte["Abstoss"])
+    }
+
+    @Test
+    fun vertraege_liestPositionAusDerNamenszellenKlasse() {
+        val html = """
+            <table>
+              <tr><th>Name</th><th>Gehalt</th><th>Lauf</th></tr>
+              <tr><td class="OMI"><a href="sp.php?s=9">Hans Offensiv</a></td><td>5.000</td><td>12</td></tr>
+              <tr><td><a href="sp.php?s=8">Ohne Klasse</a></td><td>4.000</td><td>6</td></tr>
+            </table>
+        """.trimIndent()
+
+        val vertraege = repo.parseVertraege(html)
+
+        assertEquals(
+            com.onlinesoccer.app.data.model.SpielerPosition.OMI,
+            vertraege.first { it.pid == 9L }.position,
+        )
+        assertEquals(
+            "Ohne CSS-Klasse -> Amateur",
+            com.onlinesoccer.app.data.model.SpielerPosition.AMATEUR,
+            vertraege.first { it.pid == 8L }.position,
+        )
     }
 }

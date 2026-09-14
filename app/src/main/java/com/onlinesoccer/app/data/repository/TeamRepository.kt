@@ -11,6 +11,10 @@ import com.onlinesoccer.app.data.model.AktionsOption
 import com.onlinesoccer.app.data.model.AktionZeile
 import com.onlinesoccer.app.data.model.FremdesTeam
 import com.onlinesoccer.app.data.model.KaderSpieler
+import com.onlinesoccer.app.data.model.LeihhistorieEintrag
+import com.onlinesoccer.app.data.model.SaisonhistorieEintrag
+import com.onlinesoccer.app.data.model.SaisonplanDaten
+import com.onlinesoccer.app.data.model.SaisonplanEintrag
 import com.onlinesoccer.app.data.model.SeitenAnsicht
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
 import com.onlinesoccer.app.data.model.SpielerKarte
@@ -18,8 +22,11 @@ import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.data.model.StaerkeZeile
 import com.onlinesoccer.app.data.model.StatistikZeile
 import com.onlinesoccer.app.data.model.Teaminfo
+import com.onlinesoccer.app.data.model.TeamInfoMenuEintrag
+import com.onlinesoccer.app.data.model.TransferhistorieBlock
 import com.onlinesoccer.app.data.model.UebersichtAbschnitt
 import com.onlinesoccer.app.data.model.UebersichtZeile
+import com.onlinesoccer.app.data.model.VereinshistorieEintrag
 import com.onlinesoccer.app.data.model.VertragZeile
 import java.io.IOException
 import javax.inject.Inject
@@ -104,7 +111,7 @@ class TeamRepository @Inject constructor(
                 pid = pid,
                 name = nameEl.text().orEmpty(),
                 nummer = zellen.getOrNull(iNr)?.text().orEmpty(),
-                alter = zellen.getOrNull(iAlter)?.text()?.toIntOrNull() ?: 0,
+                alter = zellen.getOrNull(iAlter)?.text()?.toIntOrNull()?.takeIf { it in 15..60 },
                 position = position,
                 skill = zellen.getOrNull(iSkill)?.text()?.replace(",", ".")?.toDoubleOrNull() ?: 0.0,
                 opti = zellen.getOrNull(iOpti)?.text()?.replace(",", ".")?.toDoubleOrNull() ?: 0.0,
@@ -131,14 +138,18 @@ class TeamRepository @Inject constructor(
 
     /** Positionscode aus dem Text der „Pos“-Spalte (z. B. „TOR“, „ABW“, „STU“). */
     private fun positionFromText(text: String): SpielerPosition? = when (text.trim().uppercase()) {
-        "TOR" -> SpielerPosition.TOR
+        "TW", "TOR" -> SpielerPosition.TOR
         "ABW" -> SpielerPosition.ABW
         "DMI" -> SpielerPosition.DMI
-        "MIT" -> SpielerPosition.MIT
+        "MIT", "MF" -> SpielerPosition.MIT
         "OMI" -> SpielerPosition.OMI
-        "STU" -> SpielerPosition.STU
+        "STU", "ST" -> SpielerPosition.STU
         else -> null
     }
+
+    /** Erste Zelle einer Zeile, die einen Positionscode enthält (Fallback-Spalte „Pos“). */
+    private fun positionAusZellen(zellen: List<String>): SpielerPosition? =
+        zellen.firstNotNullOfOrNull { positionFromText(it) }
 
     private fun positionFromClass(classes: String): SpielerPosition = when {
         classes.contains("tor", ignoreCase = true) -> SpielerPosition.TOR
@@ -679,6 +690,20 @@ class TeamRepository @Inject constructor(
         val doc = Jsoup.parse(html)
         val abschnitte = mutableListOf<UebersichtAbschnitt>()
 
+        val laufenderAusbau = doc.selectFirst("p.tor")
+        if (laufenderAusbau != null) {
+            val headline = laufenderAusbau.text().trim().removeSuffix(":")
+            val details = mutableListOf<String>()
+            if (headline.isNotEmpty()) details += headline
+            var sibling = laufenderAusbau.nextElementSibling()
+            while (sibling != null && sibling.tagName() == "p") {
+                val text = sibling.text().trim()
+                if (text.isNotEmpty()) details += text
+                sibling = sibling.nextElementSibling()
+            }
+            abschnitte += UebersichtAbschnitt(titel = TITEL_LAUFENDER_AUSBAU, punkte = details)
+        }
+
         val zustand = doc.selectFirst("table")?.select("tr")?.mapNotNull { tr ->
             val zellen = tr.select("td").map { it.text().replace('\u00a0', ' ').trim() }.filter { it.isNotEmpty() }
             if (zellen.size < 2) return@mapNotNull null
@@ -854,7 +879,7 @@ class TeamRepository @Inject constructor(
         val zeilen = kader.map { spieler ->
             UebersichtZeile(
                 ueberschrift = spieler.name,
-                untertitel = "${positionsName(spieler.position)} · ${spieler.alter} Jahre · Nr. ${spieler.nummer}",
+                untertitel = "${positionsName(spieler.position)} · ${spieler.alter?.let { "$it Jahre" } ?: "Alter k. A."} · Nr. ${spieler.nummer}",
                 werte = listOf(
                     "Skill" to spieler.skill.skillText(),
                     "Opti" to spieler.opti.skillText(),
@@ -956,6 +981,7 @@ class TeamRepository @Inject constructor(
             VertragZeile(
                 pid = pid,
                 name = zeile.name ?: "",
+                position = zeile.position ?: positionAusZellen(zeile.zellen) ?: SpielerPosition.AMATEUR,
                 gehalt = tabelle.wert(zeile, "gehalt"),
                 laufzeit = tabelle.wert(zeile, "lauf") ?: tabelle.wert(zeile, "vertrag"),
                 marktwert = tabelle.wert(zeile, "marktwert")
@@ -979,49 +1005,406 @@ class TeamRepository @Inject constructor(
                     put(kopf, wert)
                 }
             }
-            StaerkeZeile(pid = pid, name = zeile.name ?: "", werte = werte)
+            StaerkeZeile(
+                pid = pid,
+                name = zeile.name ?: "",
+                position = zeile.position ?: positionAusZellen(zeile.zellen) ?: SpielerPosition.AMATEUR,
+                werte = werte,
+            )
         }
     }
 
     internal fun parseStatistik(html: String): List<StatistikZeile> {
-        val tabelle = com.onlinesoccer.app.core.network.HtmlTools.hauptTabelle(html) ?: return emptyList()
-        if (tabelle.header.isEmpty()) return emptyList()
-        return tabelle.zeilen.mapNotNull { zeile ->
-            val pid = zeile.pid ?: return@mapNotNull null
+        val doc = Jsoup.parse(html)
+        val tabelle = doc.select("table").maxByOrNull { it.select("tr").size } ?: return emptyList()
+        val rows = tabelle.select("tr").filter { it.select("td,th").isNotEmpty() }
+        if (rows.size < 3) return emptyList()
+
+        // Statistik (`s=3`/`s=4`) hat eine zweizeilige Kopfzeile: Gruppen („Spiele“,
+        // „Tore“, …) mit colspan über den Unter-Spalten LI/LP/IP/FS. In der App werden
+        // nur die kombinierte Spaltennamen gezeigt (z. B. „Tore/LI“); die Meta-Spalten
+        // Name/Land/U werden ausgelassen, da der Spielername separat angezeigt wird.
+        val kopfZweizeilig = statistikKopfzeilen(rows[0], rows[1])
+        val kopf = kopfZweizeilig ?: rows[0].select("td,th").map { it.text().trim() }
+
+        return rows.drop(if (kopfZweizeilig != null) 2 else 1).mapNotNull { tr ->
+            val zellen = tr.select("td").map { it.text().trim() }
+            if (zellen.size < 2) return@mapNotNull null
+            val link = tr.selectFirst("td a[href*='sp.php'], td a[href*='st.php']")
+            val pid = link?.attr("href")?.let {
+                Regex("[?&]s=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull()
+            } ?: return@mapNotNull null
+            val name = link?.text() ?: zellen.firstOrNull().orEmpty()
+            val position = if (link != null) {
+                val ausKlasse = positionFromClass(link.parent()?.className().orEmpty())
+                if (ausKlasse != SpielerPosition.AMATEUR) ausKlasse
+                else positionAusZellen(zellen) ?: SpielerPosition.AMATEUR
+            } else {
+                SpielerPosition.AMATEUR
+            }
             val werte = buildMap {
-                for (ih in tabelle.header.indices) {
-                    val wert = zeile.zellen.getOrNull(ih)?.takeIf { it.isNotBlank() } ?: continue
-                    put(tabelle.header[ih], wert)
+                for (ih in kopf.indices) {
+                    val spaltenname = kopf[ih]
+                    if (spaltenname.isBlank()) continue
+                    val wert = zellen.getOrNull(ih)?.takeIf { it.isNotBlank() } ?: continue
+                    put(spaltenname, wert)
                 }
             }
-            StatistikZeile(pid = pid, name = zeile.name ?: "", werte = werte)
+            StatistikZeile(pid = pid, name = name, position = position, werte = werte)
         }
     }
+
+    /** Kombiniert Zeile 1 (Gruppen, `colspan`) + Zeile 2 (Unter-Spalten) zu Spaltentiteln. */
+    private fun statistikKopfzeilen(gruppenZeile: Element, spaltenZeile: Element): List<String>? {
+        val gruppenZellen = gruppenZeile.select("td,th")
+        val spaltenZellen = spaltenZeile.select("td,th")
+        val istZweizeilig = gruppenZellen.any { (it.attr("colspan").toIntOrNull() ?: 1) > 1 } &&
+            spaltenZellen.size > gruppenZellen.size
+        if (!istZweizeilig) return null
+
+        fun expand(zellen: org.jsoup.select.Elements): List<String> = zellen.flatMap { zelle ->
+            val span = zelle.attr("colspan").toIntOrNull() ?: 1
+            List(span) { zelle.text().trim() }
+        }
+        val gruppen = expand(gruppenZellen)
+        val spalten = expand(spaltenZellen)
+        val meta = setOf("name", "land", "u")
+        return (0 until maxOf(gruppen.size, spalten.size)).map { i ->
+            val gruppe = gruppen.getOrElse(i) { "" }
+            val spalte = spalten.getOrElse(i) { "" }
+            when {
+                gruppe.lowercase() in meta || spalte.lowercase() in meta -> ""
+                gruppe.isBlank() && spalte.isBlank() -> ""
+                gruppe.isBlank() -> spalte
+                spalte.isBlank() -> gruppe
+                else -> "$gruppe/$spalte"
+            }
+        }
+    }
+
+    /** Nur diese Felder der Teaminfo/Stadion-Seite (`s=5`) werden angezeigt. */
+    private val teaminfoErlaubt = setOf(
+        "teamname", "stadiongrösse", "stadionname", "sitzplätze", "davon überdacht",
+        "stehplätze", "anzeigetafel", "rasenheizung", "summe marktwert",
+        "schnitt marktwert", "summe gehalt", "schnitt gehalt",
+    )
 
     internal fun parseTeaminfo(html: String): Teaminfo {
         val doc = Jsoup.parse(html)
         val zeilen = mutableListOf<Pair<String, String>>()
+        // Jede Zeile hat bis zu vier Zellen: Label, Wert, Label, Wert. Die Zellen werden
+        // paarweise (Label->Wert) kombiniert statt des bisherigen Zusammenklebens.
         doc.select("table").forEach { tabelle ->
             tabelle.select("tr").forEach { tr ->
                 val zellen = tr.select("td,th").map { it.text().trim() }.filter { it.isNotEmpty() }
-                if (zellen.size >= 2) {
-                    val label = zellen[0].removeSuffix(":").trim()
-                    val wert = zellen.drop(1).joinToString(" ").trim()
-                    if (label.isNotEmpty() && wert.isNotEmpty()) {
+                var i = 0
+                while (i < zellen.size) {
+                    val label = zellen[i].removeSuffix(":").trim()
+                    val wert = zellen.getOrNull(i + 1)?.trim().orEmpty()
+                    if (label.isNotEmpty() && wert.isNotEmpty() &&
+                        label.lowercase() in teaminfoErlaubt
+                    ) {
                         zeilen += label to wert
+                    }
+                    i += 2
+                }
+            }
+        }
+        return Teaminfo(zeilen)
+    }
+
+    /**
+     * Menüstruktur der „Teaminformationen" (`showteam.php`): die Unterpunkte im
+     * Kopfbereich werden dynamisch aus den `a[hspace=20]`-Links gelesen, sodass
+     * Änderungen der Website ohne Code-Anpassung übernommen werden.
+     */
+    internal fun parseTeaminformationenMenu(html: String): List<TeamInfoMenuEintrag> {
+        val doc = Jsoup.parse(html)
+        val links = doc.select("a[hspace=20]")
+        return links.mapNotNull { a ->
+            val href = a.attr("href").trim()
+            val label = a.text().trim()
+            if (href.isEmpty() || label.isEmpty()) return@mapNotNull null
+            val showteamS = if (href.startsWith("showteam.php", ignoreCase = true)) {
+                Regex("[?&]s=(\\d+)").find(href)?.groupValues?.get(1)
+            } else {
+                null
+            }
+            val tabellenplatzTeamId = if (href.contains("tabellenplatz", ignoreCase = true)) {
+                Regex("tabellenplatz\\((\\d+)\\)").find(href)?.groupValues?.get(1)?.toLongOrNull()
+            } else {
+                null
+            }
+            TeamInfoMenuEintrag(
+                label = label,
+                path = href,
+                showteamS = showteamS,
+                tabellenplatzTeamId = tabellenplatzTeamId,
+            )
+        // „Teamübersicht" (s=0) ist als „Mannschaft" in den Team-Bereich verschoben und
+        // „Tabellenplätze" (tabellenplatz(#teamId)) wird nicht mehr im Menü angezeigt.
+        }.filterNot { it.showteamS == "0" || it.tabellenplatzTeamId != null }
+        .distinctBy { it.label }
+    }
+
+    suspend fun ladeTeaminformationenMenu(): List<TeamInfoMenuEintrag> = withContext(Dispatchers.IO) {
+        safeGet("${OsApi.BASE_URL}/showteam.php?s=0")?.let { parseTeaminformationenMenu(it) }.orEmpty()
+    }
+
+    /** Saisonplan (`showteam.php?s=6`), optional für eine gewählte Saison. */
+    suspend fun ladeSaisonplan(saison: Int? = null): SaisonplanDaten = withContext(Dispatchers.IO) {
+        val url = if (saison != null) {
+            "${OsApi.BASE_URL}/showteam.php?s=6&saison=$saison"
+        } else {
+            "${OsApi.BASE_URL}/showteam.php?s=6"
+        }
+        safeGet(url)?.let { parseSaisonplan(it) } ?: SaisonplanDaten()
+    }
+
+    internal fun parseSaisonplan(html: String): SaisonplanDaten {
+        val doc = Jsoup.parse(html)
+        val saisons = doc.select("select[name='saison'] option")
+            .mapNotNull { it.attr("value").toIntOrNull() }
+            .distinct()
+            .sortedDescending()
+        val gewaehlte = doc.select("select[name='saison'] option[selected]")
+            .firstOrNull()?.attr("value")?.toIntOrNull()
+            ?: saisons.firstOrNull()
+        val tabelle = doc.select("table").firstOrNull { t ->
+            val kopf = t.select("tr").firstOrNull()?.select("td,th")?.map { it.text().trim() }.orEmpty()
+            kopf.any { it.equals("Gegner", true) } && kopf.any { it.equals("ZAT", true) }
+        } ?: doc.select("table").maxByOrNull { it.select("tr").size }
+            ?: return SaisonplanDaten(saisons, gewaehlte, emptyList())
+        val kopf = tabelle.select("tr").firstOrNull()?.select("td,th")?.map { it.text().trim() }.orEmpty()
+        val iZat = kopf.indexOfFirst { it.equals("ZAT", true) }
+        val iArt = kopf.indexOfFirst { it.equals("Spielart", true) }
+        val iGegner = kopf.indexOfFirst { it.equals("Gegner", true) }
+        val iErgebnis = kopf.indexOfFirst { it.equals("Ergebnis", true) }
+        val iBericht = kopf.indexOfFirst { it.equals("Bericht", true) }
+        val eintraege = tabelle.select("tr").drop(1).mapNotNull { tr ->
+            val zellen = tr.select("td")
+            val zat = zellen.getOrNull(iZat)?.text()?.trim().orEmpty()
+            if (zat.toIntOrNull() == null) return@mapNotNull null
+            val gegner = zellen.getOrNull(iGegner)?.text()?.trim().orEmpty()
+            if (gegner.isEmpty()) return@mapNotNull null
+            val gegnerTeamId = zellen.getOrNull(iGegner)?.selectFirst("a[href*='st.php']")
+                ?.attr("href")?.let { Regex("[?&]c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+            val berichtUrl = when {
+                iBericht < 0 -> null
+                else -> zellen.getOrNull(iBericht)?.selectFirst("a")?.attr("href")?.let { href ->
+                    if (href.startsWith("javascript:os_bericht")) {
+                        Regex("os_bericht\\(([^)]+)\\)").find(href)?.groupValues?.get(1)
+                    } else {
+                        null
                     }
                 }
             }
+            SaisonplanEintrag(
+                zat = zat,
+                spielart = zellen.getOrNull(iArt)?.text()?.trim().orEmpty(),
+                gegner = gegner,
+                ergebnis = zellen.getOrNull(iErgebnis)?.text()?.trim().orEmpty(),
+                berichtUrl = berichtUrl,
+                gegnerTeamId = gegnerTeamId,
+            )
         }
-        if (zeilen.isEmpty()) {
-            doc.body()?.text()?.lineSequence()?.forEach { line ->
-                val teile = line.split(":", limit = 2)
-                if (teile.size == 2 && teile[0].trim().length in 3..40) {
-                    zeilen += teile[0].trim() to teile[1].trim()
-                }
+        return SaisonplanDaten(saisons, gewaehlte, eintraege)
+    }
+
+    /** Vereinshistorie (`showteam.php?s=7`): Spielerentwicklung je ZAT. */
+    suspend fun ladeVereinshistorie(): List<VereinshistorieEintrag> = withContext(Dispatchers.IO) {
+        safeGet("${OsApi.BASE_URL}/showteam.php?s=7")?.let { parseVereinshistorie(it) }.orEmpty()
+    }
+
+    internal fun parseVereinshistorie(html: String): List<VereinshistorieEintrag> {
+        val doc = Jsoup.parse(html)
+        val tabelle = doc.select("table").firstOrNull { it.text().contains("∑Spieler") }
+            ?: doc.select("table").maxByOrNull { it.select("tr").size }
+            ?: return emptyList()
+        val zeilen = mutableListOf<VereinshistorieEintrag>()
+        var header = tabelle.select("tr").firstOrNull()?.select("td,th")?.map { it.text().trim() }.orEmpty()
+        if (header.size < 5) {
+            val erste = doc.select("tr").firstOrNull { it.select("td,th").size >= 8 }
+                ?.select("td,th")?.map { it.text().trim() }.orEmpty()
+            if (erste.isNotEmpty()) header = erste
+        }
+        fun spalte(label: String) = header.indexOfFirst { it.contains(label, ignoreCase = true) }
+        val iSaison = spalte("Saison")
+        val iZat = spalte("ZAT")
+        val iSp = spalte("Spieler")
+        val iSkill = spalte("Skill")
+        val iOpti = spalte("Opti")
+        val iAlter = spalte("Alter")
+        val iAvgMw = header.indexOfFirst { it.contains("MW") && !it.contains("∑") && it.contains("∅") }
+            .takeIf { it >= 0 }
+        val iSumMw = header.indexOfFirst { it.contains("∑MW") || it.contains("Summe MW") }
+            .takeIf { it >= 0 }
+        val iAvgGehalt = header.indexOfFirst { it.contains("Gehalt") && !it.contains("∑") && it.contains("∅") }
+            .takeIf { it >= 0 }
+        val iSumGehalt = header.indexOfFirst { it.contains("∑Gehalt") || it.contains("Summe Gehalt") }
+            .takeIf { it >= 0 }
+        val iManager = spalte("Manager")
+
+        tabelle.select("tr").drop(1).forEach { tr ->
+            val zellen = tr.select("td").map { it.text().trim() }
+            if (zellen.size < 4) return@forEach
+            val saison = zellen.getOrNull(iSaison)?.takeIf { it.isNotBlank() }
+                ?: return@forEach
+            if (saison == header.firstOrNull() && zellen.all { it.isBlank() }) return@forEach
+            zeilen += VereinshistorieEintrag(
+                saison = saison,
+                zat = zellen.getOrNull(iZat).orEmpty(),
+                spielerAnzahl = zellen.getOrNull(iSp).orEmpty(),
+                avgSkill = zellen.getOrNull(iSkill).orEmpty(),
+                avgOpti = zellen.getOrNull(iOpti).orEmpty(),
+                avgAlter = zellen.getOrNull(iAlter).orEmpty(),
+                avgMW = iAvgMw?.let { zellen.getOrNull(it) }.orEmpty(),
+                sumMW = iSumMw?.let { zellen.getOrNull(it) }.orEmpty(),
+                avgGehalt = iAvgGehalt?.let { zellen.getOrNull(it) }.orEmpty(),
+                sumGehalt = iSumGehalt?.let { zellen.getOrNull(it) }.orEmpty(),
+                manager = zellen.getOrNull(iManager).orEmpty(),
+            )
+        }
+        return zeilen
+    }
+
+    /** Transferhistorie (`showteam.php?s=8`): Blöcke je Transfer/VM-Kauf. */
+    suspend fun ladeTransferhistorie(): List<TransferhistorieBlock> = withContext(Dispatchers.IO) {
+        safeGet("${OsApi.BASE_URL}/showteam.php?s=8")?.let { parseTransferhistorie(it) }.orEmpty()
+    }
+
+    internal fun parseTransferhistorie(html: String): List<TransferhistorieBlock> {
+        val doc = Jsoup.parse(html)
+        return doc.select("table > tbody > tr").mapNotNull { tr ->
+            val inner = tr.selectFirst("table[width='100%']") ?: return@mapNotNull null
+            val zellen = inner.select("td")
+            if (zellen.size < 4) return@mapNotNull null
+            val datum = zellen.getOrNull(0)?.text()?.trim().orEmpty()
+            val team1 = zellen.getOrNull(1)?.text()?.trim().orEmpty()
+            val team2 = zellen.getOrNull(2)?.text()?.trim().orEmpty()
+            if (datum.isEmpty() && team1.isEmpty()) return@mapNotNull null
+            val team1Id = zellen.getOrNull(1)?.selectFirst("a[href*='st.php']")
+                ?.attr("href")?.let { Regex("[?&]c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                ?.takeIf { it > 0 }
+            val team2Id = zellen.getOrNull(2)?.selectFirst("a[href*='st.php']")
+                ?.attr("href")?.let { Regex("[?&]c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                ?.takeIf { it > 0 }
+            val details = zellen.drop(3).mapNotNull { td ->
+                val text = td.text().trim().replace("\u00a0", " ")
+                text.takeIf { it.isNotBlank() && it != "&nbsp;" }
             }
+            TransferhistorieBlock(
+                datum = datum,
+                team1 = team1,
+                team2 = team2,
+                team1Id = team1Id,
+                team2Id = team2Id,
+                details = details,
+            )
         }
-        return Teaminfo(zeilen.distinctBy { it.first }.toList())
+    }
+
+    /** Leihhistorie (`showteam.php?s=9`): Tabelle aller Leihen. */
+    suspend fun ladeLeihhistorie(): List<LeihhistorieEintrag> = withContext(Dispatchers.IO) {
+        safeGet("${OsApi.BASE_URL}/showteam.php?s=9")?.let { parseLeihhistorie(it) }.orEmpty()
+    }
+
+    internal fun parseLeihhistorie(html: String): List<LeihhistorieEintrag> {
+        val doc = Jsoup.parse(html)
+        val tabelle = doc.select("table#leihe").firstOrNull()
+            ?: doc.select("table").maxByOrNull { it.select("tr").size }
+            ?: return emptyList()
+        val kopfTds = tabelle.select("tr").firstOrNull()?.select("td,th")?.toList().orEmpty()
+
+        // Spaltenindex im Body anhand kumulativer colspan (Header „Zahlung/Abrechnung" spannt 2 Spalten).
+        fun spaltenIndex(label: String): Int {
+            var index = 0
+            for (td in kopfTds) {
+                if (td.text().trim().contains(label, ignoreCase = true)) return index
+                index += td.attr("colspan").takeIf { it.isNotBlank() }?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            }
+            return -1
+        }
+
+        val iDatum = spaltenIndex("Datum")
+        val iSpieler = spaltenIndex("Spieler")
+        val iVon = spaltenIndex("Von")
+        val iZu = spaltenIndex("Zu")
+        val iZahlung = spaltenIndex("Zahlung")
+        val iDauer = spaltenIndex("Dauer")
+        return tabelle.select("tr").drop(1).mapNotNull { tr ->
+            val zellen = tr.select("td").map { it.text().trim() }
+            if (zellen.size < 5) return@mapNotNull null
+            val datum = zellen.getOrNull(iDatum).orEmpty()
+            val spieler = zellen.getOrNull(iSpieler).orEmpty()
+            if (datum.isEmpty() && spieler.isEmpty()) return@mapNotNull null
+            val pid = tr.selectFirst("a[href*='sp.php']")?.attr("href")
+                ?.let { Regex("[?&]s=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+            val zahlung = if (zellen.getOrNull(iZahlung).isNullOrBlank()) {
+                ""
+            } else {
+                val betrag = zellen.getOrNull(iZahlung).orEmpty()
+                val euro = zellen.getOrNull(iZahlung + 1)?.equals("Euro", true) == true
+                if (euro) "$betrag Euro" else betrag
+            }
+            LeihhistorieEintrag(
+                datum = datum,
+                spieler = spieler,
+                spielerPid = pid,
+                von = zellen.getOrNull(iVon).orEmpty(),
+                zu = zellen.getOrNull(iZu).orEmpty(),
+                zahlung = zahlung,
+                dauer = zellen.getOrNull(iDauer).orEmpty(),
+            )
+        }
+    }
+
+    /** Saisonhistorie (`showteam.php?s=10`): Liga/Tabelle/Pokal/OSE/OSC je Saison. */
+    suspend fun ladeSaisonhistorie(): List<SaisonhistorieEintrag> = withContext(Dispatchers.IO) {
+        safeGet("${OsApi.BASE_URL}/showteam.php?s=10")?.let { parseSaisonhistorie(it) }.orEmpty()
+    }
+
+    internal fun parseSaisonhistorie(html: String): List<SaisonhistorieEintrag> {
+        val doc = Jsoup.parse(html)
+        val tabelle = doc.select("table").firstOrNull { t ->
+            val kopf = t.select("tr").firstOrNull()?.select("td,th")?.map { it.text().trim() }.orEmpty()
+            kopf.any { it.equals("Saison", true) } && kopf.any { it.equals("Liga", true) }
+        } ?: doc.select("table").maxByOrNull { it.select("tr").size }
+            ?: return emptyList()
+        val kopf = tabelle.select("tr").firstOrNull()?.select("td,th")?.map { it.text().trim() }.orEmpty()
+        fun spalte(label: String) = kopf.indexOfFirst { it.contains(label, ignoreCase = true) }
+        val iSaison = spalte("Saison")
+        val iLiga = spalte("Liga")
+        val iTabelle = spalte("Tabelle")
+        val iPokal = spalte("Pokal")
+        val iOse = spalte("OSE")
+        val iOsc = spalte("OSC")
+        return tabelle.select("tr").drop(1).mapNotNull { tr ->
+            val zellen = tr.select("td").map { it.text().trim() }
+            if (zellen.size < 4) return@mapNotNull null
+            val saison = zellen.getOrNull(iSaison).orEmpty()
+            if (saison.isEmpty()) return@mapNotNull null
+            SaisonhistorieEintrag(
+                saison = saison,
+                liga = zellen.getOrNull(iLiga).orEmpty(),
+                tabelle = zellen.getOrNull(iTabelle).orEmpty(),
+                pokal = zellen.getOrNull(iPokal).orEmpty(),
+                ose = zellen.getOrNull(iOse).orEmpty(),
+                osc = zellen.getOrNull(iOsc).orEmpty(),
+            )
+        }
+    }
+
+    /** Tabellenplatz-Bild (`tabellenplatz.php?t=<teamId>`) als Byte-Array. */
+    suspend fun ladeTabellenplatzBild(teamId: Long): ByteArray? = withContext(Dispatchers.IO) {
+        val url = "${OsApi.BASE_URL}/tabellenplatz.php?t=$teamId"
+        try {
+            client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                response.body?.bytes()
+            }
+        } catch (e: IOException) {
+            null
+        }
     }
 
     internal data class SpielerProfil(
@@ -1122,6 +1505,7 @@ class TeamRepository @Inject constructor(
         const val TITEL_TRAINER = "Trainer"
         const val TITEL_VT = "Verträge verlängern"
         const val TITEL_STADION = "Stadionausbau"
+        const val TITEL_LAUFENDER_AUSBAU = "Laufender Stadionausbau"
         const val TITEL_KONTO = "Kontoauszug"
         const val TITEL_STEUER = "Steuerübersicht"
         const val TITEL_TEAM = "Teamübersicht"

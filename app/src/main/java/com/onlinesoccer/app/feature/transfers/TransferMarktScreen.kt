@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,10 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT
-import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT_AKZENT
-import com.onlinesoccer.app.core.ui.theme.KACHEL_TEXT_SEKUNDAER
-import com.onlinesoccer.app.core.ui.theme.positionsKachelFarbe
+import com.onlinesoccer.app.core.ui.theme.PositionsBadge
 import com.onlinesoccer.app.data.model.TransferMarktEintrag
 import com.onlinesoccer.app.feature.server.FehlerBox
 
@@ -148,7 +144,6 @@ private fun TransferMarktKarte(
 ) {
     Card(
         Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = positionsKachelFarbe(eintrag.position)),
     ) {
         Column(
             Modifier
@@ -156,20 +151,26 @@ private fun TransferMarktKarte(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(
-                eintrag.name,
-                Modifier.clickable { onSpielerClick(eintrag.spielerId) },
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = KACHEL_TEXT,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PositionsBadge(eintrag.position)
+                Spacer(Modifier.padding(start = 8.dp))
+                Text(
+                    eintrag.name,
+                    Modifier
+                        .weight(1f)
+                        .clickable { onSpielerClick(eintrag.spielerId) },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
 
             val kern = listOf(eintrag.alter, eintrag.position, eintrag.land).filter { it.isNotBlank() }
             if (kern.isNotEmpty()) {
                 Text(
                     kern.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT_SEKUNDAER,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
@@ -181,7 +182,7 @@ private fun TransferMarktKarte(
                 Text(
                     skillZeilen.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
@@ -192,21 +193,21 @@ private fun TransferMarktKarte(
                             eintrag.dauer.takeIf { it.isNotBlank() }?.let { "bis $it" }).joinToString(" · ")
                     }",
                     style = MaterialTheme.typography.bodySmall,
-                    color = KACHEL_TEXT,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (eintrag.bieterTeamId != null) {
                     Text(
                         "von " + eintrag.bieter,
                         Modifier.clickable { eintrag.bieterTeamId?.let(onTeamClick) },
                         style = MaterialTheme.typography.bodySmall,
-                        color = KACHEL_TEXT_AKZENT,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium,
                     )
                 } else {
                     Text(
                         eintrag.bieter,
                         style = MaterialTheme.typography.bodySmall,
-                        color = KACHEL_TEXT_SEKUNDAER,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
@@ -219,7 +220,7 @@ private fun TransferMarktKarte(
                     Text(
                         basis.joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
-                        color = KACHEL_TEXT_SEKUNDAER,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

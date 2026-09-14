@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -75,21 +77,27 @@ internal fun TransferFilterPanel(
             }
 
             if (offen) {
-                filter.forEach { kategorie ->
-                    FilterDropdown(
-                        kategorie = kategorie,
-                        aktiverWert = wahl[kategorie.name] ?: "0",
-                        onWaehlen = onFilterWaehlen,
-                    )
-                }
-                Spacer(Modifier.height(6.dp))
-                FilledTonalButton(
-                    onClick = onAnzeigen,
-                    modifier = Modifier.fillMaxWidth(),
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
-                    Text(anzeigenLabel)
+                    filter.forEach { kategorie ->
+                        FilterDropdown(
+                            kategorie = kategorie,
+                            aktiverWert = wahl[kategorie.name] ?: "0",
+                            onWaehlen = onFilterWaehlen,
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    FilledTonalButton(
+                        onClick = onAnzeigen,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                        Spacer(Modifier.width(6.dp))
+                        Text(anzeigenLabel)
+                    }
                 }
             }
         }

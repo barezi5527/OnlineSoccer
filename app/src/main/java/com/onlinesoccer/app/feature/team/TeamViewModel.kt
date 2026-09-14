@@ -3,10 +3,15 @@ package com.onlinesoccer.app.feature.team
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.onlinesoccer.app.data.model.KaderSpieler
+import com.onlinesoccer.app.data.model.LeihhistorieEintrag
+import com.onlinesoccer.app.data.model.SaisonhistorieEintrag
+import com.onlinesoccer.app.data.model.SaisonplanDaten
 import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.data.model.StaerkeZeile
 import com.onlinesoccer.app.data.model.StatistikZeile
 import com.onlinesoccer.app.data.model.Teaminfo
+import com.onlinesoccer.app.data.model.TransferhistorieBlock
+import com.onlinesoccer.app.data.model.VereinshistorieEintrag
 import com.onlinesoccer.app.data.model.VertragZeile
 import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +36,14 @@ data class TeamUiState(
     val statistik: List<StatistikZeile>? = null,
     val statistikGesamt: Boolean = false,
     val teaminfo: Teaminfo? = null,
+    // „Teaminformationen"-Weiterführende Inhalte
+    val saisonplan: SaisonplanDaten? = null,
+    val vereinshistorie: List<VereinshistorieEintrag>? = null,
+    val transferhistorie: List<TransferhistorieBlock>? = null,
+    val leihhistorie: List<LeihhistorieEintrag>? = null,
+    val saisonhistorie: List<SaisonhistorieEintrag>? = null,
+    val tabellenplatzBild: ByteArray? = null,
+    val tabellenplatzTeamId: Long? = null,
 ) {
     val gefiltert: List<KaderSpieler>
         get() = kader
@@ -39,7 +52,7 @@ data class TeamUiState(
                 Sortierung.POSITION -> compareBy<KaderSpieler> { it.position.rang }.thenByDescending { it.skill }.thenByDescending { it.opti }
                 Sortierung.SKILL -> compareByDescending<KaderSpieler> { it.skill }.thenByDescending { it.opti }
                 Sortierung.OPTI -> compareByDescending<KaderSpieler> { it.opti }.thenByDescending { it.skill }
-                Sortierung.ALTER -> compareBy<KaderSpieler> { it.alter }
+                Sortierung.ALTER -> compareBy<KaderSpieler> { it.alter ?: Int.MAX_VALUE }
                 Sortierung.NUMMER -> compareBy<KaderSpieler> { it.nummer.toIntOrNull() ?: Int.MAX_VALUE }
             })
 }
@@ -138,6 +151,97 @@ class TeamViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _uiState.value.copy(ladend = false, fehler = e.message ?: "Teaminfo konnte nicht geladen werden.")
+            }
+        }
+    }
+
+    fun ladeSaisonplan(saison: Int? = null) {
+        ladeJob?.cancel()
+        ladeJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = try {
+                _uiState.value.copy(ladend = false, saisonplan = repository.ladeSaisonplan(saison))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, fehler = e.message ?: "Saisonplan konnte nicht geladen werden.")
+            }
+        }
+    }
+
+    fun ladeVereinshistorie() {
+        if (_uiState.value.vereinshistorie != null) return
+        ladeJob?.cancel()
+        ladeJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = try {
+                _uiState.value.copy(ladend = false, vereinshistorie = repository.ladeVereinshistorie())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, fehler = e.message ?: "Vereinshistorie konnte nicht geladen werden.")
+            }
+        }
+    }
+
+    fun ladeTransferhistorie() {
+        if (_uiState.value.transferhistorie != null) return
+        ladeJob?.cancel()
+        ladeJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = try {
+                _uiState.value.copy(ladend = false, transferhistorie = repository.ladeTransferhistorie())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, fehler = e.message ?: "Transferhistorie konnte nicht geladen werden.")
+            }
+        }
+    }
+
+    fun ladeLeihhistorie() {
+        if (_uiState.value.leihhistorie != null) return
+        ladeJob?.cancel()
+        ladeJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = try {
+                _uiState.value.copy(ladend = false, leihhistorie = repository.ladeLeihhistorie())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, fehler = e.message ?: "Leihhistorie konnte nicht geladen werden.")
+            }
+        }
+    }
+
+    fun ladeSaisonhistorie() {
+        if (_uiState.value.saisonhistorie != null) return
+        ladeJob?.cancel()
+        ladeJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = try {
+                _uiState.value.copy(ladend = false, saisonhistorie = repository.ladeSaisonhistorie())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, fehler = e.message ?: "Saisonhistorie konnte nicht geladen werden.")
+            }
+        }
+    }
+
+    fun ladeTabellenplatzBild(teamId: Long) {
+        ladeJob?.cancel()
+        ladeJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null, tabellenplatzTeamId = teamId)
+            _uiState.value = try {
+                _uiState.value.copy(
+                    ladend = false,
+                    tabellenplatzBild = repository.ladeTabellenplatzBild(teamId),
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, fehler = e.message ?: "Tabellenplatz konnte nicht geladen werden.")
             }
         }
     }
