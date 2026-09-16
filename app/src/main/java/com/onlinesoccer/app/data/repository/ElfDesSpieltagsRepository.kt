@@ -13,12 +13,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Elf des Spieltags: ermittelt die eingeloggte Liga dynamisch über die
- * Server-Standardansicht (`ls.php`), lädt alle Spielberichte des gewählten
- * Spieltags, wertet sie lokal aus und cached das Ergebnis je
- * Server/Liga/Saison/Spieltag (plus Nutzer, falls Team-ID bekannt).
+ * Elf des Spieltags: lädt – je nach gewählter Auswahl Land/Liga/Saison/Spieltag –
+ * ausschließlich die Spielberichte dieses einen Spieltags (via `ls.php`), wertet
+ * sie lokal aus und cached das Ergebnis je Server/Liga/Land/Saison/Spieltag
+ * (plus Nutzer, falls Team-ID bekannt). Ohne Auswahl wird die eigene Liga des
+ * angemeldeten Benutzers über die Server-Standardansicht übernommen.
  *
  * Es gibt keinen zentralen Server für die Elf – alles läuft lokal im Gerät.
+ * Andere Ligen oder Spieltage werden nie vorab berechnet.
  */
 @Singleton
 class ElfDesSpieltagsRepository @Inject constructor(
@@ -36,11 +38,24 @@ class ElfDesSpieltagsRepository @Inject constructor(
      * ansicht. Liefert `null`, wenn die Liga nicht ermittelbar ist (z. B. kein
      * Login, Server nicht erreichbar).
      */
-    suspend fun ladeKontext(): ElfKontext? = withContext(Dispatchers.IO) {
-        val spieltag = bewerbeRepository.ladeSpieltag() ?: return@withContext null
-        if (spieltag.liga <= 0 || spieltag.land <= 0 || spieltag.zat <= 0) {
-            return@withContext null
-        }
+    suspend fun ladeKontext(): ElfKontext? =
+        ladeAuswahl()?.takeIf { it.gueltig }
+
+    /**
+     * Lädt die wählbaren Optionen (Länder, Ligen, Saisons, Spieltage) für die
+     * gewünschte Auswahl aus der Server-Spieltagsansicht (`ls.php`). Land/Liga/
+     * Saison sind optional; ohne Angabe liefert der Server die Standardwerte
+     * (eigene Liga) und deren Optionen. Dient dem bedarfsgerechten Aufbau der
+     * Land → Liga → Spieltag-Auswahl, ohne andere Ligen vorab zu berechnen.
+     */
+    suspend fun ladeAuswahl(
+        land: Int? = null,
+        liga: Int? = null,
+        saison: Int? = null,
+    ): ElfKontext? = withContext(Dispatchers.IO) {
+        val spieltag = bewerbeRepository.ladeSpieltag(liga = liga, land = land, saison = saison)
+            ?: return@withContext null
+        if (spieltag.land <= 0) return@withContext null
 
         val teamId = ladeEigeneTeamId()
 
@@ -54,6 +69,9 @@ class ElfDesSpieltagsRepository @Inject constructor(
             saisonLabel = spieltag.saisonOptionen.firstOrNull { it.wert == spieltag.saison }?.label,
             zat = spieltag.zat,
             zatOptionen = spieltag.zatOptionen,
+            landOptionen = spieltag.landOptionen,
+            ligaOptionen = spieltag.ligaOptionen,
+            saisonOptionen = spieltag.saisonOptionen,
         )
     }
 

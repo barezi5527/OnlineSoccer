@@ -5,13 +5,20 @@ Stand: 15.09.2026 · Online‑Soccer Android‑App (`app/`)
 ## Überblick
 
 Die Funktion „Elf des Spieltags" wertet die echten Spielberichte eines Spieltags
-der Liga des angemeldeten Benutzers lokal im Gerät aus und zeigt die
-bestbewerteten Elf auf einem Spielfeld (dynamisch gewählte Formation).
+der gewählten Land/Liga/Saison/Kombination lokal im Gerät aus und zeigt die
+bestbewerteten Elf auf einem Spielfeld (dynamisch gewählte Formation). Die Elf
+wird erst nach der Auswahl Land → Liga → Spieltag für genau diese Kombination
+berechnet; andere Ligen/Spieltage werden nie vorab berechnet.
 
 - **Kein zentraler Server** für die Elf – alles wird aus den öffentlichen
   Spielberichten abgeleitet und transparent bewertet.
-- **Dynamische Liga** aus dem Kontext des Benutzers (`ls.php`-Standardansicht),
-  keine fest hinterlegte Liga im Code.
+- **Freie Land‑Liga‑Auswahl** (Dropdowns) statt fest hinterlegter Liga: Die
+  Optionen kommen bedarfsgerecht aus der Server‑Spieltagsansicht (`ls.php`);
+  ohne Auswahl gilt die eigene Liga des Benutzers (Server‑Standardansicht).
+- **Sauberer Kontext‑Wechsel**: Beim Wechsel von Land/Liga/Saison wird der
+  laufende Ladevorgang abgebrochen, das bisherige Ergebnis sofort verworfen und
+  nur die neue Kombination geladen; der Cache trennt zwingend je
+  Server, Nutzer, Liga, Land, Saison und Spieltag.
 - **Bewertungsskala 1,0–10,0 ohne Normalisierung** – der beste Spieler bekommt
   nicht automatisch 10 Punkte, sondern genau die Note seiner tatsächlich
   berichteten Leistung.

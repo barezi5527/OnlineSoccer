@@ -597,6 +597,155 @@ class ElfDesSpieltagsTest {
     }
 
     @Test
+    fun cache_wechselDerLigaVerwendetNichtErgebnisDerVorherigenLiga() {
+        // „Italien · Liga 1 · Spieltag 2" (landId=4, ligaId=1) …
+        val italienLiga1Spieltag2 = ElfCache.schluessel(teamId = 7, ligaId = 1, landId = 4, saison = 24, zat = 2)
+        // … und „Italien · Liga 2 · Spieltag 2" (ligaId=2) dürfen niemals denselben
+        // Cache-Eintrag verwenden – sonst würde beim Ligawechsel die Elf der
+        // vorherigen Liga aus dem Cache gezeigt.
+        val italienLiga2Spieltag2 = ElfCache.schluessel(teamId = 7, ligaId = 2, landId = 4, saison = 24, zat = 2)
+        assertNotEquals(italienLiga1Spieltag2, italienLiga2Spieltag2)
+    }
+
+    @Test
+    fun cache_schluesselTrenntLigenLaenderUndSpieltage() {
+        // Gleicher Nutzer, gleiches Land, gleiche Saison, gleicher Spieltag –
+        // nur die Liga wechselt: getrennte Schlüssel.
+        val liga1 = ElfCache.schluessel(teamId = 7, ligaId = 1, landId = 4, saison = 24, zat = 2)
+        val liga2 = ElfCache.schluessel(teamId = 7, ligaId = 2, landId = 4, saison = 24, zat = 2)
+        assertNotEquals(liga1, liga2)
+
+        // Auch Land- und Spieltagwechsel trennen; identische Kombination ist identisch.
+        assertNotEquals(liga1, ElfCache.schluessel(teamId = 7, ligaId = 1, landId = 5, saison = 24, zat = 2))
+        assertNotEquals(liga1, ElfCache.schluessel(teamId = 7, ligaId = 1, landId = 4, saison = 24, zat = 3))
+        assertNotEquals(liga1, ElfCache.schluessel(teamId = 7, ligaId = 1, landId = 4, saison = 25, zat = 2))
+        assertEquals(liga1, ElfCache.schluessel(teamId = 7, ligaId = 1, landId = 4, saison = 24, zat = 2))
+    }
+
+    @Test
+    fun ermittlung_funktioniertFuerZweiVerschiedeneLigenUnabhaengig() {
+        // „Italien · Liga 1 · Spieltag 2"
+        val italienLiga1 = elfFuerKombination(
+            land = "Italien",
+            liga = "Liga 1",
+            saison = 24,
+            spieltag = 2,
+            vereinPraefix = "IT1",
+        )
+        // „Italien · Liga 2 · Spieltag 2"
+        val italienLiga2 = elfFuerKombination(
+            land = "Italien",
+            liga = "Liga 2",
+            saison = 24,
+            spieltag = 2,
+            vereinPraefix = "IT2",
+        )
+
+        // Beide Kombinationen werden eigenständig berechnet und sind gültig.
+        assertEquals("Italien", italienLiga1.land)
+        assertEquals("Liga 1", italienLiga1.liga)
+        assertEquals(2, italienLiga1.spieltag)
+        assertEquals("Italien", italienLiga2.land)
+        assertEquals("Liga 2", italienLiga2.liga)
+        assertEquals(2, italienLiga2.spieltag)
+        assertTrue(italienLiga1.spieler.isNotEmpty())
+        assertTrue(italienLiga2.spieler.isNotEmpty())
+        assertEquals(11, italienLiga1.spieler.size)
+        assertEquals(11, italienLiga2.spieler.size)
+        assertTrue(italienLiga1.vollstaendig)
+        assertTrue(italienLiga2.vollstaendig)
+
+        // Die Elf der Liga 2 ist nicht die Elf der Liga 1 (keine Vermischung).
+        val namenLiga1 = italienLiga1.spieler.map { it.name }.toSet()
+        val namenLiga2 = italienLiga2.spieler.map { it.name }.toSet()
+        assertNotEquals(namenLiga1, namenLiga2)
+
+        // Gleiche Kombination ist reproduzierbar (deterministisch, cachebar).
+        val wiederholt = elfFuerKombination(
+            land = "Italien",
+            liga = "Liga 1",
+            saison = 24,
+            spieltag = 2,
+            vereinPraefix = "IT1",
+        )
+        assertEquals(italienLiga1, wiederholt)
+    }
+
+    // ---------- ElfDesSpieltagsTest-Helfer ----------
+
+    /** Baut die Elf ausschließlich aus den Berichten einer Land+Liga+Spieltag-Kombination. */
+    private fun elfFuerKombination(
+        land: String,
+        liga: String,
+        saison: Int,
+        spieltag: Int,
+        vereinPraefix: String,
+    ): ElfErgebnis {
+        val kandidaten = buildList {
+            repeat(3) { i ->
+                val heimId = (1000 + i).toLong()
+                val gastId = (2000 + i).toLong()
+                addAll(
+                    ElfAuswertung.kandidatenAusBericht(
+                        SpielBericht(
+                            saison = saison,
+                            zat = spieltag,
+                            ergebnis = if (i % 2 == 0) "2:1" else "1:0",
+                            heim = "$vereinPraefix Alpha $i",
+                            gast = "$vereinPraefix Beta $i",
+                            heimId = heimId,
+                            gastId = gastId,
+                            heimAufstellung = BerichtAufstellung(
+                                spieler = listOf(
+                                    BerichtSpieler("$vereinPraefix Keeper $i", "T", "Torwart", 15),
+                                    BerichtSpieler("$vereinPraefix Abwehr A $i", "C", "Abwehr", 10),
+                                    BerichtSpieler("$vereinPraefix Abwehr B $i", "D", "Abwehr", 11),
+                                ),
+                            ),
+                            gastAufstellung = BerichtAufstellung(
+                                spieler = listOf(
+                                    BerichtSpieler("$vereinPraefix Stuermer $i", "A", "Sturm", 0),
+                                    BerichtSpieler("$vereinPraefix Mittelfeld $i", "B", "Mittelfeld", 4),
+                                ),
+                            ),
+                            ereignisse = listOf(
+                                BerichtEreignis(
+                                    "10",
+                                    "Neuer Spielstand: 1:0 ($vereinPraefix Stuermer $i)",
+                                    BerichtEreignisTyp.TOR,
+                                ),
+                                BerichtEreignis(
+                                    "40",
+                                    "Neuer Spielstand: 2:0 ($vereinPraefix Mittelfeld $i)",
+                                    BerichtEreignisTyp.TOR,
+                                ),
+                                BerichtEreignis(
+                                    "70",
+                                    "Neuer Spielstand: 2:1 ($vereinPraefix Beta $i)",
+                                    BerichtEreignisTyp.TOR,
+                                ),
+                            ),
+                            url = "test-$land-$liga-$spieltag",
+                        ),
+                    ),
+                )
+            }
+        }
+        val aufstellung = ElfAuswahl.erstelleElf(kandidaten)
+        return ElfErgebnis(
+            land = land,
+            liga = liga,
+            saison = saison,
+            spieltag = spieltag,
+            spieler = aufstellung.spieler,
+            formation = aufstellung.formation,
+            begegnungen = 3,
+            berichteErfolgreich = 3,
+            vollstaendig = aufstellung.vollstaendig,
+        )
+    }
+
+    @Test
     fun cache_roundtripErhaeltErgebnis() {
         val ergebnis = ElfErgebnis(
             land = "Deutschland",

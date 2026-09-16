@@ -20,6 +20,12 @@ data class ElfKontext(
     /** Standard-Spieltag (letzter/aktueller abgeschlossener des Servers). */
     val zat: Int = 0,
     val zatOptionen: List<Int> = emptyList(),
+    /** Wählbare Länder (`landauswahl`) für die Land-Auswahl. */
+    val landOptionen: List<LigaOption> = emptyList(),
+    /** Wählbare Ligen (`ligaauswahl`) für die Liga-Auswahl (abhängig vom Land). */
+    val ligaOptionen: List<LigaOption> = emptyList(),
+    /** Wählbare Saisons (`saauswahl`) für die Saison-Auswahl (abhängig von Land/Liga). */
+    val saisonOptionen: List<LigaOption> = emptyList(),
 ) {
     val gueltig: Boolean get() = ligaId > 0 && landId > 0 && zat > 0
 }

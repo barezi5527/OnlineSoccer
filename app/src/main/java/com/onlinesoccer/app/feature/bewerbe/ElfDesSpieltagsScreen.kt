@@ -78,6 +78,7 @@ import com.onlinesoccer.app.core.ui.theme.PositionsBadge
 import com.onlinesoccer.app.data.model.BewertungsZeile
 import com.onlinesoccer.app.data.model.ElfErgebnis
 import com.onlinesoccer.app.data.model.ElfSpieler
+import com.onlinesoccer.app.data.model.LigaOption
 import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.data.repository.ElfAuswahl
 import com.onlinesoccer.app.data.repository.ElfBewertung
@@ -172,7 +173,7 @@ fun ElfDesSpieltagsAnsicht(
             }
 
             else -> {
-                ElfKopfzeile(uiState, viewModel::waehleZat)
+                ElfKopfzeile(uiState, viewModel::waehleLand, viewModel::waehleLiga, viewModel::waehleZat)
                 when {
                     uiState.ladend -> FortschrittBlock(
                         uiState.ladephase,
@@ -261,46 +262,104 @@ private fun HochformatErzwingen() {
     }
 }
 
-/** Kopfzeile mit Titel, Liga-Kontext und Spieltag-Auswahl. */
+/** Kopfzeile mit Titel, Land-/Liga-/Spieltag-Auswahl und Saison-Kontext. */
 @Composable
 private fun ElfKopfzeile(
     uiState: ElfDesSpieltagsUiState,
+    onLand: (Int) -> Unit,
+    onLiga: (Int) -> Unit,
     onZat: (Int) -> Unit,
 ) {
-    Row(
+    val aktiv = !uiState.ladend
+    Column(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                "⭐ Elf des Spieltags",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            val kontextTeil = buildList {
-                if (uiState.land.isNotBlank()) add(uiState.land)
-                if (uiState.liga.isNotBlank()) add(uiState.liga)
-                if (uiState.saison > 0) add("Saison ${uiState.saison}")
-            }.joinToString(" · ")
-            if (kontextTeil.isNotBlank()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    kontextTeil,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    "⭐ Elf des Spieltags",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                if (uiState.saison > 0) {
+                    Text(
+                        "Saison ${uiState.saison}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            ElfZatAuswahl(
+                zat = uiState.zat,
+                zatOptionen = uiState.zatOptionen,
+                aktiv = aktiv,
+                onZat = onZat,
+            )
+        }
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ElfFilterAuswahl(
+                selected = uiState.landId,
+                optionen = uiState.landOptionen,
+                onSelect = onLand,
+                modifier = Modifier.weight(1f),
+                leerLabel = "Land",
+                aktiv = aktiv,
+            )
+            ElfFilterAuswahl(
+                selected = uiState.ligaId,
+                optionen = uiState.ligaOptionen,
+                onSelect = onLiga,
+                modifier = Modifier.weight(1f),
+                leerLabel = "Liga",
+                aktiv = aktiv,
+            )
+        }
+    }
+}
+
+/** Einheitlicher Land-/Liga-Dropdown der Elf-Auswahl (like Bewerbe `FilterAuswahl`). */
+@Composable
+private fun ElfFilterAuswahl(
+    selected: Int,
+    optionen: List<LigaOption>,
+    onSelect: (Int) -> Unit,
+    aktiv: Boolean,
+    modifier: Modifier = Modifier,
+    leerLabel: String = "Auswahl",
+) {
+    var offen by remember { mutableStateOf(false) }
+    val text = optionen.firstOrNull { it.wert == selected }?.label ?: leerLabel
+    Box(modifier) {
+        OutlinedButton(
+            onClick = { if (aktiv) offen = true },
+            enabled = aktiv,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+            optionen.forEach { opt ->
+                DropdownMenuItem(
+                    text = { Text(opt.label) },
+                    onClick = {
+                        offen = false
+                        if (opt.wert != selected) onSelect(opt.wert)
+                    },
                 )
             }
         }
-        Spacer(Modifier.width(8.dp))
-        ElfZatAuswahl(
-            zat = uiState.zat,
-            zatOptionen = uiState.zatOptionen,
-            aktiv = !uiState.ladend,
-            onZat = onZat,
-        )
     }
 }
 

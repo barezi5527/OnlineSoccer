@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.onlinesoccer.app.data.model.ElfErgebnis
 import com.onlinesoccer.app.data.model.ElfKontext
+import com.onlinesoccer.app.data.model.LigaOption
 import com.onlinesoccer.app.data.repository.ElfDesSpieltagsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -22,11 +23,14 @@ data class ElfDesSpieltagsUiState(
     /** (geprüfte Berichte, Gesamtzahl) während des Ladens. */
     val fortschritt: Pair<Int, Int>? = null,
     val fehler: String? = null,
+    val landId: Int = 0,
+    val landOptionen: List<LigaOption> = emptyList(),
+    val ligaId: Int = 0,
+    val ligaOptionen: List<LigaOption> = emptyList(),
+    val saison: Int = 0,
+    val saisonOptionen: List<LigaOption> = emptyList(),
     val zat: Int = 0,
     val zatOptionen: List<Int> = emptyList(),
-    val land: String = "",
-    val liga: String = "",
-    val saison: Int = 0,
     val ergebnis: ElfErgebnis? = null,
 )
 
@@ -40,13 +44,14 @@ class ElfDesSpieltagsViewModel @Inject constructor(
 
     private var kontext: ElfKontext? = null
     private var elfJob: Job? = null
+    private var auswahlJob: Job? = null
     private var gestartet = false
 
     fun start() {
         if (gestartet) return
         gestartet = true
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(ladend = true, ladephase = "Kontext wird geladen …", fehler = null)
+            _uiState.value = _uiState.value.copy(ladend = true, ladephase = "Auswahl wird geladen …", fehler = null)
             val geladen = try {
                 repository.ladeKontext()
             } catch (e: CancellationException) {
@@ -62,17 +67,38 @@ class ElfDesSpieltagsViewModel @Inject constructor(
                 )
                 return@launch
             }
-            kontext = geladen
-            _uiState.value = _uiState.value.copy(
-                ladend = false,
-                kontextGeladen = true,
-                zat = geladen.zat,
-                zatOptionen = geladen.zatOptionen,
-                land = geladen.landLabel,
-                liga = geladen.ligaLabel,
-                saison = geladen.saison,
-            )
+            übernehmeAuswahl(geladen)
             ermittle(geladen.zat)
+        }
+    }
+
+    fun waehleLand(landId: Int) {
+        if (landId <= 0 || landId == _uiState.value.landId) return
+        wechsleAuswahl { repository.ladeAuswahl(land = landId) }
+    }
+
+    fun waehleLiga(ligaId: Int) {
+        val aktuell = _uiState.value
+        if (ligaId <= 0 || ligaId == aktuell.ligaId) return
+        // Beim Ligawechsel fällt die Saison auf den Server-Standard der neuen Liga.
+        wechsleAuswahl {
+            repository.ladeAuswahl(
+                land = aktuell.landId.takeIf { it > 0 },
+                liga = ligaId,
+                saison = null,
+            )
+        }
+    }
+
+    fun waehleSaison(saison: Int) {
+        val aktuell = _uiState.value
+        if (saison <= 0 || saison == aktuell.saison) return
+        wechsleAuswahl {
+            repository.ladeAuswahl(
+                land = aktuell.landId.takeIf { it > 0 },
+                liga = aktuell.ligaId.takeIf { it > 0 },
+                saison = saison,
+            )
         }
     }
 
@@ -91,6 +117,61 @@ class ElfDesSpieltagsViewModel @Inject constructor(
     fun erneutVersuchen() {
         gestartet = false
         start()
+    }
+
+    /**
+     * Lädt für eine veränderte Land-/Liga-/Saison-Auswahl ausschließlich die
+     * Optionen dieser Auswahl nach und ermittelt erst danach die Elf für genau
+     * diese Kombination. Ergebnis des vorherigen Kontexts wird sofort entfernt.
+     */
+    private fun wechsleAuswahl(laden: suspend () -> ElfKontext?) {
+        auswahlJob?.cancel()
+        elfJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            ladend = true,
+            ladephase = "Auswahl wird geladen …",
+            ergebnis = null,
+            fehler = null,
+        )
+        auswahlJob = viewModelScope.launch {
+            val geladen = try {
+                laden()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+            if (geladen == null) {
+                _uiState.value = _uiState.value.copy(
+                    ladend = false,
+                    ladephase = null,
+                    fehler = "Für diese Auswahl konnten keine Daten geladen werden.",
+                )
+                return@launch
+            }
+            übernehmeAuswahl(geladen)
+            if (geladen.zat > 0) ermittle(geladen.zat)
+        }
+    }
+
+    /** Übernimmt den geladenen Kontext (inkl. Optionen) in den UI-Zustand. */
+    private fun übernehmeAuswahl(k: ElfKontext) {
+        kontext = k
+        _uiState.value = _uiState.value.copy(
+            kontextGeladen = true,
+            ladend = false,
+            ladephase = null,
+            fehler = null,
+            landId = k.landId,
+            landOptionen = k.landOptionen,
+            ligaId = k.ligaId,
+            ligaOptionen = k.ligaOptionen,
+            saison = k.saison,
+            saisonOptionen = k.saisonOptionen,
+            zat = k.zat,
+            zatOptionen = k.zatOptionen,
+            ergebnis = null,
+        )
     }
 
     private fun ermittle(zat: Int) {
@@ -142,6 +223,7 @@ class ElfDesSpieltagsViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        auswahlJob?.cancel()
         elfJob?.cancel()
         super.onCleared()
     }
