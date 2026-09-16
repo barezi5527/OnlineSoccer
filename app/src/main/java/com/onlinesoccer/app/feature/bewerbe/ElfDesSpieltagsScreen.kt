@@ -134,6 +134,7 @@ private const val SO_WURDE_BEWERTET_TEXT =
 fun ElfDesSpieltagsAnsicht(
     onSpielerKarte: (Long) -> Unit = {},
     onVerein: (Long) -> Unit = {},
+    modifier: Modifier = Modifier,
     viewModel: ElfDesSpieltagsViewModel = hiltViewModel(),
 ) {
     // Das Spielfeld braucht genügend Höhe, damit alle Markierungen (Avatar mit
@@ -148,7 +149,7 @@ fun ElfDesSpieltagsAnsicht(
     var detailSpieler by remember { mutableStateOf<ElfSpieler?>(null) }
     var zeigeUebersicht by remember { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize()) {
+    Column(modifier.then(Modifier.fillMaxSize())) {
         when {
             // Kontext (Liga) konnte nicht ermittelt werden.
             uiState.fehler != null && !uiState.kontextGeladen -> {

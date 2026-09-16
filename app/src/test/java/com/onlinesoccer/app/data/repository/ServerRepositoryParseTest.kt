@@ -173,6 +173,60 @@ class ServerRepositoryParseTest {
     }
 
     @Test
+    fun versteigerungsmarkt_formular_liefertFilterOhneEintraege() {
+        val ergebnis = repo.parseVersteigerungsmarkt(dump("viewvm_formular"))
+
+        assertTrue(ergebnis.filter.isNotEmpty())
+        assertTrue("5 Filterfelder", ergebnis.filter.size == 5)
+        assertTrue(ergebnis.eintraege.isEmpty())
+        assertTrue(!ergebnis.gesucht)
+        assertNotNull("Hinweis mit Spieleranzahl", ergebnis.hinweis)
+        assertTrue(ergebnis.hinweis.orEmpty().contains("Versteigerungsmarkt"))
+    }
+
+    @Test
+    fun versteigerungsmarkt_suche_parstEintraegeMitProzentMwUndBieter() {
+        val ergebnis = repo.parseVersteigerungsmarkt(dump("viewvm_suche"))
+
+        assertTrue(ergebnis.gesucht)
+        assertTrue("Einträge vorhanden", ergebnis.eintraege.isNotEmpty())
+
+        val linley = ergebnis.eintraege.first { it.name == "Barry Linley" }
+        assertEquals(105220L, linley.spielerId)
+        assertEquals("MIT", linley.position)
+        assertEquals("8.054.301", linley.gebot)
+        assertEquals("70.25", linley.prozentMw)
+        assertEquals("31", linley.alter)
+
+        val sevilla = ergebnis.eintraege.first { it.name == "Sulevi Venäläinen" }
+        assertEquals("Deportivo Sevilla", sevilla.bieter)
+        assertEquals(1919L, sevilla.bieterTeamId)
+    }
+
+    @Test
+    fun vmSetzen_parstEigeneSpielerMitStartpreisStaffeln() {
+        val ergebnis = repo.parseVmSetzen(dump("vmsetzen"))
+
+        assertTrue("Spieler vorhanden", ergebnis.eintraege.isNotEmpty())
+
+        val dajan = ergebnis.eintraege.first { it.name == "Egnatius Dajan" }
+        assertEquals(161985L, dajan.spielerId)
+        assertEquals("22", dajan.alter)
+        assertEquals("GHA", dajan.land)
+        assertEquals("32.24", dajan.skill)
+        assertEquals("46.37", dajan.opti)
+        assertEquals("1.404.056", dajan.marktwert)
+        assertEquals("70.203", dajan.gebuehr)
+        assertEquals("16 Startpreise (25–100)", 16, dajan.startpreise.size)
+        assertEquals("351.014", dajan.startpreise.first().label)
+        assertEquals("1.404.056", dajan.startpreise.last().label)
+
+        val simao = ergebnis.eintraege.first { it.name == "Tomás Simao" }
+        assertEquals(121678L, simao.spielerId)
+        assertTrue("Startpreise vorhanden", simao.startpreise.isNotEmpty())
+    }
+
+    @Test
     fun eigeneGebote_leereListe_liefertSummeUndKeineZeilen() {
         val ergebnis = repo.parseEigeneGebote(dump("eigenegebote"))
 

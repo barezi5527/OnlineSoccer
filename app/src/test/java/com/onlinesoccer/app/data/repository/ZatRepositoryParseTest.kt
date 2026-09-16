@@ -35,4 +35,47 @@ class ZatRepositoryParseTest {
         assertEquals("47.000", erster?.kosten)
         assertTrue("Spieler-ID wird aus spielerinfo-Link gelesen", daten.spieler.any { it.pid == 97944L })
     }
+
+    @Test
+    fun zatReport_liestAbschnittNamenZatUndSaison() {
+        val report = repo.parseZatReport(dump("zatreport_zat5"))
+        assertEquals(5, report.zat)
+        assertEquals(24, report.saison)
+        assertTrue("Einnahmen absatz vorhanden", report.einnahmen.isNotEmpty())
+        assertTrue("Trainingserfolge absatz vorhanden", report.trainingserfolge.isNotEmpty())
+    }
+
+    @Test
+    fun zatReport_liestEinnahmenUndGesamtsumme() {
+        val report = repo.parseZatReport(dump("zatreport_zat5"))
+        val labels = report.einnahmen.map { it.label }
+        assertTrue("Zuschauereinnahmen", labels.contains("Zuschauereinnahmen"))
+        assertTrue("Jugendförderung", labels.contains("Jugendförderung"))
+        val gesamt = report.einnahmen.firstOrNull { it.label == "Gesamtsumme" }
+        assertEquals("238.500 Euro", gesamt?.wert)
+    }
+
+    @Test
+    fun zatReport_liestTrainingserfolgeMitPositionUndWertAenderung() {
+        val report = repo.parseZatReport(dump("zatreport_zat5"))
+        val bommel = report.trainingserfolge.firstOrNull { it.pid == 120513L }
+        assertEquals("Kuldar Mitt", bommel?.name)
+        assertEquals("TOR", bommel?.position)
+        assertEquals("Zuverlässigkeit erfolglos", bommel?.beschreibung)
+        assertEquals("(55 → 55)", bommel?.wert)
+
+        val erfolgreich = report.trainingserfolge.first { it.name == "Dhuntiar Konechi" }
+        assertEquals("ABW", erfolgreich.position)
+        assertEquals("Geschwindigkeit erfolgreich", erfolgreich.beschreibung)
+        assertEquals("(19 → 20)", erfolgreich.wert)
+    }
+
+    @Test
+    fun zatReport_handhabtZeilenOhneWertAenderung() {
+        val report = repo.parseZatReport(dump("zatreport_zat4"))
+        val erfahrung = report.trainingserfolge.firstOrNull { it.beschreibung == "Erfahrung gestiegen" }
+        assertTrue("Erfahrung-Eintrag vorhanden", erfahrung != null)
+        assertEquals(null, erfahrung?.wert)
+        assertTrue("ZAT 4 Report wertet ZAT", report.zat == 4)
+    }
 }

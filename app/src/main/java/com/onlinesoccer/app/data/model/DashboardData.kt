@@ -27,5 +27,6 @@ data class DashboardData(
         val gegnerId: Int?,
         val berichtUrl: String? = null,
         val gepaartZat: Int?,
+        val saison: Int? = null,
     )
 }

@@ -21,6 +21,25 @@ class DashboardRepositoryParseTest {
         assertEquals(null, repo.parseBerichtUrl("javascript:spielpreview(3449,38,2)"))
     }
 
+    @Test
+    fun letztesSpielLiefertZatUndSaisonFuerZatReport() {
+        val html = """
+            <html><body>
+            <table border="1" cellpadding="5">
+              <tr><td><b>Dein letztes Spiel:&nbsp;</b></td>
+                  <td class="OMI">Liga Heim:&nbsp;</td>
+                  <td><a href="javascript:teaminfo(1382)">SV Beispiel</a>
+                      <a href="javascript:os_bericht(1382,3449,5,24)">Zum Bericht</a></td></tr>
+            </table>
+            </body></html>
+        """.trimIndent()
+        val data = repo.parse(html)
+        val last = data.letztesSpiel
+        assertEquals(5, last?.gepaartZat)
+        assertEquals(24, last?.saison)
+        assertEquals("https://os.ongapo.com/rep/saison/24/5/1382-3449.html", last?.berichtUrl)
+    }
+
     private val grundHtml = """
         <html><body>
         <img src="images/wappen/00000080.gif" alt="Wappen TSV 1999 Wehen" />

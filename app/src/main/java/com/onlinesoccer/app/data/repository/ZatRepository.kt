@@ -9,6 +9,9 @@ import com.onlinesoccer.app.data.model.ZuzuPreise
 import com.onlinesoccer.app.data.model.ZuzuSpieler
 import com.onlinesoccer.app.data.model.ZatErgebnisse
 import com.onlinesoccer.app.data.model.ZatLiga
+import com.onlinesoccer.app.data.model.ZatReport
+import com.onlinesoccer.app.data.model.ZatReportEinnahme
+import com.onlinesoccer.app.data.model.ZatReportTraining
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -59,6 +62,92 @@ class ZatRepository @Inject constructor(
             if (rows.isNotEmpty()) ligen += ZatLiga(name = ligaName, spiele = rows.distinctBy { it.heim to it.gast })
         }
         return ZatErgebnisse(zat = zat, zusammengefasst = ligen)
+    }
+
+    /**
+     * Ladet den persönlichen ZAT-Report (`zar.php`) für einen ZAT.
+     * Ohne ZAT/Saison holt die Seite ihren Standardwert (aktueller ZAT).
+     */
+    suspend fun ladeZatReport(zat: Int?, saison: Int?): ZatReport? = withContext(Dispatchers.IO) {
+        val basis = Request.Builder()
+            .url("${OsApi.BASE_URL}/zar.php")
+        val request = if (zat != null || saison != null) {
+            val form = FormBody.Builder()
+                .add("zat", zat?.toString().orEmpty())
+                .add("saison", saison?.toString().orEmpty())
+                .add("ansehen", "ansehen")
+                .build()
+            basis.post(form).build()
+        } else {
+            basis.build()
+        }
+        val html = try {
+            client.newCall(request).execute().use { response ->
+                val bytes = response.body?.bytes() ?: return@withContext null
+                if (SessionGuard.isPureLoginView(bytes)) return@withContext null
+                bytes.toString(Charsets.UTF_8)
+            }
+        } catch (e: IOException) {
+            null
+        }
+        if (html == null) return@withContext null
+        parseZatReport(html)
+    }
+
+    internal fun parseZatReport(html: String): ZatReport {
+        val doc = Jsoup.parse(html)
+
+        fun selectedWert(name: String): Int? =
+            doc.selectFirst("select[name=$name] option[selected]")?.attr("value")?.toIntOrNull()
+
+        val einnahmen = mutableListOf<ZatReportEinnahme>()
+        val trainingserfolge = mutableListOf<ZatReportTraining>()
+
+        doc.select("h3").forEach { h3 ->
+            when {
+                h3.text().startsWith("1.") || h3.text().contains("Einnahmen") -> {
+                    h3.nextElementSibling()?.takeIf { it.tagName() == "table" }?.select("tr")?.forEach { tr ->
+                        val zellen = tr.select("td")
+                        if (zellen.size >= 2) {
+                            val label = zellen[0].text().trim()
+                            val wert = zellen[1].text().trim()
+                            if (label.isNotEmpty() && wert.isNotEmpty()) {
+                                einnahmen += ZatReportEinnahme(label = label, wert = wert)
+                            }
+                        }
+                    }
+                }
+                h3.text().startsWith("2.") || h3.text().contains("Trainingserfolge") -> {
+                    h3.nextElementSibling()?.takeIf { it.tagName() == "table" }?.select("tr")?.forEach { tr ->
+                        val zellen = tr.select("td")
+                        val nameZelle = zellen.firstOrNull() ?: return@forEach
+                        val name = nameZelle.selectFirst("a")?.text()?.trim()
+                            ?: nameZelle.ownText().trim()
+                        if (name.isEmpty()) return@forEach
+                        val link = nameZelle.selectFirst("a[href*='spielerinfo']")
+                        val pid = link?.attr("href")
+                            ?.let { Regex("(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                        val position = nameZelle.selectFirst(
+                            "[class=TOR],[class=ABW],[class=DMI],[class=MIT],[class=OMI],[class=STU]",
+                        )?.attr("class")
+                        trainingserfolge += ZatReportTraining(
+                            name = name,
+                            pid = pid,
+                            position = position,
+                            beschreibung = zellen.getOrNull(1)?.text()?.trim().orEmpty(),
+                            wert = zellen.getOrNull(2)?.text()?.trim()?.takeIf { it.startsWith("(") && it.endsWith(")") },
+                        )
+                    }
+                }
+            }
+        }
+
+        return ZatReport(
+            zat = selectedWert("zat"),
+            saison = selectedWert("saison"),
+            einnahmen = einnahmen,
+            trainingserfolge = trainingserfolge,
+        )
     }
 
     /** Zugabgabe-Zusatz (`zuzu.php`): Eintrittspreise + Physio-Liste (lesend). */

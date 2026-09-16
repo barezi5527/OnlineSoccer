@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
@@ -56,6 +57,7 @@ fun DashboardScreen(
     onBerichtClick: (String?) -> Unit = {},
     onZugabgabeClick: () -> Unit = {},
     onServerBereicheClick: () -> Unit = {},
+    onZatReportClick: (zat: Int?, saison: Int?) -> Unit = { _, _ -> },
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,6 +72,7 @@ fun DashboardScreen(
             onBerichtClick,
             onZugabgabeClick,
             onServerBereicheClick,
+            onZatReportClick,
         )
     }
 }
@@ -115,6 +118,7 @@ private fun DashboardContent(
     onBerichtClick: (String?) -> Unit,
     onZugabgabeClick: () -> Unit,
     onServerBereicheClick: () -> Unit,
+    onZatReportClick: (zat: Int?, saison: Int?) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -146,6 +150,13 @@ private fun DashboardContent(
                 title = "Letztes Spiel",
                 match = prev,
                 onClick = { onBerichtClick(prev.berichtUrl) },
+            )
+        }
+
+        data.letztesSpiel?.let { prev ->
+            ZatReportCard(
+                zat = prev.gepaartZat,
+                onClick = { onZatReportClick(prev.gepaartZat, prev.saison) },
             )
         }
 
@@ -378,6 +389,41 @@ private fun MatchCard(
                     text = if (title == "Nächstes Spiel") "Matchcenter öffnen" else "Spielbericht öffnen",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+/** Persönliche ZAT-Zusammenfassung (`zar.php`) – unter „Letztes Spiel“ auf dem Dashboard. */
+@Composable
+private fun ZatReportCard(
+    zat: Int?,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.Description,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text("ZAT-Report", fontWeight = FontWeight.Bold)
+                Text(
+                    "Einnahmen & Trainingserfolge (ZAT ${zat ?: "–"})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

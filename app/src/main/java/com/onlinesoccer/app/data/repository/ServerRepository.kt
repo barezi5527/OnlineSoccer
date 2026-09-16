@@ -29,6 +29,10 @@ import com.onlinesoccer.app.data.model.TransferStatus
 import com.onlinesoccer.app.data.model.TransferStatusAntwort
 import com.onlinesoccer.app.data.model.TransferStatusErgebnis
 import com.onlinesoccer.app.data.model.TransferStatusZeile
+import com.onlinesoccer.app.data.model.VersteigerungsmarktEintrag
+import com.onlinesoccer.app.data.model.VersteigerungsmarktErgebnis
+import com.onlinesoccer.app.data.model.VmSetzenEintrag
+import com.onlinesoccer.app.data.model.VmSetzenErgebnis
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -115,6 +119,7 @@ class ServerRepository @Inject constructor(
 
     private val TRANSFERLISTE_FILTER = listOf("alter", "skill", "opti", "abloese", "position", "tstatus", "tdetail", "sortierung", "tinfo", "proSeite")
     private val TRANSFERMARKT_FILTER = listOf("alter", "skill", "marktwert", "position", "sortierung")
+    private val VERSTEIGERUNGSMARKT_FILTER = TRANSFERMARKT_FILTER
 
     /** Lädt die „Transferliste" (`osneu/transferliste`) mit den gewählten Filtern (GET,
      * alle Filterfelder werden gesendet, wert 0 = keine Einschränkung) und optionaler Seite.
@@ -148,6 +153,31 @@ class ServerRepository @Inject constructor(
             val html = post(url, body) ?: return@withContext TransferMarktErgebnis()
             parseTransfermarkt(html)
         }
+
+    /** Lädt die Filteroptionen des „Versteigerungsmarkts" (`viewvm.php`) per GET (Formular-Seite). */
+    suspend fun versteigerungsmarktFormular(): VersteigerungsmarktErgebnis = withContext(Dispatchers.IO) {
+        val html = safeGet("${OsApi.BASE_URL}/viewvm.php") ?: return@withContext VersteigerungsmarktErgebnis()
+        parseVersteigerungsmarkt(html)
+    }
+
+    /** Lädt den „Versteigerungsmarkt" (`viewvm.php`) mit Filtern per POST (`sshow` – nur Anzeigen, kein Gebot). */
+    suspend fun versteigerungsmarkt(filter: Map<String, String>): VersteigerungsmarktErgebnis =
+        withContext(Dispatchers.IO) {
+            val url = "${OsApi.BASE_URL}/viewvm.php"
+            val body = FormBody.Builder().apply {
+                VERSTEIGERUNGSMARKT_FILTER.forEach { name -> add(name, filter[name] ?: "0") }
+                add("sshow", "Spieler anzeigen")
+            }.build()
+            val html = post(url, body) ?: return@withContext VersteigerungsmarktErgebnis()
+            parseVersteigerungsmarkt(html)
+        }
+
+    /** Lädt „Auf den VM setzen" (`vmsetzen.php`) nur lesend: eigene, auf den VM
+     *  setzbare Spieler samt Startpreis-Staffeln. Es wird nie ein Formular abgesendet. */
+    suspend fun vmsetzen(): VmSetzenErgebnis = withContext(Dispatchers.IO) {
+        val html = safeGet("${OsApi.BASE_URL}/vmsetzen.php") ?: return@withContext VmSetzenErgebnis()
+        parseVmSetzen(html)
+    }
 
     internal fun parseTransferliste(html: String, seite: Int = 1): TransferListeErgebnis {
         val doc = Jsoup.parse(html)
@@ -223,6 +253,73 @@ class ServerRepository @Inject constructor(
             eintraege = eintraege,
             gesucht = eintraege.isNotEmpty(),
         )
+    }
+
+    internal fun parseVersteigerungsmarkt(html: String): VersteigerungsmarktErgebnis {
+        val doc = Jsoup.parse(html)
+        val filter = VERSTEIGERUNGSMARKT_FILTER.mapNotNull { filterKategorie(doc, it) }
+        val eintraege = doc.select("table#tm tr").mapNotNull { tr ->
+            val link = tr.selectFirst("td a[href*='spielerinfo']") ?: return@mapNotNull null
+            val zellen = tr.select("td")
+            val spielerId = Regex("spielerinfo\\((\\d+)\\)").find(link.attr("href"))
+                ?.groupValues?.get(1)?.toLongOrNull() ?: return@mapNotNull null
+            val bieterLink = zellen.getOrNull(8)?.selectFirst("a[href*='teaminfo']")
+            VersteigerungsmarktEintrag(
+                spielerId = spielerId,
+                name = link.text().trim(),
+                alter = zellen.getOrNull(1)?.text()?.trim().orEmpty(),
+                position = zellen.getOrNull(2)?.text()?.trim().orEmpty(),
+                land = zellen.getOrNull(3)?.text()?.trim().orEmpty(),
+                skill = zellen.getOrNull(4)?.text()?.trim().orEmpty(),
+                optSkill = zellen.getOrNull(5)?.text()?.trim().orEmpty(),
+                gebot = zellen.getOrNull(6)?.text()?.trim().orEmpty(),
+                prozentMw = zellen.getOrNull(7)?.text()?.trim().orEmpty(),
+                bieter = bieterLink?.text()?.trim().orEmpty(),
+                bieterTeamId = bieterLink?.attr("href")
+                    ?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                gehalt = zellen.getOrNull(9)?.text()?.trim().orEmpty(),
+                dauer = zellen.getOrNull(10)?.text()?.trim().orEmpty(),
+                anzahl = zellen.getOrNull(11)?.text()?.trim().orEmpty(),
+            )
+        }
+        val hinweis = doc.select("b").firstOrNull { it.text().contains("Versteigerungsmarkt") }?.text()?.trim()
+        return VersteigerungsmarktErgebnis(
+            filter = filter,
+            hinweis = hinweis,
+            eintraege = eintraege,
+            gesucht = eintraege.isNotEmpty(),
+        )
+    }
+
+    internal fun parseVmSetzen(html: String): VmSetzenErgebnis {
+        val doc = Jsoup.parse(html)
+        val eintraege = doc.select("table tr").mapNotNull { tr ->
+            val link = tr.selectFirst("td a[href*='spielerinfo']") ?: return@mapNotNull null
+            val pidInput = tr.previousElementSibling()
+            val spielerId = if (pidInput != null && pidInput.tagName() == "input" && pidInput.attr("name") == "vmsetzen") {
+                pidInput.attr("value").toLongOrNull()
+            } else {
+                null
+            } ?: return@mapNotNull null
+            val zellen = tr.select("td")
+            val startpreis = tr.selectFirst("select[name=startpreis]")
+            val startpreise = startpreis?.select("option")?.mapNotNull { opt ->
+                opt.attr("value").toIntOrNull()?.let { TransferOption(it.toString(), opt.text().trim()) }
+            }.orEmpty()
+            VmSetzenEintrag(
+                spielerId = spielerId,
+                name = link.text().trim(),
+                alter = zellen.getOrNull(1)?.text()?.trim().orEmpty(),
+                land = zellen.getOrNull(2)?.text()?.trim().orEmpty(),
+                u = zellen.getOrNull(3)?.text()?.trim().orEmpty(),
+                skill = zellen.getOrNull(4)?.text()?.trim().orEmpty(),
+                opti = zellen.getOrNull(5)?.text()?.trim().orEmpty(),
+                marktwert = zellen.getOrNull(6)?.text()?.trim().orEmpty(),
+                gebuehr = zellen.getOrNull(7)?.text()?.trim().orEmpty(),
+                startpreise = startpreise,
+            )
+        }
+        return VmSetzenErgebnis(eintraege = eintraege)
     }
 
     /** Lädt „Eigene Gebote" (`viewtm.php`) mit der Summe über alle Gebote. */

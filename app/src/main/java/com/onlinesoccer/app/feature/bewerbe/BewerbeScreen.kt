@@ -20,13 +20,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -55,7 +59,10 @@ import com.onlinesoccer.app.data.model.LigaTabelle
 import com.onlinesoccer.app.data.model.PokalAnsicht
 import com.onlinesoccer.app.ui.HubTabs
 
-private enum class BewerbeBereich { TABELLE, SPIELTAGE, ELF_DE_SPIELTAGS, POKAL }
+private enum class BewerbeBereich { TABELLE, SPIELTAGE, POKAL }
+
+/** Unter-Schalter innerhalb des Menüpunkts „Spieltage". */
+private enum class SpieltageUnteransicht { SPIELTAGE, ELF_DE_SPIELTAGS }
 
 @Composable
 fun BewerbeScreen(
@@ -66,31 +73,51 @@ fun BewerbeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var bereich by rememberSaveable { mutableStateOf(BewerbeBereich.TABELLE) }
+    var spieltageUnteransicht by rememberSaveable { mutableStateOf(SpieltageUnteransicht.SPIELTAGE) }
 
     LaunchedEffect(bereich) {
         when (bereich) {
             BewerbeBereich.TABELLE -> viewModel.ladeTabelle()
             BewerbeBereich.SPIELTAGE -> viewModel.ladeSpieltag()
-            BewerbeBereich.ELF_DE_SPIELTAGS -> Unit // eigenes ViewModel startet selbst
             BewerbeBereich.POKAL -> viewModel.ladePokal()
         }
     }
 
     Column(Modifier.fillMaxSize()) {
-        HubTabs(
-            tabs = listOf(
-                "Ligatabelle" to BewerbeBereich.TABELLE,
-                "Spieltage" to BewerbeBereich.SPIELTAGE,
-                "Elf des Spieltags" to BewerbeBereich.ELF_DE_SPIELTAGS,
-                "Landespokal" to BewerbeBereich.POKAL,
-            ),
-            selected = bereich,
-            onSelect = { bereich = it as BewerbeBereich },
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HubTabs(
+                tabs = listOf(
+                    "Ligatabelle" to BewerbeBereich.TABELLE,
+                    "Spieltage" to BewerbeBereich.SPIELTAGE,
+                    "Landespokal" to BewerbeBereich.POKAL,
+                ),
+                selected = bereich,
+                onSelect = {
+                    val gewaehlt = it as BewerbeBereich
+                    if (gewaehlt != BewerbeBereich.SPIELTAGE) {
+                        spieltageUnteransicht = SpieltageUnteransicht.SPIELTAGE
+                    }
+                    bereich = gewaehlt
+                },
+                modifier = Modifier.weight(1f),
+            )
+            if (bereich == BewerbeBereich.SPIELTAGE && spieltageUnteransicht == SpieltageUnteransicht.ELF_DE_SPIELTAGS) {
+                IconButton(onClick = { spieltageUnteransicht = SpieltageUnteransicht.SPIELTAGE }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück zu den Spieltagen")
+                }
+            }
+        }
 
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            if (bereich == BewerbeBereich.ELF_DE_SPIELTAGS) {
-                ElfDesSpieltagsAnsicht(onSpielerKarte = onSpielerKarte, onVerein = onTeamClick)
+            if (bereich == BewerbeBereich.SPIELTAGE && spieltageUnteransicht == SpieltageUnteransicht.ELF_DE_SPIELTAGS) {
+                ElfDesSpieltagsAnsicht(
+                    onSpielerKarte = onSpielerKarte,
+                    onVerein = onTeamClick,
+                    modifier = Modifier.fillMaxSize(),
+                )
             } else {
                 when {
                     uiState.ladend -> {
@@ -126,8 +153,8 @@ fun BewerbeScreen(
                             onLiga = viewModel::waehleSpieltagLiga,
                             onLand = viewModel::waehleSpieltagLand,
                             onSpielbericht = onSpielbericht,
+                            onElf = { spieltageUnteransicht = SpieltageUnteransicht.ELF_DE_SPIELTAGS },
                         )
-                        BewerbeBereich.ELF_DE_SPIELTAGS -> Unit
                         BewerbeBereich.POKAL -> PokalAnsicht(
                             pokal = uiState.pokal,
                             onSpielbericht = onSpielbericht,
@@ -145,7 +172,6 @@ fun BewerbeScreen(
 private fun neuLaden(bereich: BewerbeBereich, viewModel: BewerbeViewModel) = when (bereich) {
     BewerbeBereich.TABELLE -> viewModel.ladeTabelle(force = true)
     BewerbeBereich.SPIELTAGE -> viewModel.ladeSpieltag(force = true)
-    BewerbeBereich.ELF_DE_SPIELTAGS -> Unit
     BewerbeBereich.POKAL -> viewModel.erneutLadePokal()
 }
 
@@ -444,11 +470,13 @@ private fun SpieltageAnsicht(
     onLiga: (Int) -> Unit,
     onLand: (Int) -> Unit,
     onSpielbericht: (String?, String?) -> Unit,
+    onElf: (() -> Unit)? = null,
 ) {
     if (spieltag == null || spieltag.spiele.isEmpty()) {
         Text("Keine Spieltage gefunden.", Modifier.padding(24.dp))
         return
     }
+    var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(
             Modifier
@@ -474,16 +502,30 @@ private fun SpieltageAnsicht(
         Row(
             Modifier
                 .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ZatSelector(spieltag, onZat)
-            Spacer(Modifier.width(12.dp))
-            Text(
-                "Spieltag ${spieltag.zat}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
+            if (onElf != null) {
+                FilterChip(
+                    selected = false,
+                    onClick = onElf,
+                    label = { Text("Elf des Spieltags") },
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = ergebnisseSichtbar,
+                    onCheckedChange = { ergebnisseSichtbar = it },
+                )
+                Text(
+                    "Ergebnisse",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.clickable { ergebnisseSichtbar = !ergebnisseSichtbar },
+                )
+            }
         }
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -491,7 +533,7 @@ private fun SpieltageAnsicht(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             items(spieltag.spiele, key = { "${it.heim}-${it.gast}" }) { spiel ->
-                SpielZeile(spiel, onSpielbericht)
+                SpielZeile(spiel, ergebnisseSichtbar, onSpielbericht)
             }
         }
     }
@@ -527,6 +569,7 @@ private fun ZatSelector(
 @Composable
 private fun SpielZeile(
     spiel: LigaSpiel,
+    ergebnisseSichtbar: Boolean,
     onSpielbericht: (String?, String?) -> Unit,
 ) {
     val keinBericht = spiel.berichtSid == null && spiel.berichtUrl == null
@@ -556,7 +599,8 @@ private fun SpielZeile(
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 ) {
                     Text(
-                        if (spiel.gespielt) "${spiel.toreHeim ?: "–"}:${spiel.toreGast ?: "–"}" else "vs.",
+                        if (!spiel.gespielt || !ergebnisseSichtbar) "vs."
+                        else "${spiel.toreHeim ?: "–"}:${spiel.toreGast ?: "–"}",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                     )

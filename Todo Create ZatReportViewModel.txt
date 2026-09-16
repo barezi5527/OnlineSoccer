@@ -1,6 +1,9 @@
 ▼Todo
-[•] Create ZatReportViewModel.kt
-[ ] Create ZatReportScreen.kt
-[ ] Modify TeamScreen.kt to add ZAT_REPORT tab
-[ ] Update AppRoot.kt with new routes
-[ ] Build and verify compilation
+[x] Website geprüft: ZAT → ZAT-Report = zar.php (Einnahmen/Ausgaben + Trainingserfolge)
+[x] Datenmodell ZatReport.kt erstellen
+[x] Parser parseZatReport + ladeZatReport (POST zat/saison) in ZatRepository
+[x] Create ZatReportViewModel.kt
+[x] Create ZatReportScreen.kt
+[x] Route ZAT_REPORT in AppRoot + Dashboard: ZAT-Report-Karte unter „Letztes Spiel"
+[x] Dump-Dateien + Unit-Tests (ZatRepositoryParseTest, DashboardRepositoryParseTest)
+[x] Build, Tests & Lint verifizieren

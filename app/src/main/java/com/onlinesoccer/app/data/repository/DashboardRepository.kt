@@ -104,6 +104,8 @@ class DashboardRepository @Inject constructor(
                 ?.attr("href")
                 ?.let { Regex("spielpreview\\(\\d+,\\d+,(\\d+)\\)").find(it)?.groupValues?.get(1)?.toIntOrNull() }
                 ?: berichtHref?.let { parseBerichtZat(it) }
+            val saison = berichtHref?.let { parseBerichtSaison(it) }
+                ?: berichtUrl?.let { parseUrlSaison(it) }
             return DashboardData.MatchInfo(
                 art = artCell,
                 heim = artCell.contains("Heim"),
@@ -111,6 +113,7 @@ class DashboardRepository @Inject constructor(
                 gegnerId = gegnerId,
                 berichtUrl = berichtUrl,
                 gepaartZat = gepaartZat,
+                saison = saison,
             )
         }
 
@@ -156,5 +159,13 @@ class DashboardRepository @Inject constructor(
 
     private fun parseBerichtZat(href: String): Int? =
         Regex("os_bericht\\(\\d+,\\d+,(\\d+),\\d+\\)").find(href)
+            ?.groupValues?.get(1)?.toIntOrNull()
+
+    private fun parseBerichtSaison(href: String): Int? =
+        Regex("os_bericht\\(\\d+,\\d+,\\d+,(\\d+)\\)").find(href)
+            ?.groupValues?.get(1)?.toIntOrNull()
+
+    private fun parseUrlSaison(url: String): Int? =
+        Regex("rep/saison/(\\d+)/").find(url)
             ?.groupValues?.get(1)?.toIntOrNull()
 }

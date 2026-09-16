@@ -69,6 +69,52 @@ data class TransferMarktErgebnis(
     val gesucht: Boolean = false,
 )
 
+/** Eintrag des Versteigerungsmarkts (`viewvm.php`). */
+data class VersteigerungsmarktEintrag(
+    val spielerId: Long,
+    val name: String,
+    val alter: String = "",
+    val position: String = "",
+    val land: String = "",
+    val skill: String = "",
+    val optSkill: String = "",
+    val gebot: String = "",
+    val prozentMw: String = "",
+    val bieter: String = "",
+    val bieterTeamId: Long? = null,
+    val gehalt: String = "",
+    val dauer: String = "",
+    val anzahl: String = "",
+)
+
+/** Ergebnis des Versteigerungsmarkts (`viewvm.php`): Filter, Hinweis und Einträge. */
+data class VersteigerungsmarktErgebnis(
+    val filter: List<TransferFilter> = emptyList(),
+    val hinweis: String? = null,
+    val eintraege: List<VersteigerungsmarktEintrag> = emptyList(),
+    val gesucht: Boolean = false,
+)
+
+/** Eigener Spieler auf „Auf den VM setzen" (`vmsetzen.php`) – nur lesend. */
+data class VmSetzenEintrag(
+    val spielerId: Long,
+    val name: String,
+    val alter: String = "",
+    val land: String = "",
+    val u: String = "",
+    val skill: String = "",
+    val opti: String = "",
+    val marktwert: String = "",
+    val gebuehr: String = "",
+    /** Startpreis-Staffeln (Wert 25–100, Label = angezeigter Betrag). */
+    val startpreise: List<TransferOption> = emptyList(),
+)
+
+/** „Auf den VM setzen" (`vmsetzen.php`): verfügbare eigene Spieler. */
+data class VmSetzenErgebnis(
+    val eintraege: List<VmSetzenEintrag> = emptyList(),
+)
+
 /** Ein eigenes Transfermarkt-Gebot (`viewtm.php`). */
 data class EigeneGeboteZeile(
     val spielerId: Long = 0L,

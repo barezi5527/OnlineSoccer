@@ -18,6 +18,7 @@ fun HubTabs(
     tabs: List<Pair<String, Any>>,
     selected: Any,
     onSelect: (Any) -> Unit,
+    modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
     val vertical = if (compact) 2.dp else 6.dp
@@ -25,7 +26,7 @@ fun HubTabs(
     LazyRow(
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = vertical),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.padding(top = topPadding),
+        modifier = modifier.padding(top = topPadding),
     ) {
         items(tabs) { (label, value) ->
             FilterChip(

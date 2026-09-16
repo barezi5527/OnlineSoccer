@@ -1,0 +1,1115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<form method="POST">	<table border="0">		<tr><td><b>Internationaler Versteigerungsmarkt - Es befinden sich zur Zeit 37 Spieler auf dem Versteigerungsmarkt<b><a href="javascript:os_wiki('OS_Hilfesystem_Versteigerungsmarkt')"><img border="0" src="images/os_hilfe.gif"></a><br></td></tr>		<tr><td>			<select name="alter"><option value="0">Alter</option><option value="1">16-18</option><option value="2">19-20</option><option value="3">21 - 22</option><option value="4">23-24</option><option value="5">25-26</option><option value="6">27-28</option><option value="7">29-30</option><option value="8">31-32</option><option value="9">33+</option></select>			<select name="skill"><option value="0">Skillschnitt</option><option value="1">0-20.00</option><option value="2">20.01 - 30.00</option><option value="3">30.01 - 40.00</option><option value="4">40.01 - 50.00</option><option value="5">50.01 - 60.00</option><option value="6">60.01+</option></select>			<select name="marktwert"><option value="0">Marktwert</option><option value="1">0 - 1.000.000</option><option value="2">1.000.001 - 2.500.000</option><option value="3">2.500.001 - 5.000.000</option><option value="4">5.000.001 - 10.000.000</option><option value="5">10.000.001 - 15.000.000</option><option value="6">15.000.001 - 25.000.000</option><option value="7">25.000.001 - 50.000.000</option><option value="8">50.000.001+</option></select>			<select name="position"><option value="0">Position</option><option value="1">TOR</option><option value="2">ABW</option><option value="3">DMI</option><option value="4">MIT</option><option value="5">OMI</option><option value="6">STU</option></select>			<select name="sortierung"><option value="0">Sortierung</option><option value="11">Alter aufsteigend</option><option value="12">Alter absteigend</option><option value="21">Dauer aufsteigend</option><option value="22">Dauer absteigend</option><option value="31">Marktwert aufsteigend</option><option value="32">Marktwert absteigend</option><option value="41">Opti aufsteigend</option><option value="42">Opti absteigend</option><option value="51">Position aufsteigend</option><option value="52">Position absteigend</option><option value="61">Skill aufsteigend</option><option value="62">Skill absteigend</option></select>			<input type="submit" value="Spieler anzeigen" name="sshow">		</td></tr>	</table></form><hr><table border="0" id="tm" class="sortable">	<tbody><tr>		<td>Name</td>		<td>Alter</td>		<td>Pos</td>		<td>Land</td>		<td>Skill</td>		<td>Opt. Skill</td>		<td align="right">Gebot</td>		<td>% MW</td>		<td>Bieter</td>		<td>Gehalt</td>		<td>Dauer</td>		<td>#</td>		<td>Aktion</td>	</tr>		<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(105220);">Barry Linley</a></td>
+
+		<td class="MIT">31</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">ENG</td>
+
+		<td class="MIT">55.12</td>
+
+		<td class="MIT">84.04</td>
+
+		<td class="MIT" align="right">8.054.301</td>
+
+		<td class="MIT" align="right">70.25</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="MIT" align="right">89.850</td>
+
+		<td class="MIT">20.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(105220)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="TOR"><a href="javascript:spielerinfo(115514);">Benjamin Hearpere</a></td>
+
+		<td class="TOR">30</td>
+
+		<td class="TOR">TOR</td>
+
+		<td class="TOR">ENG</td>
+
+		<td class="TOR">64.71</td>
+
+		<td class="TOR">91.41</td>
+
+		<td class="TOR" align="right">17.422.025</td>
+
+		<td class="TOR" align="right">75.26</td>
+
+		<td class="TOR"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="TOR" align="right">314.200</td>
+
+		<td class="TOR">20.09.2026</td>
+
+		<td class="TOR">0</td>
+
+		<td class="TOR"><a href="javascript:vmbieten(115514)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(136152);">Ruber Costa</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">COL</td>
+
+		<td class="STU">38.00</td>
+
+		<td class="STU">60.37</td>
+
+		<td class="STU" align="right">1.621.437</td>
+
+		<td class="STU" align="right">55.02</td>
+
+		<td class="STU"><a href="javascript:teaminfo(952)">SC Reig</a></td>
+
+		<td class="STU" align="right">15.724</td>
+
+		<td class="STU">17.09.2026</td>
+
+		<td class="STU">1</td>
+
+		<td class="STU"><a href="javascript:vmbieten(136152)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(137348);">Stefano Niklaus</a></td>
+
+		<td class="MIT">26</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">SUI</td>
+
+		<td class="MIT">46.65</td>
+
+		<td class="MIT">69.07</td>
+
+		<td class="MIT" align="right">3.199.571</td>
+
+		<td class="MIT" align="right">55.25</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="MIT" align="right">47.660</td>
+
+		<td class="MIT">17.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(137348)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(139860);">Sulevi Venäläinen</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">FIN</td>
+
+		<td class="STU">55.53</td>
+
+		<td class="STU">80.30</td>
+
+		<td class="STU" align="right">3.862.467</td>
+
+		<td class="STU" align="right">25.03</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1919)">Deportivo Sevilla</a></td>
+
+		<td class="STU" align="right">174.924</td>
+
+		<td class="STU">28.09.2026</td>
+
+		<td class="STU">1</td>
+
+		<td class="STU"><a href="javascript:vmbieten(139860)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(140725);">Roy Bayes</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">NIR</td>
+
+		<td class="STU">46.29</td>
+
+		<td class="STU">77.74</td>
+
+		<td class="STU" align="right">10.566.172</td>
+
+		<td class="STU" align="right">120.54</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3403)">Hajduk Krusevac</a></td>
+
+		<td class="STU" align="right">60.583</td>
+
+		<td class="STU">17.09.2026</td>
+
+		<td class="STU">7</td>
+
+		<td class="STU"><a href="javascript:vmbieten(140725)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="DMI"><a href="javascript:spielerinfo(145768);">Aden Woolcott</a></td>
+
+		<td class="DMI">25</td>
+
+		<td class="DMI">DMI</td>
+
+		<td class="DMI">ENG</td>
+
+		<td class="DMI">51.47</td>
+
+		<td class="DMI">76.85</td>
+
+		<td class="DMI" align="right">8.928.479</td>
+
+		<td class="DMI" align="right">75.26</td>
+
+		<td class="DMI"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="DMI" align="right">116.876</td>
+
+		<td class="DMI">22.09.2026</td>
+
+		<td class="DMI">0</td>
+
+		<td class="DMI"><a href="javascript:vmbieten(145768)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(150397);">Hranush Kishoyan</a></td>
+
+		<td class="OMI">23</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">ARM</td>
+
+		<td class="OMI">36.82</td>
+
+		<td class="OMI">67.78</td>
+
+		<td class="OMI" align="right">3.942.132</td>
+
+		<td class="OMI" align="right">84.56</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="OMI" align="right">25.571</td>
+
+		<td class="OMI">21.09.2026</td>
+
+		<td class="OMI">0</td>
+
+		<td class="OMI"><a href="javascript:vmbieten(150397)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(153047);">Detlef Kleinebrahm</a></td>
+
+		<td class="MIT">23</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">GER</td>
+
+		<td class="MIT">40.88</td>
+
+		<td class="MIT">70.19</td>
+
+		<td class="MIT" align="right">4.225.752</td>
+
+		<td class="MIT" align="right">65.00</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="MIT" align="right">43.726</td>
+
+		<td class="MIT">30.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(153047)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(154096);">Angleos Ellinikaki</a></td>
+
+		<td class="ABW">22</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">GRE</td>
+
+		<td class="ABW">42.06</td>
+
+		<td class="ABW">74.19</td>
+
+		<td class="ABW" align="right">5.004.768</td>
+
+		<td class="ABW" align="right">55.12</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(822)">Sociedad Santander</a></td>
+
+		<td class="ABW" align="right">63.202</td>
+
+		<td class="ABW">22.09.2026</td>
+
+		<td class="ABW">7</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(154096)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(155690);">Berend Drdul</a></td>
+
+		<td class="STU">21</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">SVK</td>
+
+		<td class="STU">37.41</td>
+
+		<td class="STU">62.37</td>
+
+		<td class="STU" align="right">3.173.387</td>
+
+		<td class="STU" align="right">68.89</td>
+
+		<td class="STU"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="STU" align="right">31.129</td>
+
+		<td class="STU">21.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:vmbieten(155690)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(155828);">Ruslan Nagiev</a></td>
+
+		<td class="ABW">22</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">AZE</td>
+
+		<td class="ABW">45.06</td>
+
+		<td class="ABW">75.48</td>
+
+		<td class="ABW" align="right">8.606.108</td>
+
+		<td class="ABW" align="right">85.09</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(376)">CF Castellon</a></td>
+
+		<td class="ABW" align="right">84.679</td>
+
+		<td class="ABW">26.09.2026</td>
+
+		<td class="ABW">1</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(155828)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(156505);">Radan Prexta</a></td>
+
+		<td class="MIT">22</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">SVK</td>
+
+		<td class="MIT">53.82</td>
+
+		<td class="MIT">81.89</td>
+
+		<td class="MIT" align="right">13.127.723</td>
+
+		<td class="MIT" align="right">69.43</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="MIT" align="right">248.032</td>
+
+		<td class="MIT">22.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(156505)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(160460);">Thyge Möller</a></td>
+
+		<td class="ABW">21</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">DEN</td>
+
+		<td class="ABW">47.12</td>
+
+		<td class="ABW">71.59</td>
+
+		<td class="ABW" align="right">8.762.440</td>
+
+		<td class="ABW" align="right">89.66</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(693)">SKA Donezk</a></td>
+
+		<td class="ABW" align="right">100.929</td>
+
+		<td class="ABW">19.09.2026</td>
+
+		<td class="ABW">1</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(160460)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(162958);">Sören Kofoed</a></td>
+
+		<td class="ABW">21</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">DEN</td>
+
+		<td class="ABW">35.41</td>
+
+		<td class="ABW">63.93</td>
+
+		<td class="ABW" align="right">1.291.646</td>
+
+		<td class="ABW" align="right">29.85</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(615)">SC Heppen</a></td>
+
+		<td class="ABW" align="right">25.848</td>
+
+		<td class="ABW">21.09.2026</td>
+
+		<td class="ABW">1</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(162958)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="DMI"><a href="javascript:spielerinfo(166645);">Petter Askheim</a></td>
+
+		<td class="DMI">19</td>
+
+		<td class="DMI">DMI</td>
+
+		<td class="DMI">NOR</td>
+
+		<td class="DMI">34.59</td>
+
+		<td class="DMI">53.93</td>
+
+		<td class="DMI" align="right">1.038.081</td>
+
+		<td class="DMI" align="right">35.07</td>
+
+		<td class="DMI"><a href="javascript:teaminfo(91)">CF Mons Lézard</a></td>
+
+		<td class="DMI" align="right">30.351</td>
+
+		<td class="DMI">23.09.2026</td>
+
+		<td class="DMI">3</td>
+
+		<td class="DMI"><a href="javascript:vmbieten(166645)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="TOR"><a href="javascript:spielerinfo(166664);">Soini Hartikainen</a></td>
+
+		<td class="TOR">20</td>
+
+		<td class="TOR">TOR</td>
+
+		<td class="TOR">FIN</td>
+
+		<td class="TOR">41.53</td>
+
+		<td class="TOR">68.37</td>
+
+		<td class="TOR" align="right">4.065.707</td>
+
+		<td class="TOR" align="right">54.71</td>
+
+		<td class="TOR"><a href="javascript:teaminfo(163)">KVR Turnhout</a></td>
+
+		<td class="TOR" align="right">72.531</td>
+
+		<td class="TOR">23.09.2026</td>
+
+		<td class="TOR">1</td>
+
+		<td class="TOR"><a href="javascript:vmbieten(166664)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="DMI"><a href="javascript:spielerinfo(167798);">Juan José Sanchez</a></td>
+
+		<td class="DMI">20</td>
+
+		<td class="DMI">DMI</td>
+
+		<td class="DMI">ESP</td>
+
+		<td class="DMI">34.94</td>
+
+		<td class="DMI">52.52</td>
+
+		<td class="DMI" align="right">1.172.932</td>
+
+		<td class="DMI" align="right">44.79</td>
+
+		<td class="DMI"><a href="javascript:teaminfo(533)">Sloboda Mostar</a></td>
+
+		<td class="DMI" align="right">24.524</td>
+
+		<td class="DMI">18.09.2026</td>
+
+		<td class="DMI">3</td>
+
+		<td class="DMI"><a href="javascript:vmbieten(167798)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(167861);">Anthèlme Ruinart</a></td>
+
+		<td class="MIT">20</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">FRA</td>
+
+		<td class="MIT">36.59</td>
+
+		<td class="MIT">50.74</td>
+
+		<td class="MIT" align="right">589.376</td>
+
+		<td class="MIT" align="right">25.03</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(24)">Madeira</a></td>
+
+		<td class="MIT" align="right">23.186</td>
+
+		<td class="MIT">29.09.2026</td>
+
+		<td class="MIT">1</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(167861)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(169980);">Kato de Morais</a></td>
+
+		<td class="ABW">20</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">GNB</td>
+
+		<td class="ABW">40.88</td>
+
+		<td class="ABW">64.70</td>
+
+		<td class="ABW" align="right">2.665.880</td>
+
+		<td class="ABW" align="right">45.15</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="ABW" align="right">53.551</td>
+
+		<td class="ABW">20.09.2026</td>
+
+		<td class="ABW">0</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(169980)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(170463);">Edmondo Toldo</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">ITA</td>
+
+		<td class="STU">45.29</td>
+
+		<td class="STU">73.70</td>
+
+		<td class="STU" align="right">6.579.571</td>
+
+		<td class="STU" align="right">60.13</td>
+
+		<td class="STU"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="STU" align="right">111.746</td>
+
+		<td class="STU">23.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:vmbieten(170463)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(170556);">Daniel Moreno</a></td>
+
+		<td class="MIT">20</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">ECU</td>
+
+		<td class="MIT">45.59</td>
+
+		<td class="MIT">66.93</td>
+
+		<td class="MIT" align="right">3.452.982</td>
+
+		<td class="MIT" align="right">45.00</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(1009)">TuS Emden</a></td>
+
+		<td class="MIT" align="right">96.484</td>
+
+		<td class="MIT">16.09.2026</td>
+
+		<td class="MIT">1</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(170556)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(171073);">Solomon Shee</a></td>
+
+		<td class="OMI">20</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">KEN</td>
+
+		<td class="OMI">41.82</td>
+
+		<td class="OMI">67.22</td>
+
+		<td class="OMI" align="right">5.110.302</td>
+
+		<td class="OMI" align="right">69.80</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(291)">Dynamo Lisky</a></td>
+
+		<td class="OMI" align="right">69.585</td>
+
+		<td class="OMI">26.09.2026</td>
+
+		<td class="OMI">1</td>
+
+		<td class="OMI"><a href="javascript:vmbieten(171073)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(171127);">Chris Hatun</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">FRO</td>
+
+		<td class="STU">42.53</td>
+
+		<td class="STU">68.26</td>
+
+		<td class="STU" align="right">6.697.233</td>
+
+		<td class="STU" align="right">89.82</td>
+
+		<td class="STU"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="STU" align="right">76.926</td>
+
+		<td class="STU">24.09.2026</td>
+
+		<td class="STU">0</td>
+
+		<td class="STU"><a href="javascript:vmbieten(171127)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="DMI"><a href="javascript:spielerinfo(171305);">Gehung Tan</a></td>
+
+		<td class="DMI">19</td>
+
+		<td class="DMI">DMI</td>
+
+		<td class="DMI">CHN</td>
+
+		<td class="DMI">33.00</td>
+
+		<td class="DMI">51.74</td>
+
+		<td class="DMI" align="right">1.067.386</td>
+
+		<td class="DMI" align="right">45.00</td>
+
+		<td class="DMI"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="DMI" align="right">20.482</td>
+
+		<td class="DMI">29.09.2026</td>
+
+		<td class="DMI">0</td>
+
+		<td class="DMI"><a href="javascript:vmbieten(171305)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(171955);">Alyaksandr Mikulin</a></td>
+
+		<td class="ABW">20</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">BLR</td>
+
+		<td class="ABW">41.71</td>
+
+		<td class="ABW">65.67</td>
+
+		<td class="ABW" align="right">4.722.215</td>
+
+		<td class="ABW" align="right">70.15</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="ABW" align="right">70.773</td>
+
+		<td class="ABW">22.09.2026</td>
+
+		<td class="ABW">0</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(171955)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(172352);">Lucjan Rogowski</a></td>
+
+		<td class="MIT">19</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">POL</td>
+
+		<td class="MIT">36.47</td>
+
+		<td class="MIT">63.56</td>
+
+		<td class="MIT" align="right">3.236.914</td>
+
+		<td class="MIT" align="right">60.13</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="MIT" align="right">50.357</td>
+
+		<td class="MIT">24.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(172352)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(174739);">Fedja Vitakic</a></td>
+
+		<td class="STU">19</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">SCG</td>
+
+		<td class="STU">28.53</td>
+
+		<td class="STU">43.15</td>
+
+		<td class="STU" align="right">544.117</td>
+
+		<td class="STU" align="right">45.10</td>
+
+		<td class="STU"><a href="javascript:teaminfo(24)">Madeira</a></td>
+
+		<td class="STU" align="right">10.253</td>
+
+		<td class="STU">25.09.2026</td>
+
+		<td class="STU">1</td>
+
+		<td class="STU"><a href="javascript:vmbieten(174739)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(174827);">Michael Agius</a></td>
+
+		<td class="MIT">19</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">MLT</td>
+
+		<td class="MIT">37.94</td>
+
+		<td class="MIT">58.26</td>
+
+		<td class="MIT" align="right">1.438.382</td>
+
+		<td class="MIT" align="right">34.69</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(1919)">Deportivo Sevilla</a></td>
+
+		<td class="MIT" align="right">42.375</td>
+
+		<td class="MIT">17.09.2026</td>
+
+		<td class="MIT">1</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(174827)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="OMI"><a href="javascript:spielerinfo(175079);">Raymond Wunder</a></td>
+
+		<td class="OMI">19</td>
+
+		<td class="OMI">OMI</td>
+
+		<td class="OMI">GER</td>
+
+		<td class="OMI">31.53</td>
+
+		<td class="OMI">50.67</td>
+
+		<td class="OMI" align="right">910.723</td>
+
+		<td class="OMI" align="right">45.05</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="OMI" align="right">17.018</td>
+
+		<td class="OMI">28.09.2026</td>
+
+		<td class="OMI">0</td>
+
+		<td class="OMI"><a href="javascript:vmbieten(175079)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="DMI"><a href="javascript:spielerinfo(175626);">Wolf-Hendrik Benschneider</a></td>
+
+		<td class="DMI">17</td>
+
+		<td class="DMI">DMI</td>
+
+		<td class="DMI">GER</td>
+
+		<td class="DMI">34.00</td>
+
+		<td class="DMI">41.70</td>
+
+		<td class="DMI" align="right">1.095.318</td>
+
+		<td class="DMI" align="right">69.01</td>
+
+		<td class="DMI"><a href="javascript:teaminfo(1064)">VfL Eisenhüttenstadt</a></td>
+
+		<td class="DMI" align="right">30.057</td>
+
+		<td class="DMI">20.09.2026</td>
+
+		<td class="DMI">2</td>
+
+		<td class="DMI"><a href="javascript:vmbieten(175626)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(175814);">Styrmir Steinthórsson</a></td>
+
+		<td class="STU">19</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">ISL</td>
+
+		<td class="STU">37.29</td>
+
+		<td class="STU">43.33</td>
+
+		<td class="STU" align="right">2.307.768</td>
+
+		<td class="STU" align="right">116.14</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3434)">FC Vale</a></td>
+
+		<td class="STU" align="right">30.740</td>
+
+		<td class="STU">17.09.2026</td>
+
+		<td class="STU">8</td>
+
+		<td class="STU"><a href="javascript:vmbieten(175814)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="STU"><a href="javascript:spielerinfo(175976);">Emiliano Bennarivo</a></td>
+
+		<td class="STU">18</td>
+
+		<td class="STU">STU</td>
+
+		<td class="STU">ITA</td>
+
+		<td class="STU">34.00</td>
+
+		<td class="STU">46.89</td>
+
+		<td class="STU" align="right">1.519.341</td>
+
+		<td class="STU" align="right">75.24</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3432)">CD Elche</a></td>
+
+		<td class="STU" align="right">27.019</td>
+
+		<td class="STU">22.09.2026</td>
+
+		<td class="STU">1</td>
+
+		<td class="STU"><a href="javascript:vmbieten(175976)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(176002);">Craig Brett</a></td>
+
+		<td class="ABW">18</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">WAL</td>
+
+		<td class="ABW">37.76</td>
+
+		<td class="ABW">53.41</td>
+
+		<td class="ABW" align="right">1.830.409</td>
+
+		<td class="ABW" align="right">49.85</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="ABW" align="right">49.766</td>
+
+		<td class="ABW">27.09.2026</td>
+
+		<td class="ABW">0</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(176002)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="MIT"><a href="javascript:spielerinfo(176021);">Asad Khamenei</a></td>
+
+		<td class="MIT">18</td>
+
+		<td class="MIT">MIT</td>
+
+		<td class="MIT">IRN</td>
+
+		<td class="MIT">40.59</td>
+
+		<td class="MIT">58.00</td>
+
+		<td class="MIT" align="right">3.525.992</td>
+
+		<td class="MIT" align="right">69.73</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(0)"></a></td>
+
+		<td class="MIT" align="right">74.178</td>
+
+		<td class="MIT">18.09.2026</td>
+
+		<td class="MIT">0</td>
+
+		<td class="MIT"><a href="javascript:vmbieten(176021)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="DMI"><a href="javascript:spielerinfo(176032);">Giorgio Thut</a></td>
+
+		<td class="DMI">18</td>
+
+		<td class="DMI">DMI</td>
+
+		<td class="DMI">SUI</td>
+
+		<td class="DMI">13.59</td>
+
+		<td class="DMI">10.48</td>
+
+		<td class="DMI" align="right">31.360</td>
+
+		<td class="DMI" align="right">40.08</td>
+
+		<td class="DMI"><a href="javascript:teaminfo(1064)">VfL Eisenhüttenstadt</a></td>
+
+		<td class="DMI" align="right">3.500</td>
+
+		<td class="DMI">26.09.2026</td>
+
+		<td class="DMI">4</td>
+
+		<td class="DMI"><a href="javascript:vmbieten(176032)">Gebot</a></td>
+
+	</tr>
+	<tr>
+
+		<td class="ABW"><a href="javascript:spielerinfo(176210);">Oldrich Hlinka</a></td>
+
+		<td class="ABW">17</td>
+
+		<td class="ABW">ABW</td>
+
+		<td class="ABW">CZE</td>
+
+		<td class="ABW">13.71</td>
+
+		<td class="ABW">9.67</td>
+
+		<td class="ABW" align="right">19.833</td>
+
+		<td class="ABW" align="right">25.02</td>
+
+		<td class="ABW"><a href="javascript:teaminfo(1064)">VfL Eisenhüttenstadt</a></td>
+
+		<td class="ABW" align="right">3.500</td>
+
+		<td class="ABW">27.09.2026</td>
+
+		<td class="ABW">1</td>
+
+		<td class="ABW"><a href="javascript:vmbieten(176210)">Gebot</a></td>
+
+	</tr>
+</tbody></table>
+</div>
+
+</body>
+
+</html>

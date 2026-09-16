@@ -76,7 +76,10 @@ import com.onlinesoccer.app.feature.transfers.TransferListeScreen
 import com.onlinesoccer.app.feature.transfers.TransferMarktScreen
 import com.onlinesoccer.app.feature.transfers.TransferStatusScreen
 import com.onlinesoccer.app.feature.transfers.TransfersScreen
+import com.onlinesoccer.app.feature.transfers.VersteigerungsmarktScreen
+import com.onlinesoccer.app.feature.transfers.VmSetzenScreen
 import com.onlinesoccer.app.feature.zat.ZatScreen
+import com.onlinesoccer.app.feature.zat.ZatReportScreen
 import com.onlinesoccer.app.feature.team.TeaminformationenContentScreen
 import com.onlinesoccer.app.feature.team.TeaminformationenScreen
 import com.onlinesoccer.app.feature.team.TeamScreen
@@ -98,6 +101,7 @@ object Routes {
     const val TEAMINFO = "teaminfo"
     const val TEAMINFO_CONTENT = "teaminfo-content/{eintragId}?teamId={teamId}&label={label}"
     const val BERICHT = "bericht?sid={sid}&url={url}"
+    const val ZAT_REPORT = "zat-report?zat={zat}&saison={saison}"
     const val SEITE = "seite/{path}"
     const val SERVER_SEITE = "server-seite/{path}"
     const val SERVER = "server"
@@ -108,6 +112,8 @@ object Routes {
     const val TRANSFERS = "transfers"
     const val TRANSFER_LISTE = "transferliste"
     const val TRANSFER_MARKT = "transfermarkt"
+    const val VERSTEIGERUNGSMARKT = "versteigerungsmarkt"
+    const val VM_SETZEN = "vm-setzen"
     const val EIGENE_GEBOTE = "eigene-gebote"
     const val LEIH_UEBERSICHT = "leih-uebersicht"
     const val TRANSFER_STATUS = "transfer-status"
@@ -146,6 +152,8 @@ fun AppRoot(
 private fun routeFuerBereich(bereich: TransferBereich): String = when (bereich) {
     TransferBereich.TRANSFERLISTE -> Routes.TRANSFER_LISTE
     TransferBereich.TRANSFERMARKT -> Routes.TRANSFER_MARKT
+    TransferBereich.VERSTEIGERUNGSMARKT -> Routes.VERSTEIGERUNGSMARKT
+    TransferBereich.VM_SETZEN -> Routes.VM_SETZEN
     TransferBereich.EIGENE_GEBOTE -> Routes.EIGENE_GEBOTE
     TransferBereich.LEIH_UEBERSICHT -> Routes.LEIH_UEBERSICHT
     TransferBereich.TRANSFERSTATUS -> Routes.TRANSFER_STATUS
@@ -171,6 +179,7 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.TEAMINFO -> "Teaminformationen"
         Routes.TEAMINFO_CONTENT -> label?.takeIf { it.isNotBlank() }?.let { Uri.decode(it) } ?: "Teaminformationen"
         Routes.BERICHT -> "Spielbericht"
+        Routes.ZAT_REPORT -> "ZAT-Report"
         Routes.SEITE -> "Team"
         Routes.SERVER_SEITE -> "Weitere Bereiche"
         Routes.SERVER -> "Weitere Bereiche"
@@ -181,6 +190,8 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.TRANSFERS -> "Transfers"
         Routes.TRANSFER_LISTE -> "Transferliste"
         Routes.TRANSFER_MARKT -> "Transfermarkt"
+        Routes.VERSTEIGERUNGSMARKT -> "Versteigerungsmarkt"
+        Routes.VM_SETZEN -> "Auf den VM setzen"
         Routes.EIGENE_GEBOTE -> "Eigene Gebote"
         Routes.LEIH_UEBERSICHT -> "Leihspieler Übersicht"
         Routes.TRANSFER_STATUS -> "Transferstatus"
@@ -302,6 +313,13 @@ private fun MainScaffold(
                          buildBerichtRoute(null, url)?.let { route ->
                              navController.navigate(route) { launchSingleTop = true }
                          }
+                    },
+                    onZatReportClick = { zat, saison ->
+                        navController.navigate(
+                            Routes.ZAT_REPORT
+                                .replace("{zat}", zat?.toString().orEmpty())
+                                .replace("{saison}", saison?.toString().orEmpty()),
+                        ) { launchSingleTop = true }
                     },
                     onZugabgabeClick = {
                         navController.navigate(Routes.ZAT) {
@@ -488,6 +506,31 @@ private fun MainScaffold(
                     },
                 )
             }
+            composable(Routes.VERSTEIGERUNGSMARKT) {
+                VersteigerungsmarktScreen(
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onTeamClick = { teamId ->
+                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
+            composable(Routes.VM_SETZEN) {
+                VmSetzenScreen(
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
             composable(Routes.EIGENE_GEBOTE) {
                 EigeneGeboteScreen(
                     onClose = { navController.popBackStack() },
@@ -600,6 +643,22 @@ private fun MainScaffold(
                 ),
             ) {
                 SpielberichtScreen(onClose = { navController.popBackStack() })
+            }
+            composable(
+                Routes.ZAT_REPORT,
+                arguments = listOf(
+                    navArgument("zat") { type = androidx.navigation.NavType.StringType; defaultValue = "" },
+                    navArgument("saison") { type = androidx.navigation.NavType.StringType; defaultValue = "" },
+                ),
+            ) {
+                ZatReportScreen(
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
             composable(Routes.SEITE) {
                 SeiteScreen(onClose = { navController.popBackStack() })

@@ -19,7 +19,9 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.SwapCalls
@@ -41,6 +43,8 @@ import androidx.compose.ui.unit.dp
 enum class TransferBereich {
     TRANSFERLISTE,
     TRANSFERMARKT,
+    VERSTEIGERUNGSMARKT,
+    VM_SETZEN,
     EIGENE_GEBOTE,
     LEIH_UEBERSICHT,
     TRANSFERSTATUS,
@@ -73,6 +77,18 @@ object TransfersMenu {
             "Internationaler Transfermarkt mit Geboten",
             TransferBereich.TRANSFERMARKT,
             Icons.Filled.Storefront,
+        ),
+        TransferMenuEintrag(
+            "Versteigerungsmarkt",
+            "Internationaler Versteigerungsmarkt (nur Anzeige, kein Gebot)",
+            TransferBereich.VERSTEIGERUNGSMARKT,
+            Icons.Filled.Paid,
+        ),
+        TransferMenuEintrag(
+            "Auf den VM setzen",
+            "Eigene Spieler mit Startpreis-Staffeln (nur Anzeige)",
+            TransferBereich.VM_SETZEN,
+            Icons.Filled.Sell,
         ),
         TransferMenuEintrag(
             "Eigene Gebote",
