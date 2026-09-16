@@ -73,6 +73,47 @@ class BerichtRepositoryParseTest {
     }
 
     @Test
+    fun parseBericht_liestSpielerstatistikenInklNoteToreVorlagen() {
+        val html = """
+            <html><body>
+            <h2>Heim FC - Gast FC</h2>
+            <div>Es folgt der Spielbericht :</div><div>Es folgen die Spielstatistiken</div>
+            <table>
+              <tr><td>Spielername</td><td>Note</td><td>ZK</td><td>ZK-%</td><td>Schüsse</td><td>aufs Tor</td><td>Tore</td><td>Vorlagen</td><td width="20"></td><td>Schüsse</td><td>aufs Tor</td><td>Tore</td><td>Vorlagen</td><td>ZK</td><td>ZK-%</td><td>Note</td><td>Spielername</td></tr>
+              <tr><td>Ted Struan</td><td></td><td>2</td><td>50</td><td>0</td><td>0</td><td>0</td><td>0</td><td width="20"></td><td>4</td><td>1</td><td>0</td><td>0</td><td>8</td><td>37.5</td><td></td><td>Steffen Fromm</td></tr>
+              <tr><td>Mijalko Disljenkovic</td><td>3.5</td><td>13</td><td>0</td><td>4</td><td>1</td><td>2</td><td>1</td><td width="20"></td><td>0</td><td>0</td><td>0</td><td>0</td><td>16</td><td>56.25</td><td></td><td>Ekin Demirpence</td></tr>
+            </table>
+            </body></html>
+        """.trimIndent()
+
+        val bericht = repo.parseBericht(html, "test", null)
+
+        val heim = bericht.heimSpielerStatistik
+        val gast = bericht.gastSpielerStatistik
+        assertEquals(2, heim.size)
+        assertEquals(2, gast.size)
+        assertEquals(2, heim.getValue("ted struan").zweikaempfe)
+        assertEquals(50.0, heim.getValue("ted struan").zweikampfQuote, 0.001)
+        assertEquals(0, heim.getValue("ted struan").tore)
+        assertEquals("3.5", heim.getValue("mijalko disljenkovic").note)
+        assertEquals(2, heim.getValue("mijalko disljenkovic").tore)
+        assertEquals(1, heim.getValue("mijalko disljenkovic").vorlagen)
+        assertEquals(4, heim.getValue("mijalko disljenkovic").schuesse)
+        assertEquals(1, heim.getValue("mijalko disljenkovic").aufsTor)
+
+        assertEquals(8, gast.getValue("steffen fromm").zweikaempfe)
+        assertEquals(37.5, gast.getValue("steffen fromm").zweikampfQuote, 0.001)
+        assertEquals(1, gast.getValue("steffen fromm").aufsTor)
+        assertEquals(4, gast.getValue("steffen fromm").schuesse)
+        assertEquals(0, gast.getValue("steffen fromm").tore)
+
+        assertEquals(listOf("Ted Struan", "Mijalko Disljenkovic"), bericht.heimSpielerStatistikListe.map { it.name })
+        assertEquals(listOf("Steffen Fromm", "Ekin Demirpence"), bericht.gastSpielerStatistikListe.map { it.name })
+        assertEquals("Ekin Demirpence", bericht.gastSpielerStatistikListe[1].name)
+        assertEquals(56.25, bericht.gastSpielerStatistikListe[1].statistik.zweikampfQuote, 0.001)
+    }
+
+    @Test
     fun parseBericht_liestViktoriaUlmHeimrasterOhneSpielerlisteAlsRaster() {
         val positionen = mapOf(
             "A" to ("N" to 8), "B" to ("M" to 4), "C" to ("K" to 8),

@@ -35,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,21 +55,23 @@ import com.onlinesoccer.app.data.model.LigaTabelle
 import com.onlinesoccer.app.data.model.PokalAnsicht
 import com.onlinesoccer.app.ui.HubTabs
 
-private enum class BewerbeBereich { TABELLE, SPIELTAGE, POKAL }
+private enum class BewerbeBereich { TABELLE, SPIELTAGE, ELF_DE_SPIELTAGS, POKAL }
 
 @Composable
 fun BewerbeScreen(
     onSpielbericht: (String?, String?) -> Unit,
     onTeamClick: (Long) -> Unit = {},
+    onSpielerKarte: (Long) -> Unit = {},
     viewModel: BewerbeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var bereich by remember { mutableStateOf(BewerbeBereich.TABELLE) }
+    var bereich by rememberSaveable { mutableStateOf(BewerbeBereich.TABELLE) }
 
     LaunchedEffect(bereich) {
         when (bereich) {
             BewerbeBereich.TABELLE -> viewModel.ladeTabelle()
             BewerbeBereich.SPIELTAGE -> viewModel.ladeSpieltag()
+            BewerbeBereich.ELF_DE_SPIELTAGS -> Unit // eigenes ViewModel startet selbst
             BewerbeBereich.POKAL -> viewModel.ladePokal()
         }
     }
@@ -78,6 +81,7 @@ fun BewerbeScreen(
             tabs = listOf(
                 "Ligatabelle" to BewerbeBereich.TABELLE,
                 "Spieltage" to BewerbeBereich.SPIELTAGE,
+                "Elf des Spieltags" to BewerbeBereich.ELF_DE_SPIELTAGS,
                 "Landespokal" to BewerbeBereich.POKAL,
             ),
             selected = bereich,
@@ -85,48 +89,53 @@ fun BewerbeScreen(
         )
 
         Box(Modifier.fillMaxWidth().weight(1f)) {
-            when {
-                uiState.ladend -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                }
-                uiState.fehler != null -> {
-                    Column(
-                        Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(uiState.fehler.orEmpty(), color = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.height(12.dp))
-                        FilledTonalButton(onClick = { neuLaden(bereich, viewModel) }) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Spacer(Modifier.padding(start = 4.dp))
-                            Text("Erneut versuchen")
+            if (bereich == BewerbeBereich.ELF_DE_SPIELTAGS) {
+                ElfDesSpieltagsAnsicht(onSpielerKarte = onSpielerKarte, onVerein = onTeamClick)
+            } else {
+                when {
+                    uiState.ladend -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    }
+                    uiState.fehler != null -> {
+                        Column(
+                            Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(uiState.fehler.orEmpty(), color = MaterialTheme.colorScheme.error)
+                            Spacer(Modifier.height(12.dp))
+                            FilledTonalButton(onClick = { neuLaden(bereich, viewModel) }) {
+                                Icon(Icons.Default.Refresh, contentDescription = null)
+                                Spacer(Modifier.padding(start = 4.dp))
+                                Text("Erneut versuchen")
+                            }
                         }
                     }
-                }
-                else -> when (bereich) {
-                    BewerbeBereich.TABELLE -> TabelleAnsicht(
-                        tabelle = uiState.tabelle,
-                        onSaison = viewModel::ladeTabelle,
-                        onLiga = viewModel::waehleTabelleLiga,
-                        onLand = viewModel::waehleTabelleLand,
-                        onTab = viewModel::waehleTabelleTab,
-                        onTeamClick = onTeamClick,
-                    )
-                    BewerbeBereich.SPIELTAGE -> SpieltageAnsicht(
-                        spieltag = uiState.spieltag,
-                        onZat = viewModel::ladeSpieltag,
-                        onLiga = viewModel::waehleSpieltagLiga,
-                        onLand = viewModel::waehleSpieltagLand,
-                        onSpielbericht = onSpielbericht,
-                    )
-                    BewerbeBereich.POKAL -> PokalAnsicht(
-                        pokal = uiState.pokal,
-                        onSpielbericht = onSpielbericht,
-                        onSaison = viewModel::waehlePokalSaison,
-                        onRunde = viewModel::waehlePokalRunde,
-                        onLand = viewModel::waehlePokalLand,
-                    )
+                    else -> when (bereich) {
+                        BewerbeBereich.TABELLE -> TabelleAnsicht(
+                            tabelle = uiState.tabelle,
+                            onSaison = viewModel::ladeTabelle,
+                            onLiga = viewModel::waehleTabelleLiga,
+                            onLand = viewModel::waehleTabelleLand,
+                            onTab = viewModel::waehleTabelleTab,
+                            onTeamClick = onTeamClick,
+                        )
+                        BewerbeBereich.SPIELTAGE -> SpieltageAnsicht(
+                            spieltag = uiState.spieltag,
+                            onZat = viewModel::ladeSpieltag,
+                            onLiga = viewModel::waehleSpieltagLiga,
+                            onLand = viewModel::waehleSpieltagLand,
+                            onSpielbericht = onSpielbericht,
+                        )
+                        BewerbeBereich.ELF_DE_SPIELTAGS -> Unit
+                        BewerbeBereich.POKAL -> PokalAnsicht(
+                            pokal = uiState.pokal,
+                            onSpielbericht = onSpielbericht,
+                            onSaison = viewModel::waehlePokalSaison,
+                            onRunde = viewModel::waehlePokalRunde,
+                            onLand = viewModel::waehlePokalLand,
+                        )
+                    }
                 }
             }
         }
@@ -136,6 +145,7 @@ fun BewerbeScreen(
 private fun neuLaden(bereich: BewerbeBereich, viewModel: BewerbeViewModel) = when (bereich) {
     BewerbeBereich.TABELLE -> viewModel.ladeTabelle(force = true)
     BewerbeBereich.SPIELTAGE -> viewModel.ladeSpieltag(force = true)
+    BewerbeBereich.ELF_DE_SPIELTAGS -> Unit
     BewerbeBereich.POKAL -> viewModel.erneutLadePokal()
 }
 

@@ -7,6 +7,8 @@ import com.onlinesoccer.app.data.model.BerichtEreignisTyp
 import com.onlinesoccer.app.data.model.BerichtAufstellung
 import com.onlinesoccer.app.data.model.BerichtEinstellungen
 import com.onlinesoccer.app.data.model.BerichtSpieler
+import com.onlinesoccer.app.data.model.BerichtSpielerStatistik
+import com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag
 import com.onlinesoccer.app.data.model.BerichtStatistik
 import com.onlinesoccer.app.data.model.SpielBericht
 import java.io.IOException
@@ -122,6 +124,9 @@ class BerichtRepository @Inject constructor(
             it.groupValues[1] + ":" + it.groupValues[2]
         }
 
+        val (heimSpielerStatistik, gastSpielerStatistik, heimSpielerStatistikListe, gastSpielerStatistikListe) =
+            parseSpielerStatistik(doc)
+
         return SpielBericht(
             saison = saison,
             zat = zat,
@@ -138,6 +143,10 @@ class BerichtRepository @Inject constructor(
             gastAufstellung = parseAufstellung(doc, "G", parseEinstellungen(doc, 1)),
             ereignisse = ereignisse.distinctBy { it.minute to it.text }.take(200),
             statistik = parseStatistik(doc),
+            heimSpielerStatistik = heimSpielerStatistik,
+            gastSpielerStatistik = gastSpielerStatistik,
+            heimSpielerStatistikListe = heimSpielerStatistikListe,
+            gastSpielerStatistikListe = gastSpielerStatistikListe,
             rohtext = bodyText,
             url = url,
         )
@@ -212,12 +221,20 @@ class BerichtRepository @Inject constructor(
             val name = markers.drop(1).joinToString(" ") { it.text().trim() }.trim()
                 .takeIf { it.isNotBlank() } ?: return@mapNotNull null
             val koordinaten = slotKoordinaten[slot]
+            // Sofern der Bericht den Spielernamen verlinkt (spielerinfo(id)),
+            // wird die echte Spieler-ID mitgenommen (keine Erfindung, sonst null).
+            val spielerId = Regex("spielerinfo\\((\\d+)\\)")
+                .find(row.outerHtml())
+                ?.groupValues
+                ?.get(1)
+                ?.toLongOrNull()
             BerichtSpieler(
                 name = name,
                 nummer = slot,
                 position = slotPositionen[slot],
                 feldzeile = koordinaten?.first,
                 feldspalte = koordinaten?.second,
+                spielerId = spielerId,
             )
         }
         if (spieler.isEmpty()) return null
@@ -285,6 +302,75 @@ class BerichtRepository @Inject constructor(
             moral = wert("Moral"),
         )
     }
+
+    /**
+     * Spielerstatistik-Tabelle: „Spielername | Note | ZK | ZK-% | Schüsse |
+     * aufs Tor | Tore | Vorlagen <Trenner> Schüsse | aufs Tor | Tore | Vorlagen
+     * | ZK | ZK-% | Note | Spielername". Auswärtswerte stehen gespiegelt in den
+     * hinteren Spalten. Die Tore/Vorlagen der Tabelle werden nur für die
+     * Anzeige übernommen – für Auswertungen stammen sie aus den Ticker-Ereignissen
+     * (inkl. Vorlagengeber).
+     */
+    private fun parseSpielerStatistik(
+        doc: org.jsoup.nodes.Document,
+    ): SpielerStatistikErgebnis {
+        val tabelle = doc.select("table").firstOrNull { table ->
+            table.select("tr").any { row ->
+                row.select("td").firstOrNull()?.text()?.trim() == "Spielername"
+            }
+        } ?: return SpielerStatistikErgebnis()
+
+        val heim = mutableMapOf<String, BerichtSpielerStatistik>()
+        val gast = mutableMapOf<String, BerichtSpielerStatistik>()
+        val heimListe = mutableListOf<BerichtSpielerStatistikEintrag>()
+        val gastListe = mutableListOf<BerichtSpielerStatistikEintrag>()
+
+        tabelle.select("tr").forEach { row ->
+            val cells = row.select("td")
+            if (cells.size < 17) return@forEach
+            if (cells[0].text().trim() == "Spielername") return@forEach
+
+            fun text(index: Int): String? = cells[index].text().trim().takeIf { it.isNotBlank() }
+            fun zahl(index: Int): Int = cells[index].text().trim().toIntOrNull() ?: 0
+            fun prozent(index: Int): Double = cells[index].text().trim().replace('%', ' ').trim()
+                .toDoubleOrNull() ?: 0.0
+
+            val heimName = text(0)
+            if (heimName != null) {
+                heim[heimName.lowercase()] = BerichtSpielerStatistik(
+                    note = text(1),
+                    zweikaempfe = zahl(2),
+                    zweikampfQuote = prozent(3),
+                    schuesse = zahl(4),
+                    aufsTor = zahl(5),
+                    tore = zahl(6),
+                    vorlagen = zahl(7),
+                )
+                heimListe += BerichtSpielerStatistikEintrag(heimName, heim.getValue(heimName.lowercase()))
+            }
+            val gastName = text(16)
+            if (gastName != null) {
+                gast[gastName.lowercase()] = BerichtSpielerStatistik(
+                    note = text(15),
+                    zweikaempfe = zahl(13),
+                    zweikampfQuote = prozent(14),
+                    schuesse = zahl(9),
+                    aufsTor = zahl(10),
+                    tore = zahl(11),
+                    vorlagen = zahl(12),
+                )
+                gastListe += BerichtSpielerStatistikEintrag(gastName, gast.getValue(gastName.lowercase()))
+            }
+        }
+        return SpielerStatistikErgebnis(heim, gast, heimListe, gastListe)
+    }
+
+    private data class SpielerStatistikErgebnis(
+        val heim: Map<String, BerichtSpielerStatistik> = emptyMap(),
+        val gast: Map<String, BerichtSpielerStatistik> = emptyMap(),
+        val heimListe: List<BerichtSpielerStatistikEintrag> = emptyList(),
+        val gastListe: List<BerichtSpielerStatistikEintrag> = emptyList(),
+    )
 
     private fun safeGet(url: String): String? {
         val request = Request.Builder().url(url).build()

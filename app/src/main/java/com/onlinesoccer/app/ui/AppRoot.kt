@@ -549,6 +549,11 @@ private fun MainScaffold(
                             launchSingleTop = true
                         }
                     },
+                    onSpielerKarte = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
             composable(Routes.INTERNATIONALE_BEWERBE) {

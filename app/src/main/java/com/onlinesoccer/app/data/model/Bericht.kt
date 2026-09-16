@@ -10,6 +10,8 @@ data class BerichtSpieler(
     val position: String? = null,
     val feldzeile: Int? = null,
     val feldspalte: Int? = null,
+    /** Spieler-ID, falls der Bericht sie verlinkt (z. B. `spielerinfo(123)`). */
+    val spielerId: Long? = null,
 )
 
 data class BerichtAufstellung(
@@ -38,6 +40,33 @@ data class BerichtEreignis(
 ) {
     val tor: Boolean get() = typ == BerichtEreignisTyp.TOR
 }
+
+/**
+ * Einzelstatistik eines Spielers aus der Tabelle „Es folgen die Spielerstatistiken".
+ * Alle Werte stehen exakt so im Bericht; fehlen sie, bleibt die Karte leer.
+ */
+data class BerichtSpielerStatistik(
+    /** Spielnote, sofern der Bericht eine ausweist. */
+    val note: String? = null,
+    /** Gewonnene Zweikämpfe (ZK). */
+    val zweikaempfe: Int = 0,
+    /** Zweikampfquote in Prozent (ZK-%), 0…100. */
+    val zweikampfQuote: Double = 0.0,
+    /** Schüsse insgesamt. */
+    val schuesse: Int = 0,
+    /** Schüsse aufs Tor. */
+    val aufsTor: Int = 0,
+    /** Tore laut Spielerstatistik-Tabelle. */
+    val tore: Int = 0,
+    /** Vorlagen laut Spielerstatistik-Tabelle. */
+    val vorlagen: Int = 0,
+)
+
+/** Ein Spieler samt seiner Statistik in der Reihenfolge des Berichts. */
+data class BerichtSpielerStatistikEintrag(
+    val name: String,
+    val statistik: BerichtSpielerStatistik,
+)
 /** Statistik einer Mannschaft im Spielbericht. */
 data class BerichtStatistik(
     val abseits: String? = null,
@@ -68,6 +97,12 @@ data class SpielBericht(
     val gastAufstellung: BerichtAufstellung? = null,
     val ereignisse: List<BerichtEreignis> = emptyList(),
     val statistik: BerichtStatistik? = null,
+    /** Spielerstatistiken je Team, Schlüssel = Spielername (kleingeschrieben). */
+    val heimSpielerStatistik: Map<String, BerichtSpielerStatistik> = emptyMap(),
+    val gastSpielerStatistik: Map<String, BerichtSpielerStatistik> = emptyMap(),
+    /** Geordnete Spielerstatistiken je Team für die Anzeige (Reihenfolge des Berichts). */
+    val heimSpielerStatistikListe: List<BerichtSpielerStatistikEintrag> = emptyList(),
+    val gastSpielerStatistikListe: List<BerichtSpielerStatistikEintrag> = emptyList(),
     val rohtext: String? = null,
     val url: String,
 )

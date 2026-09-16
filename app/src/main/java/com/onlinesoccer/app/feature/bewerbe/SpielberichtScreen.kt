@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -215,6 +216,19 @@ private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBerich
                         StatistikZeile("Moral", stat.moral)
                     }
                 }
+            }
+        }
+
+        if (bericht.heimSpielerStatistikListe.isNotEmpty() || bericht.gastSpielerStatistikListe.isNotEmpty()) {
+            item {
+                SpielerstatistikenVergleich(
+                    heim = bericht.heim,
+                    gast = bericht.gast,
+                    heimEintraege = bericht.heimSpielerStatistikListe,
+                    gastEintraege = bericht.gastSpielerStatistikListe,
+                    heimAufstellung = bericht.heimAufstellung,
+                    gastAufstellung = bericht.gastAufstellung,
+                )
             }
         }
     }
@@ -497,4 +511,134 @@ private fun StatistikZeile(label: String, wert: String?) {
             Text(werte.getOrNull(1).orEmpty(), modifier = Modifier.weight(0.35f), textAlign = TextAlign.End, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
         }
     }
+}
+
+/** Übersicht aller eingesetzten Spieler je Team (wie „Es folgen die Spielerstatistiken"). */
+@Composable
+private fun SpielerstatistikenVergleich(
+    heim: String?,
+    gast: String?,
+    heimEintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
+    gastEintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
+    heimAufstellung: BerichtAufstellung?,
+    gastAufstellung: BerichtAufstellung?,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Spielerstatistiken", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        SpielerstatistikTabelle(heim ?: "Heimteam", heimEintraege, heimAufstellung)
+        SpielerstatistikTabelle(gast ?: "Gastteam", gastEintraege, gastAufstellung)
+    }
+}
+
+private val noteBreite = 34.dp
+private val zkBreite = 26.dp
+private val zkProzentBreite = 44.dp
+private val schuesseBreite = 38.dp
+private val aufsTorBreite = 46.dp
+private val toreBreite = 30.dp
+private val vorlagenBreite = 40.dp
+private val nummernBreite = 24.dp
+
+@Composable
+private fun SpielerstatistikTabelle(
+    teamName: String,
+    eintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
+    aufstellung: BerichtAufstellung?,
+) {
+    if (eintraege.isEmpty()) return
+    val zeigeNote = eintraege.any { !it.statistik.note.isNullOrBlank() }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(teamName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth()) {
+                Spacer(Modifier.width(nummernBreite))
+                Text(
+                    "Spieler",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                )
+                if (zeigeNote) StatKopfZelle("Note", noteBreite)
+                StatKopfZelle("ZK", zkBreite)
+                StatKopfZelle("ZK-%", zkProzentBreite)
+                StatKopfZelle("Schüsse", schuesseBreite)
+                StatKopfZelle("aufs Tor", aufsTorBreite)
+                StatKopfZelle("Tore", toreBreite)
+                StatKopfZelle("Vorl.", vorlagenBreite)
+            }
+            eintraege.forEach { eintrag ->
+                SpielerstatistikZeile(eintrag, aufstellung, zeigeNote)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatKopfZelle(label: String, breite: androidx.compose.ui.unit.Dp) {
+    Text(
+        label,
+        modifier = Modifier.width(breite),
+        textAlign = TextAlign.End,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontWeight = FontWeight.Bold,
+        maxLines = 2,
+    )
+}
+
+@Composable
+private fun SpielerstatistikZeile(
+    eintrag: com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag,
+    aufstellung: BerichtAufstellung?,
+    zeigeNote: Boolean,
+) {
+    val spieler = aufstellung?.spieler?.firstOrNull { it.name.equals(eintrag.name, ignoreCase = true) }
+    val stat = eintrag.statistik
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (spieler?.nummer != null) {
+            Box(
+                Modifier
+                    .size(18.dp)
+                    .background(markerColor(spieler.position), RoundedCornerShape(4.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(spieler.nummer, color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+            }
+            Spacer(Modifier.width(6.dp))
+        } else {
+            Spacer(Modifier.width(nummernBreite))
+        }
+        Text(
+            eintrag.name,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+        )
+        if (zeigeNote) {
+            StatWertZelle(stat.note ?: "–", noteBreite)
+        }
+        StatWertZelle(stat.zweikaempfe.toString(), zkBreite)
+        StatWertZelle(stat.zweikampfQuote.formatProzent(), zkProzentBreite)
+        StatWertZelle(stat.schuesse.toString(), schuesseBreite)
+        StatWertZelle(stat.aufsTor.toString(), aufsTorBreite)
+        StatWertZelle(stat.tore.toString(), toreBreite)
+        StatWertZelle(stat.vorlagen.toString(), vorlagenBreite)
+    }
+}
+
+@Composable
+private fun StatWertZelle(wert: String, breite: androidx.compose.ui.unit.Dp) {
+    Text(
+        wert,
+        modifier = Modifier.width(breite),
+        textAlign = TextAlign.End,
+        style = MaterialTheme.typography.bodySmall,
+    )
+}
+
+private fun Double.formatProzent(): String {
+    val ganze = this % 1.0 == 0.0
+    return if (ganze) toInt().toString() else toString()
 }

@@ -17,4 +17,16 @@ object OsApi {
     const val MENU = "$BASE_URL/os_menu_haupt.html"
     const val MAIN = "$BASE_URL/haupt.php"
     const val INDEX = "$BASE_URL/index.php"
+
+    /**
+     * Basis-Pfad eines Vereinswappens (`images/wappen/00000080…`).
+     * Die Dateiendungen variieren je Verein (png/gif/jpg) – siehe [wappenUrls].
+     */
+    private const val WAPPEN_BASIS = "$BASE_URL/images/wappen"
+
+    /** Kandidaten-URLs eines Vereinswappens in wahrscheinlicher Reihenfolge. */
+    fun wappenUrls(teamId: Long): List<String> {
+        val id = teamId.toString().padStart(8, '0')
+        return listOf("$WAPPEN_BASIS/$id.png", "$WAPPEN_BASIS/$id.gif", "$WAPPEN_BASIS/$id.jpg")
+    }
 }
