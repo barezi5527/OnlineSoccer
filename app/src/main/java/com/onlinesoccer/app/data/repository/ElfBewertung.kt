@@ -69,6 +69,12 @@ data class ElfKandidat(
      * Gegentore) – nur wenn Spielerstatistik und Endstand vorliegen; sonst null.
      */
     val gehalteneBalle: Int? = null,
+    /**
+     * Bericht-Note des Spielers aus der Spielerstatistik-Tabelle (Skala 1,0–6,0,
+     * 1 = beste Note). Nur berichtet, wenn der Bericht eine Note ausweist
+     * (sonst null → K5 bleibt neutral).
+     */
+    val berichtNote: Double? = null,
 ) {
     /** Kein eigener Gegentreffer (Zu-Null-Spiel) – nur bei bekanntem Ergebnis. */
     val zuNull: Boolean get() = hatErgebnis && gegenTore == 0
@@ -81,37 +87,46 @@ data class ElfKandidat(
 /**
  * Zentrale, positionsabhängige Bewertungslogik der Elf des Spieltags.
  *
- * Die Note entsteht ausschließlich aus der in den Spielberichten tatsächlich
- * vorhandenen Information nach der Formel
+ * Die Note entsteht ausschließlich aus der im Spielbericht tatsächlich
+ * vorhandenen Information nach der additiven Formel
  *
- *   5,5 Grundbewertung + positive Aktionen + Ergebnis/Spielkontext − negative Aktionen
+ *    Endnote = Basis + K1 + K2 + K3 + K4 + K5 − Karten
  *
- * Es gibt **keine** künstlichen Zusatzgrößen: Zweikämpfe, Schüsse, Passquoten,
- * xG, Paraden, Auffälligkeit, Elfmeter-Treffer oder geschätzte Spielanteile
- * fließen bewusst nicht ein – nur Tore, Vorlagen, Ergebnis, Zu-Null-Spiel und
- * Karten sind bewerbar (alle Werte stammen aus dem realen Spielbericht).
+ * Basis: Startelf **5,5** · Einwechsler **4,0** (fix, kein Minuten-Faktor).
+ * Die Leistungszuschläge werden nach Einsatzzeit **nicht** skaliert; die
+ * Einsatzminuten ([effektiveMinuten]) entscheiden nur, ob ein Spieler überhaupt
+ * als eingesetzt gilt ([hatEinsatz]) – nicht eingesetzte Bank-Spieler werden
+ * von der Elf ausgeschlossen.
  *
- * Die Einsatzminuten sind **kein** Bonus: Ein kurzer Einsatz (z. B. 20 Minuten
- * mit Tor) erhält exakt denselben Torbonus wie eine volle Partie, aber nie
- * einen künstlichen „Vollspielbonus". Die Ermittlung der Einsatzzeit selbst
- * ([effektiveMinuten]) bleibt unverändert bestehen und entscheidet nur noch,
- * ob ein Spieler überhaupt als eingesetzt gilt ([hatEinsatz]) – nicht
- * eingesetzte Bank-Spieler werden von der Elf ausgeschlossen.
+ * Die fünf Kategorien werden durch feste Budgets (Caps) begrenzt; deren Summe
+ * (4,5) setzt die Zielverteilung 35/25/20/12/8 um:
  *
- * Aufschlüsselung (transparent, in dieser Reihenfolge):
+ *  – K1 Direkter Impact (Cap 1,6): Tore (STU 0,5 · MIT/OMI/DMI 0,6 · ABW 0,8 ·
+ *    TW 1,0 je Tor, max. 1,0 für Tore insgesamt), Vorlagen (+0,35 je, max. 0,7),
+ *    verwandelter Elfmeter (+0,2)
+ *  – K2 Effizienz & Spielkontrolle (Cap 1,1, Proxy): Schussquote
+ *    (`aufsTor/schuesse`, nur bei `schuesse ≥ 3`): ≥40 % 0,2 · ≥50 % 0,3 ·
+ *    ≥60 % 0,4 · ≥75 % 0,5; Abschlusspräsenz (`aufsTor ≥2` 0,1 · `≥4` 0,2);
+ *    Auffälligkeit (2–3 0,1 · 4–5 0,2 · 6+ 0,3)
+ *  – K3 Zweikämpfe (Cap 0,9): +0,03 je gewonnener ZK (max. 0,4) und
+ *    Zweikampfquote ≥45 % 0,05 … ≥70 % 0,3 – nur bei vorhandener Statistik
+ *    (`zweikaempfe > 0`); beim Torwart stattdessen gehaltene Bälle (3–4 0,3 ·
+ *    5–6 0,5 · 7+ 0,7)
+ *  – K4 Ergebnis & Teambonus (Cap 0,55): Sieg +0,35 · Unentschieden +0,1 ·
+ *    Niederlage −0,2; Zu null: TW +0,3 · ABW +0,2 – jeweils nur bei bekanntem
+ *    Endstand
+ *  – K5 Bericht-Note (Cap +0,35/−0,15): Bericht-Note 1,0 (beste) bis 6,0;
+ *    ohne Note im Bericht 0,0
+ *  – Karten (unskaliert, extra): je Gelb −0,2 · je Rot-Ereignis −1,0
+ *    (kein Doppel-Abzug)
  *
- *  – Grundbewertung  5,5
- *  – Tore            STU +1,0 · MIT/OMI +1,2 · ABW +1,5 · TW +2,0 (je Tor)
- *  – Vorlagen        +0,6 je Vorlage
- *  – Ergebnis        nur bei bekanntem Endstand: Sieg +0,3 · Unentschieden +0,1 · Niederlage −0,2
- *  – Zu null         nur bei bekanntem Endstand: TW +0,5 · ABW +0,3
- *  – Karten          je Gelb −0,2 · je Rot-Ereignis −1,0 (kein Doppel-Abzug)
- *
- * Die Rohbewertung wird auf eine Nachkommastelle gerundet und auf maximal 10,0
- * begrenzt. Eine 10,0 darf nur entstehen, wenn die **ungerundete** Rohbewertung
- * mindestens 9,8 beträgt – es findet **keine** Normalisierung oder
- * Hochskalierung statt. Auch eine Elf ganz ohne 10,0 ist ausdrücklich in
- * Ordnung. Fehlende Daten (z. B. kein Endstand) erzeugen weder Bonus noch Malus.
+ * Die Summe der sichtbaren Kriterienzeilen entspricht exakt der Rohbewertung,
+ * aus der die (gerundete) Endnote entsteht. Die Rohbewertung wird auf eine
+ * Nachkommastelle gerundet und auf maximal 10,0 begrenzt. Eine 10,0 darf nur
+ * entstehen, wenn die **ungerundete** Rohbewertung mindestens 9,95 beträgt –
+ * es findet **keine** Normalisierung oder Hochskalierung statt. Fehlende Daten
+ * (z. B. kein Endstand, keine Zweikampf-Statistik, keine Bericht-Note)
+ * erzeugen weder Bonus noch Malus.
  */
 object ElfBewertung {
 
@@ -120,37 +135,71 @@ object ElfBewertung {
 
     /**
      * Zeilennamen der transparenten Aufschlüsselung – identisch zur Anzeige,
-     * damit Grundbewertung/Tore/… direkt mit den Dialogzeilen korrespondieren.
+     * damit die Zeilen direkt mit den Dialogzeilen korrespondieren.
      */
     private const val GRUND = "Grundbewertung"
-    private const val TORE = "Tore"
-    private const val VORLAGEN = "Vorlagen"
-    private const val ERGEBNIS = "Ergebnis"
-    private const val ZU_NULL = "Zu null"
+    private const val GRUND_EINWECHSLER = "Grundbewertung (Einwechslung)"
+    private const val IMPACT = "Direkter Impact"
+    private const val EFFIZIENZ = "Effizienz"
+    private const val ZWEIKAEMPFE = "Zweikämpfe"
+    private const val PARADEN = "Paraden"
+    private const val TEAM = "Ergebnis & Teambonus"
+    private const val NOTE = "Bericht-Note"
     private const val KARTEN = "Karten"
 
-    /** Grundbewertung – identisch für jeden eingesetzten Spieler. */
-    private const val GRUNDBEWERTUNG = 5.5
+    /** Basis-Bewertung: Startelf 5,5 · Einwechsler 4,0 (fix, kein Minuten-Faktor). */
+    private const val BASIS_STARTELF = 5.5
+    private const val BASIS_EINWECHSLER = 4.0
 
+    /** Kategorie-Budgets (Caps) – Summe = 4,5 → Startelf max. Roh ≈ 10,0. */
+    private const val IMPACT_MAX = 1.6
+    private const val EFFIZIENZ_MAX = 1.1
+    private const val ZWEIKAMPF_MAX = 0.9
+    private const val TEAM_MAX = 0.55
+    private const val NOTE_MAX = 0.35
+
+    // K1 – Direkter Impact.
     /** Torbonus je Tor, abhängig von der Position. */
-    private const val TOR_STU = 1.0
-    private const val TOR_MIT = 1.2
-    private const val TOR_ABW = 1.5
-    private const val TOR_TW = 2.0
-
+    private const val TOR_STU = 0.5
+    private const val TOR_MIT = 0.6
+    private const val TOR_ABW = 0.8
+    private const val TOR_TW = 1.0
+    /** Maximaler Torbonus insgesamt (deutlich gedeckelt, "Tore sind kein Selbstläufer"). */
+    private const val TOR_MAX = 1.0
     /** Vorlagen-Bonus je Vorlage. */
-    private const val VORLAGE_BONUS = 0.6
+    private const val VORLAGE_BONUS = 0.35
+    private const val VORLAGEN_MAX = 0.7
+    /** Bonus für einen verwandelten Elfmeter (zusätzlich zum Tor). */
+    private const val ELFMETER_BONUS = 0.2
 
-    /** Ergebnis-Bonus/-Malus – nur bei tatsächlich vorhandenem Endstand. */
-    private const val SIEG_BONUS = 0.3
+    // K2 – Effizienz & Spielkontrolle (Proxy, da Passdaten fehlen).
+    /** Schussquote wird nur bei mindestens so vielen Schüssen gewertet. */
+    private const val MIN_SCHUESSE = 3
+    /** Abschlusspräsenz (aufsTor). */
+    private const val AUFS_TOR_TIER_4 = 0.2
+    private const val AUFS_TOR_TIER_2 = 0.1
+    /** Auffälligkeit (Ticker-Nennungen). */
+    private const val NENNUNGEN_6 = 0.3
+    private const val NENNUNGEN_4_5 = 0.2
+    private const val NENNUNGEN_2_3 = 0.1
+
+    // K3 – Zweikämpfe.
+    /** Zuschlag je gewonnener Zweikampf (ZK), max. [ZK_QUANTITAET_MAX]. */
+    private const val ZK_PRO_ZWIKAMPF = 0.03
+    private const val ZK_QUANTITAET_MAX = 0.4
+    /** Gehaltene Bälle (Torwart ersetzt damit die ZK-Werte). */
+    private const val TW_GEHALTEN_7 = 0.7
+    private const val TW_GEHALTEN_5_6 = 0.5
+    private const val TW_GEHALTEN_3_4 = 0.3
+
+    // K4 – Ergebnis & Teambonus – nur bei tatsächlich vorhandenem Endstand.
+    private const val SIEG_BONUS = 0.35
     private const val UNENTSCHIEDEN_BONUS = 0.1
     private const val NIEDERLAGE_MALUS = 0.2
+    private const val ZU_NULL_TW = 0.3
+    private const val ZU_NULL_ABW = 0.2
 
-    /** Zu-Null-Bonus – nur bei tatsächlich vorhandenem Endstand. */
-    private const val ZU_NULL_TW = 0.5
-    private const val ZU_NULL_ABW = 0.3
-
-    /** Karten-Malus (positiver Betrag). */
+    /** Karten-Malus (positiver Betrag), unskaliert – außerhalb des Budgets. */
     const val GELBE_KARTE_MALUS = 0.2
     /**
      * Malus je Rot-Ereignis. Der Parser wertet „Gelb-Rot"/„zweite Gelbe" ebenso
@@ -163,60 +212,64 @@ object ElfBewertung {
      */
     const val ROTE_KARTE_MALUS = 1.0
 
-    /** Eine 10,0 setzt eine ungerundete Rohbewertung von mindestens 9,8 voraus. */
-    private const val ZEHN_UNTERGRENZE = 9.8
+    /** Eine 10,0 setzt eine ungerundete Rohbewertung von mindestens 9,95 voraus. */
+    private const val ZEHN_UNTERGRENZE = 9.95
     private const val MAX_NOTE = 10.0
 
     /**
      * Bewertet einen Kandidaten und liefert die nachvollziehbare Note samt
-     * Aufschlüsselung in exakt dieser Reihenfolge: Grundbewertung, Tore,
-     * Vorlagen, Ergebnis, Zu null, Karten. Die Summe der sichtbaren Beiträge
-     * entspricht der Rohbewertung, aus der die (gerundete) Endnote entsteht.
+     * Aufschlüsselung in exakt dieser Reihenfolge: Grundbewertung, Direkter
+     * Impact, Effizienz, Zweikämpfe, Ergebnis & Teambonus, Bericht-Note,
+     * Karten. 0-Beiträge werden nicht angezeigt; die Summe der sichtbaren
+     * Beiträge entspricht der Rohbewertung, aus der die Endnote entsteht.
      */
     fun bewerten(kandidat: ElfKandidat): SpielerBewertung {
         val zeilen = mutableListOf<BewertungsZeile>()
-        var summe = 0.0
 
-        // 1. Grundbewertung – immer.
-        zeilen += BewertungsZeile(GRUND, GRUNDBEWERTUNG)
-        summe += GRUNDBEWERTUNG
+        // 1. Grundbewertung – Basis nach Einsatzart (Startelf 5,5 / Einwechsler 4,0).
+        zeilen += BewertungsZeile(
+            if (kandidat.startelf) GRUND else GRUND_EINWECHSLER,
+            if (kandidat.startelf) BASIS_STARTELF else BASIS_EINWECHSLER,
+        )
 
-        // 2. Tore – positionsabhängig, je Tor aufsummiert.
-        val tore = kandidat.tore * torBonus(kandidat.position)
-        if (tore != 0.0) {
-            zeilen += BewertungsZeile(TORE, tore)
-            summe += tore
+        // 2. K1 – Direkter Impact (Tore/Vorlagen/Elfmeter), Cap 1,6.
+        val impact = impactBonus(kandidat)
+        if (impact != 0.0) {
+            zeilen += BewertungsZeile(IMPACT, impact)
         }
 
-        // 3. Vorlagen – je Vorlage.
-        val vorlagen = kandidat.vorlagen * VORLAGE_BONUS
-        if (vorlagen != 0.0) {
-            zeilen += BewertungsZeile(VORLAGEN, vorlagen)
-            summe += vorlagen
+        // 3. K2 – Effizienz & Spielkontrolle (Proxy), Cap 1,1.
+        val effizienz = effizienzBonus(kandidat)
+        if (effizienz != 0.0) {
+            zeilen += BewertungsZeile(EFFIZIENZ, effizienz)
         }
 
-        // 4. Ergebnis – nur bei tatsächlich vorhandenem Endstand.
-        val ergebnis = ergebnisBonus(kandidat)
-        if (ergebnis != 0.0) {
-            zeilen += BewertungsZeile(ERGEBNIS, ergebnis)
-            summe += ergebnis
+        // 4. K3 – Zweikämpfe (Feldspieler) bzw. gehaltene Bälle (Torwart), Cap 0,9.
+        val zweikaempfe = zweikaempfeBonus(kandidat)
+        if (zweikaempfe != 0.0) {
+            val label = if (kandidat.position == SpielerPosition.TOR) PARADEN else ZWEIKAEMPFE
+            zeilen += BewertungsZeile(label, zweikaempfe)
         }
 
-        // 5. Zu null – nur bei tatsächlich vorhandenem Endstand (Torwart/Abwehr).
-        val zuNull = zuNullBonus(kandidat)
-        if (zuNull != 0.0) {
-            zeilen += BewertungsZeile(ZU_NULL, zuNull)
-            summe += zuNull
+        // 5. K4 – Ergebnis & Teambonus, nur bei bekanntem Endstand, Cap 0,55.
+        val team = teamBonus(kandidat)
+        if (team != 0.0) {
+            zeilen += BewertungsZeile(TEAM, team)
         }
 
-        // 6. Karten – je Gelb −0,2, je Rot-Ereignis −1,0 (kein Doppel-Abzug).
+        // 6. K5 – Bericht-Note (nur falls der Bericht eine Note ausweist).
+        val note = noteBonus(kandidat.berichtNote)
+        if (note != 0.0) {
+            zeilen += BewertungsZeile(NOTE, note)
+        }
+
+        // 7. Karten – je Gelb −0,2, je Rot-Ereignis −1,0 (kein Doppel-Abzug).
         val karten = kartenMalus(kandidat)
         if (karten != 0.0) {
             zeilen += BewertungsZeile(KARTEN, karten)
-            summe += karten
         }
 
-        val gesamt = endnote(summe)
+        val gesamt = endnote(zeilen.sumOf { it.beitrag })
         return SpielerBewertung(gesamt = gesamt, zeilen = zeilen)
     }
 
@@ -256,26 +309,120 @@ object ElfBewertung {
         else -> TOR_STU
     }
 
-    /** Ergebnis-Bonus/-Malus – ausschließlich bei tatsächlich vorhandenem Endstand. */
-    private fun ergebnisBonus(kandidat: ElfKandidat): Double {
+    /** K1 – Direkter Impact (Tore/Vorlagen/Elfmeter), Cap [IMPACT_MAX]. */
+    private fun impactBonus(kandidat: ElfKandidat): Double {
+        val tore = (kandidat.tore * torBonus(kandidat.position)).coerceAtMost(TOR_MAX)
+        val vorlagen = (kandidat.vorlagen * VORLAGE_BONUS).coerceAtMost(VORLAGEN_MAX)
+        val elfmeter = if (kandidat.elfmeter) ELFMETER_BONUS else 0.0
+        return (tore + vorlagen + elfmeter).coerceAtMost(IMPACT_MAX)
+    }
+
+    /** K2 – Effizienz & Spielkontrolle (Proxy), Cap [EFFIZIENZ_MAX]. */
+    private fun effizienzBonus(kandidat: ElfKandidat): Double {
+        var bonus = 0.0
+        if (kandidat.schuesse >= MIN_SCHUESSE) {
+            val quote = kandidat.aufsTor.toDouble() / kandidat.schuesse
+            bonus += when {
+                quote >= 0.75 -> 0.5
+                quote >= 0.60 -> 0.4
+                quote >= 0.50 -> 0.3
+                quote >= 0.40 -> 0.2
+                else -> 0.0
+            }
+        }
+        bonus += when {
+            kandidat.aufsTor >= 4 -> AUFS_TOR_TIER_4
+            kandidat.aufsTor >= 2 -> AUFS_TOR_TIER_2
+            else -> 0.0
+        }
+        bonus += when {
+            kandidat.auffaelligkeit >= 6 -> NENNUNGEN_6
+            kandidat.auffaelligkeit >= 4 -> NENNUNGEN_4_5
+            kandidat.auffaelligkeit >= 2 -> NENNUNGEN_2_3
+            else -> 0.0
+        }
+        return bonus.coerceAtMost(EFFIZIENZ_MAX)
+    }
+
+    /**
+     * K3 – Zweikämpfe (Feldspieler) bzw. gehaltene Bälle (Torwart), Cap
+     * [ZWEIKAMPF_MAX]. Nur anrechnen, wenn eine Statistik vorliegt: Feldspieler
+     * erst bei `zweikaempfe > 0`; der Torwart nutzt stattdessen die gehaltenen
+     * Bälle (ZK-Werte sind für TW selten aussagekräftig).
+     */
+    private fun zweikaempfeBonus(kandidat: ElfKandidat): Double {
+        if (kanonisch(kandidat.position) == SpielerPosition.TOR) {
+            val gehaltene = kandidat.gehalteneBalle ?: return 0.0
+            return gehalteneTier(gehaltene).coerceAtMost(ZWEIKAMPF_MAX)
+        }
+        if (kandidat.zweikaempfe <= 0) return 0.0
+        // Die ZK-Spalte liefert bereits die GEWONNENEN Zweikämpfe (BerichtRepository);
+        // die Quote steuert nur die Quote-Stufe.
+        val quantitaet = (kandidat.zweikaempfe * ZK_PRO_ZWIKAMPF).coerceAtMost(ZK_QUANTITAET_MAX)
+        val quote = quoteTier(kandidat.zweikampfQuote)
+        return (quantitaet + quote).coerceAtMost(ZWEIKAMPF_MAX)
+    }
+
+    /** Gehaltene-Bälle-Stufe des Torhüters (3–4 · 5–6 · 7+). */
+    private fun gehalteneTier(gehaltene: Int): Double = when {
+        gehaltene >= 7 -> TW_GEHALTEN_7
+        gehaltene >= 5 -> TW_GEHALTEN_5_6
+        gehaltene >= 3 -> TW_GEHALTEN_3_4
+        else -> 0.0
+    }
+
+    /** Zweikampfquote-Stufe (höchste erreichte Stufe zählt nur einmal). */
+    private fun quoteTier(quote: Double): Double = when {
+        quote >= 70 -> 0.3
+        quote >= 65 -> 0.25
+        quote >= 60 -> 0.2
+        quote >= 55 -> 0.15
+        quote >= 50 -> 0.1
+        quote >= 45 -> 0.05
+        else -> 0.0
+    }
+
+    /**
+     * K4 – Ergebnis & Teambonus. Nur bei tatsächlich vorhandenem Endstand;
+     * die Bonusseite ist auf [TEAM_MAX] gedeckelt (Sieg + TW-Zu-Null = 0,65 →
+     * 0,55), die Niederlage (−0,2) ist ein ungedeckelter Malus.
+     */
+    private fun teamBonus(kandidat: ElfKandidat): Double {
         if (!kandidat.hatErgebnis) return 0.0
-        return when {
+        var bonus = when {
             kandidat.sieg -> SIEG_BONUS
             kandidat.unentschieden -> UNENTSCHIEDEN_BONUS
             kandidat.niederlage -> -NIEDERLAGE_MALUS
             else -> 0.0
         }
+        if (kandidat.zuNull) {
+            bonus += when (kanonisch(kandidat.position)) {
+                SpielerPosition.TOR -> ZU_NULL_TW
+                SpielerPosition.ABW -> ZU_NULL_ABW
+                else -> 0.0
+            }
+        }
+        return if (bonus > 0.0) bonus.coerceAtMost(TEAM_MAX) else bonus
     }
 
     /**
-     * Zu-Null-Bonus (Torwart +0,5, Abwehr +0,3) – ausschließlich bei tatsächlich
-     * vorhandenem Endstand und 0 Gegentoren des eigenen Teams.
+     * K5 – Bericht-Note (Skala 1,0–6,0, 1,0 = beste Note). Liefert der Bericht
+     * keine Note (null) oder außerhalb der Skala, bleibt der Beitrag 0,0.
      */
-    private fun zuNullBonus(kandidat: ElfKandidat): Double {
-        if (!kandidat.hatErgebnis || !kandidat.zuNull) return 0.0
-        return when (kanonisch(kandidat.position)) {
-            SpielerPosition.TOR -> ZU_NULL_TW
-            SpielerPosition.ABW -> ZU_NULL_ABW
+    private fun noteBonus(note: Double?): Double {
+        if (note == null) return 0.0
+        return when (round(note * 10.0) / 10.0) {
+            1.0 -> 0.35
+            1.5 -> 0.30
+            2.0 -> 0.25
+            2.5 -> 0.20
+            3.0 -> 0.15
+            3.5 -> 0.10
+            4.0 -> 0.05
+            4.5 -> 0.0
+            5.0 -> -0.05
+            5.5 -> -0.10
+            6.0 -> -0.15
             else -> 0.0
         }
     }
@@ -291,7 +438,7 @@ object ElfBewertung {
     /**
      * Endnote: Rohbewertung auf eine Nachkommastelle gerundet und auf die Skala
      * 1,0 … 10,0 geklemmt. Eine 10,0 verlangt eine ungerundete Rohbewertung von
-     * mindestens 9,8 – darunter wird niemals auf 10,0 aufgerundet.
+     * mindestens 9,95 – darunter wird niemals auf 10,0 aufgerundet.
      */
     private fun endnote(roh: Double): Double {
         val geklemmt = roh.coerceIn(1.0, MAX_NOTE)
@@ -350,6 +497,7 @@ object ElfBewertung {
         aufsTor = spieler.aufsTor,
         auffaelligkeit = spieler.auffaelligkeit,
         gehalteneBalle = spieler.gehalteneBalle,
+        berichtNote = spieler.berichtNote,
     )
 }
 
@@ -542,6 +690,7 @@ object ElfAuswahl {
                 aufsTor = kandidat.aufsTor,
                 auffaelligkeit = kandidat.auffaelligkeit,
                 gehalteneBalle = kandidat.gehalteneBalle,
+                berichtNote = kandidat.berichtNote,
             )
         }
         return ElfAufstellung(

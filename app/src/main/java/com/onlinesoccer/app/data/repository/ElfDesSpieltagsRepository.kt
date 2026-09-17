@@ -166,9 +166,9 @@ object ElfCache {
 
     private const val FELD = '\u241F'
     private const val SPIELER = '\u241E'
-    private const val PREFIX = "ElfDesSpieltags|v6"
-    /** Anzahl gespeicherter Felder je Spieler (inkl. Bewertungs-Eingaben, teamId, kapitän). */
-    private const val SPIELER_FELDER = 25
+    private const val PREFIX = "ElfDesSpieltags|v7"
+    /** Anzahl gespeicherter Felder je Spieler (inkl. Bewertungs-Eingaben, teamId, kapitän, berichtNote). */
+    private const val SPIELER_FELDER = 26
 
     /** Eindeutiger Cache-Schlüssel je Server, Nutzer (falls bekannt), Liga, Land, Saison, Spieltag. */
     fun schluessel(teamId: Long?, ligaId: Int, landId: Int, saison: Int, zat: Int): String {
@@ -228,6 +228,7 @@ object ElfCache {
                 spieler.auffaelligkeit.toString(),
                 spieler.gehalteneBalle?.toString().orEmpty(),
                 spieler.kapitän.toString(),
+                spieler.berichtNote?.toString().orEmpty(),
             ).joinToString(FELD.toString())
         }
         return meta + SPIELER + spieler
@@ -299,6 +300,7 @@ object ElfCache {
             auffaelligkeit = felder[22].toIntOrNull() ?: 0,
             gehalteneBalle = felder[23].toIntOrNull(),
             kapitän = felder[24].toBooleanStrictOrNull() ?: false,
+            berichtNote = felder[25].toDoubleOrNull(),
         )
     }
 }

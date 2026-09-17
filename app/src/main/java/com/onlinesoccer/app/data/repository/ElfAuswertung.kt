@@ -73,14 +73,14 @@ object ElfAuswertung {
         val kapitänProName = kapitän(bericht.rohtext.orEmpty(), bekannteNamen)
 
         // Gehaltene Bälle je Torhüter: Schüsse aufs Tor des Gegners minus Gegentore.
-// Nur wenn die Spielerstatistik des Gegners vorliegt und der Endstand bekannt ist.
-val gegnerAufsTorHeim = bericht.gastSpielerStatistik.values.sumOf { it.aufsTor }
-val gegnerAufsTorGast = bericht.heimSpielerStatistik.values.sumOf { it.aufsTor }
+        // Nur wenn die Spielerstatistik des Gegners vorliegt und der Endstand bekannt ist.
+        val gegnerAufsTorHeim = bericht.gastSpielerStatistik.values.sumOf { it.aufsTor }
+        val gegnerAufsTorGast = bericht.heimSpielerStatistik.values.sumOf { it.aufsTor }
 
-fun gehaltene(opponentenStatistik: Map<String, BerichtSpielerStatistik>, gegnerAufsTor: Int, perform: Performanz?): Int? {
-    if (perform == null || opponentenStatistik.isEmpty()) return null
-    return (gegnerAufsTor - perform.gegenTore).coerceAtLeast(0)
-}
+        fun gehaltene(opponentenStatistik: Map<String, BerichtSpielerStatistik>, gegnerAufsTor: Int, perform: Performanz?): Int? {
+            if (perform == null || opponentenStatistik.isEmpty()) return null
+            return (gegnerAufsTor - perform.gegenTore).coerceAtLeast(0)
+        }
 
         val kandidaten = mutableListOf<ElfKandidat>()
 
@@ -118,6 +118,7 @@ fun gehaltene(opponentenStatistik: Map<String, BerichtSpielerStatistik>, gegnerA
                 } else {
                     null
                 },
+                berichtNote = noteAus(stat?.note),
             )
         }
 
@@ -155,6 +156,7 @@ fun gehaltene(opponentenStatistik: Map<String, BerichtSpielerStatistik>, gegnerA
                 } else {
                     null
                 },
+                berichtNote = noteAus(stat?.note),
             )
         }
 
@@ -171,6 +173,14 @@ fun gehaltene(opponentenStatistik: Map<String, BerichtSpielerStatistik>, gegnerA
     }
 
     private data class Performanz(val sieg: Boolean, val unentschieden: Boolean, val niederlage: Boolean, val gegenTore: Int)
+
+    /**
+     * Bericht-Note aus der Spielerstatistik-Tabelle (z. B. `"3.5"`). Dezimal-
+     * und Komma-Schreibweise werden akzeptiert; nur Werte auf der Skala
+     * 1,0–6,0 (1 = beste Note) zählen – sonst bleibt K5 neutral (null).
+     */
+    private fun noteAus(note: String?): Double? =
+        note?.replace(',', '.')?.toDoubleOrNull()?.takeIf { it in 1.0..6.0 }
 
     /** Endstand je Team: Sieg/Unentschieden/Niederlage und Gegentore. */
     private fun ergebnisAufteilung(ergebnis: String?): Pair<Performanz?, Performanz?> {

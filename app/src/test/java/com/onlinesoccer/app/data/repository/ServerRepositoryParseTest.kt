@@ -356,4 +356,86 @@ class ServerRepositoryParseTest {
         assertEquals(true, ergebnis.erfolg)
         assertTrue(ergebnis.meldung.contains("Gebot"))
     }
+
+    @Test
+    fun versteigerungsmarkt_suche_parstGebotsanzahl() {
+        val ergebnis = repo.parseVersteigerungsmarkt(dump("viewvm_suche"))
+
+        val royBayes = ergebnis.eintraege.first { it.name == "Roy Bayes" }
+        assertEquals("7", royBayes.anzahl)
+    }
+
+    /**
+     * Synthetisches `vmgebot.php`-Fixture: Der echte Aufbau ist laut Analyse
+     * dokumentiert, aber ohne Zugriff auf die Website entsteht der Test aus der
+     * bekannten Struktur (`Geld`-Eingabefeld wie bei `juscout.php`).
+     */
+    @Test
+    fun vmGebotInfo_parstKennzahlenBetragsfeldUndSubmit() {
+        val html = """
+            <html><body><div>
+            <b>Du kannst durch Klick auf "Gebot abgeben" ein Gebot auf den Versteigerungsmarkt abgeben.<b>
+            <form method="POST" action="vmgebot.php?s=105220">
+            <table border="0" width="100%">
+                <tr><td align="right">Name:</td><td align="right">Barry Linley</td><td align="right">Alter:</td><td align="right">31</td></tr>
+                <tr><td align="right">Nationalit&auml;t:</td><td align="right">England</td><td align="right">Stammposition:</td><td align="right">MIT</td></tr>
+                <tr><td align="right">Marktwert:</td><td align="right">11.465.947</td><td align="right">Angebote bis:</td><td align="right">20.09.2026</td></tr>
+                <tr><td align="right">H&ouml;chstgebot:</td><td align="right">8.054.301</td><td align="right">Gehalt:</td><td align="right">89.850</td></tr>
+                <tr><td align="right">Bieter:</td><td align="right"></td></tr>
+                <tr><td align="right"><input type="text" name="Geld" value="8054301" />&euro;</td><td align="right"><input type="submit" value="Gebot abgeben" name="Gebot"></td></tr>
+            </table>
+            </form>
+            </div></body></html>
+        """.trimIndent()
+
+        val info = repo.parseVmGebotInfo(html, 105220L)
+
+        assertEquals(105220L, info.spielerId)
+        assertEquals("Barry Linley", info.name)
+        assertEquals("31", info.alter)
+        assertEquals("MIT", info.position)
+        assertEquals("8.054.301", info.hoechstgebot)
+        assertEquals("Geld", info.betragName)
+        assertEquals("8054301", info.betragWert)
+        assertEquals("Gebot", info.submitName)
+        assertEquals("Gebot abgeben", info.submitValue)
+    }
+
+    @Test
+    fun parseVmSetzenErgebnis_erkenntErfolgWennSpielerNichtMehrGelistet() {
+        val html = """
+            <html><body><table border="0">
+            <tr><td>Name</td><td>Alter</td><td>Land</td><td>U</td><td>Skill</td><td>Opti</td><td>Marktwert</td><td>Geb&uuml;hr</td><td>Startpreis</td><td align="center">Aktion</td></tr><form method="POST">
+            <tr>
+                <td class="ABW"><a href="javascript:spielerinfo(999999);">Anderer Spieler</a></td>
+                <td>20</td><td>DEU</td><td>#</td><td>20.00</td><td>30.00</td><td>1.000.000</td><td>50.000</td>
+                <td><select name="startpreis"><option value="25">250.000</option></select></td>
+                <td><input type="submit" value="auf den VM setzen"></td>
+            </tr>
+            </form></table></body></html>
+        """.trimIndent()
+
+        val ergebnis = repo.parseVmSetzenErgebnis(html, 161985L)
+
+        assertEquals(true, ergebnis.erfolg)
+        assertTrue(ergebnis.meldung.contains("Versteigerungsmarkt"))
+    }
+
+    @Test
+    fun parseVmSetzenErgebnis_meldetFehlerWennSpielerNochGelistet() {
+        val ergebnis = repo.parseVmSetzenErgebnis(dump("vmsetzen"), 161985L)
+
+        assertEquals(false, ergebnis.erfolg)
+    }
+
+    @Test
+    fun parseVmSetzenErgebnis_erkenntFehlerhinweis() {
+        val ergebnis = repo.parseVmSetzenErgebnis(
+            "<html><body>Der Spieler ist gesperrt und kann nicht auf den VM gesetzt werden.</body></html>",
+            161985L,
+        )
+
+        assertEquals(false, ergebnis.erfolg)
+        assertTrue(ergebnis.meldung.contains("gesperrt"))
+    }
 }

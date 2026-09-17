@@ -41,6 +41,20 @@ class BewerbeViewModel @Inject constructor(
     private var pokalVersucht = false
 
     /**
+     * Demo-Modus: Filter für Land/Liga werden nicht mit der eigenen Liga/Land des
+     * Gast-Teams vorbelegt – der Nutzer muss Land und Liga selbst auswählen. Nur die
+     * aktuelle Saison wird vorbelegt. Erst bei vollständiger Auswahl (Land + Liga)
+     * wird vom Server geladen.
+     */
+    private var demo = false
+
+    private var demoSaison: Int = 0
+
+    fun setDemo(demo: Boolean) {
+        this.demo = demo
+    }
+
+    /**
      * Aktive Auswahlen. Solange [`null`] wird die Server-Standardansicht
      * (eigene Liga/Land/Saison) geladen; nach dem ersten Laden werden die
      * tatsächlich angezeigten Werte aus der Server-Antwort übernommen.
@@ -51,6 +65,8 @@ class BewerbeViewModel @Inject constructor(
     private var spieltagSaison: Int? = null
     private var spieltagZat: Int? = null
     private var pokalLand: Int? = null
+    private var pokalSaison: Int? = null
+    private var pokalRunde: Int? = null
 
     private suspend fun eigeneTeamIdBestimmen(): Int? {
         eigeneTeamId?.let { return it }
@@ -64,10 +80,62 @@ class BewerbeViewModel @Inject constructor(
     // ---------- Ligatabelle ----------
 
     fun ladeTabelle(saison: Int? = null, force: Boolean = false) {
+        if (demo) {
+            demoLadeTabelle(saison, force)
+            return
+        }
         val gewuenscht = if (saison != null) {
             (tabelleFilter ?: _uiState.value.tabelle?.filter)?.copy(saison = saison)
         } else {
             tabelleFilter
+        }
+        ladeTabelleMitFilter(gewuenscht, force)
+    }
+
+    private fun demoLadeTabelle(saison: Int? = null, force: Boolean = false) {
+        val aktuelle = _uiState.value.tabelle
+        // Erstaufruf: nur Formular/Optionen laden (Server-Standard), Saison übernehmen,
+        // aber keine eigene Liga/Land vorbelegen und keine Tabelle anzeigen.
+        if (aktuelle == null) {
+            viewModelScope.launch {
+                _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+                _uiState.value = try {
+                    val geladen = repository.ladeLigatabelle(filter = null, eigeneTeamId = null)
+                    if (geladen == null) {
+                        _uiState.value.copy(ladend = false, fehler = "Keine Tabelle für diese Auswahl verfügbar.")
+                    } else {
+                        demoSaison = geladen.saison
+                        tabelleFilter = LigaFilter(liga = 0, land = 0, tab = 0, saison = geladen.saison)
+                        _uiState.value.copy(
+                            ladend = false,
+                            tabelle = LigaTabelle(
+                                saisonen = geladen.saisonen,
+                                saison = geladen.saison,
+                                ligaOptionen = geladen.ligaOptionen,
+                                landOptionen = geladen.landOptionen,
+                                tabOptionen = geladen.tabOptionen,
+                                filter = tabelleFilter,
+                            ),
+                            fehler = null,
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiState.value.copy(ladend = false, fehler = e.message ?: "Tabelle konnte nicht geladen werden.")
+                }
+            }
+            return
+        }
+        // Saison übernehmen, aber erst laden, wenn Land UND Liga gewählt sind.
+        val basis = tabelleFilter ?: aktuelle.filter ?: return
+        val gewuenscht = basis.copy(saison = saison ?: basis.saison)
+        if (gewuenscht.liga <= 0 || gewuenscht.land <= 0) {
+            tabelleFilter = gewuenscht
+            _uiState.value = _uiState.value.copy(
+                ladend = false,
+                tabelle = aktuelle.copy(saison = gewuenscht.saison, filter = gewuenscht),
+                fehler = null,
+            )
+            return
         }
         ladeTabelleMitFilter(gewuenscht, force)
     }
@@ -80,7 +148,17 @@ class BewerbeViewModel @Inject constructor(
 
     private fun tabelleFilterAendern(transform: LigaFilter.() -> LigaFilter) {
         val basis = tabelleFilter ?: _uiState.value.tabelle?.filter ?: return
-        ladeTabelleMitFilter(basis.transform())
+        val gewuenscht = basis.transform()
+        if (demo && (gewuenscht.liga <= 0 || gewuenscht.land <= 0)) {
+            tabelleFilter = gewuenscht
+            _uiState.value = _uiState.value.copy(
+                ladend = false,
+                tabelle = _uiState.value.tabelle?.copy(filter = gewuenscht),
+                fehler = null,
+            )
+            return
+        }
+        ladeTabelleMitFilter(gewuenscht)
     }
 
     private fun ladeTabelleMitFilter(gewuenscht: LigaFilter?, force: Boolean = false) {
@@ -110,6 +188,10 @@ class BewerbeViewModel @Inject constructor(
     // ---------- Spieltage ----------
 
     fun ladeSpieltag(zat: Int? = null, liga: Int? = null, land: Int? = null, saison: Int? = null, force: Boolean = false) {
+        if (demo) {
+            demoLadeSpieltag(zat, liga, land, saison, force)
+            return
+        }
         if (liga != null) spieltagLiga = liga
         if (land != null) spieltagLand = land
         if (saison != null) spieltagSaison = saison
@@ -153,6 +235,85 @@ class BewerbeViewModel @Inject constructor(
         }
     }
 
+    private fun demoLadeSpieltag(zat: Int? = null, liga: Int? = null, land: Int? = null, saison: Int? = null, force: Boolean = false) {
+        val aktuelle = _uiState.value.spieltag
+        // Erstaufruf: Formular/Optionen laden (Server-Standard), Saison übernehmen, aber
+        // weder Liga noch Land vorbelegen und keine Spiele anzeigen.
+        if (aktuelle == null) {
+            viewModelScope.launch {
+                _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+                _uiState.value = try {
+                    val geladen = repository.ladeSpieltag()
+                    if (geladen == null) {
+                        _uiState.value.copy(ladend = false, fehler = "Keine Spieltage für diese Auswahl verfügbar.")
+                    } else {
+                        demoSaison = geladen.saison
+                        spieltagLiga = 0
+                        spieltagLand = 0
+                        spieltagSaison = geladen.saison
+                        _uiState.value.copy(
+                            ladend = false,
+                            spieltag = geladen.copy(
+                                liga = 0,
+                                land = 0,
+                                saison = geladen.saison,
+                                zat = 0,
+                                spiele = emptyList(),
+                            ),
+                            fehler = null,
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiState.value.copy(ladend = false, fehler = e.message ?: "Spieltage konnten nicht geladen werden.")
+                }
+            }
+            return
+        }
+        // Auswahl übernehmen, aber erst laden, wenn Land UND Liga gewählt sind.
+        if (liga != null) spieltagLiga = liga
+        if (land != null) spieltagLand = land
+        if (saison != null) spieltagSaison = saison
+        val ligaV = spieltagLiga ?: 0
+        val landV = spieltagLand ?: 0
+        if (ligaV <= 0 || landV <= 0) {
+            spieltagZat = null
+            _uiState.value = _uiState.value.copy(
+                ladend = false,
+                spieltag = aktuelle.copy(liga = ligaV, land = landV, saison = spieltagSaison ?: aktuelle.saison, spiele = emptyList()),
+                fehler = null,
+            )
+            return
+        }
+        if (zat != null) spieltagZat = zat
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = try {
+                val teamId = eigeneTeamIdBestimmen()
+                val geladen = repository.ladeSpieltag(zat = spieltagZat, liga = ligaV, land = landV, saison = spieltagSaison)
+                if (geladen == null) {
+                    _uiState.value.copy(
+                        ladend = false,
+                        spieltag = aktuelle,
+                        fehler = "Keine Spieltage für diese Auswahl verfügbar.",
+                    )
+                } else {
+                    spieltagZat = geladen.zat.takeIf { it > 0 } ?: spieltagZat
+                    spieltagLiga = geladen.liga.takeIf { it > 0 } ?: spieltagLiga
+                    spieltagLand = geladen.land.takeIf { it > 0 } ?: spieltagLand
+                    spieltagSaison = geladen.saison.takeIf { it > 0 } ?: spieltagSaison
+                    val markiert = if (teamId == null) geladen
+                    else geladen.copy(spiele = geladen.spiele.map { spiel ->
+                        val own = teamId.toLong()
+                        if (spiel.heimId == own || spiel.gastId == own) spiel.copy(eigenerVerein = true) else spiel
+                    })
+                    _uiState.value.copy(ladend = false, spieltag = markiert, fehler = null)
+                }
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, spieltag = aktuelle, fehler = e.message ?: "Spieltage konnten nicht geladen werden.")
+            }
+        }
+    }
+
     fun waehleSpieltagLiga(liga: Int) {
         // Beim Ligawechsel den Spieltag zurücksetzen, damit der Server den
         // Standard der neuen Liga wählt (evtl. abweichende Spieltagsanzahl).
@@ -168,6 +329,10 @@ class BewerbeViewModel @Inject constructor(
     // ---------- Landespokal ----------
 
     fun ladePokal(saison: Int? = null, runde: Int? = null, land: Int? = null, force: Boolean = false) {
+        if (demo) {
+            demoLadePokal(saison, runde, land, force)
+            return
+        }
         if (land != null) pokalLand = land
         val aktuell = _uiState.value.pokal
         if (!force && saison == null && runde == null && land == null && (aktuell != null || pokalVersucht)) return
@@ -182,6 +347,64 @@ class BewerbeViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 val geladen = repository.ladePokal(saison, runde, land ?: pokalLand)
+                geladen.takeIf { it.land > 0 }?.let { pokalLand = it.land }
+                _uiState.value.copy(ladend = false, pokal = geladen)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value.copy(ladend = false, fehler = e.message ?: "Pokal konnte nicht geladen werden.")
+            }
+        }
+    }
+
+    private fun demoLadePokal(saison: Int? = null, runde: Int? = null, land: Int? = null, force: Boolean = false) {
+        val aktuelle = _uiState.value.pokal
+        if (saison != null) pokalSaison = saison
+        if (runde != null) pokalRunde = runde
+        // Erstaufruf: Formular/Optionen laden, Saison übernehmen, aber kein Land
+        // vorbelegen und keine Runden anzeigen.
+        if (aktuelle == null) {
+            pokalVersucht = true
+            pokalJob?.cancel()
+            pokalJob = viewModelScope.launch {
+                _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+                _uiState.value = try {
+                    val geladen = repository.ladePokal(null, null, 0)
+                    if (geladen.saison > 0) demoSaison = geladen.saison
+                    pokalLand = 0
+                    pokalSaison = (pokalSaison ?: geladen.saison.takeIf { it > 0 }) ?: demoSaison
+                    pokalRunde = 0
+                    _uiState.value.copy(
+                        ladend = false,
+                        pokal = geladen.copy(land = 0, runde = 0, saison = pokalSaison ?: geladen.saison, runden = emptyList()),
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    _uiState.value.copy(ladend = false, fehler = e.message ?: "Pokal konnte nicht geladen werden.")
+                }
+            }
+            return
+        }
+        if (land != null) pokalLand = land
+        val landV = pokalLand ?: 0
+        val gewaehlteSaison = pokalSaison ?: aktuelle.saison.takeIf { it > 0 } ?: demoSaison
+        val gewaehlteRunde = pokalRunde?.coerceAtLeast(0) ?: 0
+        if (landV <= 0) {
+            _uiState.value = _uiState.value.copy(
+                ladend = false,
+                pokal = aktuelle.copy(land = 0, runde = gewaehlteRunde, runden = emptyList(), saison = gewaehlteSaison),
+                fehler = null,
+            )
+            return
+        }
+        pokalJob?.cancel()
+        pokalJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = try {
+                val gewaehlteSaison = saison ?: aktuelle.saison.takeIf { it > 0 } ?: demoSaison
+                val gewaehlteRunde = runde ?: aktuelle.runde.takeIf { it > 0 }
+                val geladen = repository.ladePokal(gewaehlteSaison, gewaehlteRunde, landV)
                 geladen.takeIf { it.land > 0 }?.let { pokalLand = it.land }
                 _uiState.value.copy(ladend = false, pokal = geladen)
             } catch (e: CancellationException) {

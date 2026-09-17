@@ -2,10 +2,13 @@ package com.onlinesoccer.app.feature.transfers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.onlinesoccer.app.data.model.VersteigerungsmarktEintrag
 import com.onlinesoccer.app.data.model.VersteigerungsmarktErgebnis
+import com.onlinesoccer.app.data.model.VmGebotInformation
 import com.onlinesoccer.app.data.repository.ServerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +21,15 @@ data class VersteigerungsmarktUiState(
     val wahl: Map<String, String> = emptyMap(),
 )
 
-/** Native Darstellung des „Versteigerungsmarkts" (`viewvm.php`): Filter + Anzeigen (kein Gebot). */
+/** Zustand des „Gebot abgeben"-Dialogs im Versteigerungsmarkt (Gebote werden erst nach Bestätigung gesendet). */
+sealed interface VmBietDialogState {
+    data object Verborgen : VmBietDialogState
+    data object Laedt : VmBietDialogState
+    data class Bereit(val info: VmGebotInformation?) : VmBietDialogState
+    data class Ergebnis(val erfolg: Boolean, val meldung: String) : VmBietDialogState
+}
+
+/** Native Darstellung des „Versteigerungsmarkts" (`viewvm.php`): Filter + Anzeigen + Gebote. */
 @HiltViewModel
 class VersteigerungsmarktViewModel @Inject constructor(
     private val repository: ServerRepository,
@@ -26,6 +37,9 @@ class VersteigerungsmarktViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(VersteigerungsmarktUiState())
     val uiState: StateFlow<VersteigerungsmarktUiState> = _uiState.asStateFlow()
+
+    private val _bietDialog = MutableStateFlow<VmBietDialogState>(VmBietDialogState.Verborgen)
+    val bietDialog: StateFlow<VmBietDialogState> = _bietDialog.asStateFlow()
 
     init {
         ladeFormular()
@@ -60,5 +74,56 @@ class VersteigerungsmarktViewModel @Inject constructor(
                 _uiState.value.copy(ladend = false, fehler = e.message ?: "Versteigerungsmarkt konnte nicht geladen werden.")
             }
         }
+    }
+
+    /** Öffnet den „Gebot abgeben"-Dialog: lädt die Gebots-Vorschau (`vmgebot.php`, nur lesend). */
+    fun onBietenKlick(eintrag: VersteigerungsmarktEintrag) {
+        if (_bietDialog.value != VmBietDialogState.Verborgen) return
+        _bietDialog.value = VmBietDialogState.Laedt
+        viewModelScope.launch {
+            try {
+                val info = repository.vmGebotInfo(eintrag.spielerId)
+                _bietDialog.value = if (info?.submitName.isNullOrBlank() && info?.betragName.isNullOrBlank()) {
+                    VmBietDialogState.Ergebnis(
+                        erfolg = false,
+                        meldung = "Der Versteigerungsmarkt erlaubt für diesen Spieler kein Gebot.",
+                    )
+                } else {
+                    VmBietDialogState.Bereit(info)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _bietDialog.value = VmBietDialogState.Ergebnis(
+                    erfolg = false,
+                    meldung = e.message ?: "Gebots-Informationen konnten nicht geladen werden.",
+                )
+            }
+        }
+    }
+
+    /** Sendet das Gebot erst, nachdem der Nutzer im Dialog bestätigt hat. */
+    fun vmGebotAbgeben(betrag: String?) {
+        val aktuell = _bietDialog.value as? VmBietDialogState.Bereit ?: return
+        val pid = aktuell.info?.spielerId ?: return
+        _bietDialog.value = VmBietDialogState.Laedt
+        viewModelScope.launch {
+            try {
+                val ergebnis = repository.vmGebotAbgeben(pid, betrag)
+                _bietDialog.value = VmBietDialogState.Ergebnis(erfolg = ergebnis.erfolg, meldung = ergebnis.meldung)
+                anzeigen()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _bietDialog.value = VmBietDialogState.Ergebnis(
+                    erfolg = false,
+                    meldung = e.message ?: "Gebot konnte nicht gesendet werden.",
+                )
+            }
+        }
+    }
+
+    fun bietDialogSchliessen() {
+        _bietDialog.value = VmBietDialogState.Verborgen
     }
 }

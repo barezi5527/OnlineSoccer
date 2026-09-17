@@ -23,22 +23,34 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -86,6 +98,7 @@ fun SpielberichtScreen(
 
 @Composable
 private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBericht, onClose: () -> Unit) {
+    var zeigePressekonferenz by remember { mutableStateOf(false) }
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -231,6 +244,14 @@ private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBerich
                 )
             }
         }
+
+        item {
+            KiPressekonferenzButton(onOeffnen = { zeigePressekonferenz = true })
+        }
+    }
+
+    if (zeigePressekonferenz) {
+        PressekonferenzDialog(bericht, onDismiss = { zeigePressekonferenz = false })
     }
 }
 
@@ -261,6 +282,82 @@ private fun KiKommentarButton(bericht: com.onlinesoccer.app.data.model.SpielBeri
         Spacer(Modifier.width(8.dp))
         Text("KI-Live-Kommentar")
     }
+}
+
+@Composable
+private fun KiPressekonferenzButton(onOeffnen: () -> Unit) {
+    FilledTonalButton(
+        onClick = onOeffnen,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Icon(Icons.Default.RecordVoiceOver, contentDescription = null)
+        Spacer(Modifier.width(8.dp))
+        Text("KI-Pressekonferenz")
+    }
+}
+
+/** Zeigt die Aussagen beider Trainer samt Umschalter und Kopier-Button fürs Forum. */
+@Composable
+private fun PressekonferenzDialog(
+    bericht: com.onlinesoccer.app.data.model.SpielBericht,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    var trainer by remember { mutableStateOf(KiPressekonferenz.Trainer.HEIM) }
+    val aussage = remember(bericht, trainer) { KiPressekonferenz.aussage(bericht, trainer) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    listOf(
+                        KiPressekonferenz.Trainer.HEIM to (bericht.heim ?: "Heim"),
+                        KiPressekonferenz.Trainer.GAST to (bericht.gast ?: "Gast"),
+                    ).forEachIndexed { index, (option, label) ->
+                        SegmentedButton(
+                            selected = trainer == option,
+                            onClick = { trainer = option },
+                            shape = SegmentedButtonDefaults.itemShape(index, 2),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                label,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+                Text(aussage.ueberschrift, fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(aussage.text, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "Beitrag kopieren und im Forum posten.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    clipboard.setText(AnnotatedString(aussage.ganz()))
+                    Toast.makeText(context, "Beitrag in die Zwischenablage kopiert.", Toast.LENGTH_LONG).show()
+                },
+            ) {
+                Icon(Icons.Default.ContentCopy, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Kopieren")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Schließen") }
+        },
+    )
 }
 
 @Composable

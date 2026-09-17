@@ -69,11 +69,16 @@ fun BewerbeScreen(
     onSpielbericht: (String?, String?) -> Unit,
     onTeamClick: (Long) -> Unit = {},
     onSpielerKarte: (Long) -> Unit = {},
+    demo: Boolean = false,
     viewModel: BewerbeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var bereich by rememberSaveable { mutableStateOf(BewerbeBereich.TABELLE) }
     var spieltageUnteransicht by rememberSaveable { mutableStateOf(SpieltageUnteransicht.SPIELTAGE) }
+
+    LaunchedEffect(demo) {
+        viewModel.setDemo(demo)
+    }
 
     LaunchedEffect(bereich) {
         when (bereich) {
@@ -146,6 +151,7 @@ fun BewerbeScreen(
                             onLand = viewModel::waehleTabelleLand,
                             onTab = viewModel::waehleTabelleTab,
                             onTeamClick = onTeamClick,
+                            demo = demo,
                         )
                         BewerbeBereich.SPIELTAGE -> SpieltageAnsicht(
                             spieltag = uiState.spieltag,
@@ -154,6 +160,7 @@ fun BewerbeScreen(
                             onLand = viewModel::waehleSpieltagLand,
                             onSpielbericht = onSpielbericht,
                             onElf = { spieltageUnteransicht = SpieltageUnteransicht.ELF_DE_SPIELTAGS },
+                            demo = demo,
                         )
                         BewerbeBereich.POKAL -> PokalAnsicht(
                             pokal = uiState.pokal,
@@ -161,6 +168,7 @@ fun BewerbeScreen(
                             onSaison = viewModel::waehlePokalSaison,
                             onRunde = viewModel::waehlePokalRunde,
                             onLand = viewModel::waehlePokalLand,
+                            demo = demo,
                         )
                     }
                 }
@@ -214,8 +222,9 @@ private fun TabelleAnsicht(
     onLand: (Int) -> Unit,
     onTab: (Int) -> Unit,
     onTeamClick: (Long) -> Unit = {},
+    demo: Boolean = false,
 ) {
-    if (tabelle == null || tabelle.header.isEmpty()) {
+    if (tabelle == null) {
         Text("Keine Tabelle gefunden.", Modifier.padding(24.dp))
         return
     }
@@ -237,10 +246,6 @@ private fun TabelleAnsicht(
             }
         }
     }
-    if (cols.isEmpty()) {
-        Text("Keine Tabelle gefunden.", Modifier.padding(24.dp))
-        return
-    }
     val fülltBreite = kompakt != null
     val horizontalScroll = rememberScrollState()
     val verticalScroll = rememberScrollState()
@@ -253,6 +258,14 @@ private fun TabelleAnsicht(
             onLand = onLand,
             onTab = onTab,
         )
+        if (cols.isEmpty()) {
+            Text(
+                if (demo) "Bitte zuerst Land und Liga auswählen."
+                else "Keine Tabelle gefunden.",
+                Modifier.padding(24.dp),
+            )
+            return@Column
+        }
         Column(
             Modifier
                 .fillMaxWidth()
@@ -471,8 +484,38 @@ private fun SpieltageAnsicht(
     onLand: (Int) -> Unit,
     onSpielbericht: (String?, String?) -> Unit,
     onElf: (() -> Unit)? = null,
+    demo: Boolean = false,
 ) {
-    if (spieltag == null || spieltag.spiele.isEmpty()) {
+    if (spieltag == null) {
+        Text("Keine Spieltage gefunden.", Modifier.padding(24.dp))
+        return
+    }
+    if (spieltag.spiele.isEmpty() && demo) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterAuswahl(
+                selected = spieltag.liga,
+                optionen = spieltag.ligaOptionen,
+                onSelect = onLiga,
+                modifier = Modifier.weight(1f),
+                leerLabel = "Liga",
+            )
+            FilterAuswahl(
+                selected = spieltag.land,
+                optionen = spieltag.landOptionen,
+                onSelect = onLand,
+                modifier = Modifier.weight(1f),
+                leerLabel = "Land",
+            )
+        }
+        Text("Bitte zuerst Land und Liga auswählen.", Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
+        return
+    }
+    if (spieltag.spiele.isEmpty()) {
         Text("Keine Spieltage gefunden.", Modifier.padding(24.dp))
         return
     }
@@ -633,8 +676,58 @@ private fun PokalAnsicht(
     onSaison: (Int) -> Unit,
     onRunde: (Int) -> Unit,
     onLand: (Int) -> Unit,
+    demo: Boolean = false,
 ) {
-    if (pokal == null || pokal.runden.isEmpty()) {
+    if (pokal == null) {
+        Text("Keine Pokalrunden gefunden.", Modifier.padding(24.dp))
+        return
+    }
+    if (pokal.runden.isEmpty() && demo) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterAuswahl(
+                        selected = pokal.land,
+                        optionen = pokal.landOptionen,
+                        onSelect = onLand,
+                        modifier = Modifier.weight(1f),
+                        leerLabel = "Land",
+                    )
+                    FilterAuswahl(
+                        selected = pokal.saison,
+                        optionen = saisonOptionen(pokal.saisonen),
+                        onSelect = onSaison,
+                        modifier = Modifier.weight(1f),
+                        leerLabel = "Saison",
+                    )
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterAuswahl(
+                        selected = pokal.runde,
+                        optionen = pokal.rundenOptionen.map { LigaOption(it.wert, it.label) },
+                        onSelect = onRunde,
+                        modifier = Modifier.weight(1f),
+                        leerLabel = "Runde",
+                    )
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+            Text("Bitte zuerst ein Land auswählen.", Modifier.padding(vertical = 12.dp))
+        }
+        return
+    }
+    if (pokal.runden.isEmpty()) {
         Text("Keine Pokalrunden gefunden.", Modifier.padding(24.dp))
         return
     }

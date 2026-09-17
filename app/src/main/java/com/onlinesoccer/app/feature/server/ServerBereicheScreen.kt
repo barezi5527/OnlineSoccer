@@ -50,6 +50,9 @@ enum class ServerAktion {
     /** Im externen Browser öffnen. */
     BROWSER,
 
+    /** Zur App-Anmeldung (Demo-Sitzung beenden → Login-Screen). */
+    ANMELDUNG,
+
     /** Nur Hinweistext, keine Aktion. */
     HINWEIS,
 }
@@ -92,7 +95,7 @@ object ServerMenu {
                 ServerItem("Passwort verloren?", "Neues Passwort für ein Team anfordern", ServerAktion.READER, path = "osneu/lostpw"),
                 ServerItem("Bewerbung", "Bewerbung um ein freies Team", ServerAktion.BROWSER, url = "$BASE/bewerbung.php", erfordertLogin = true),
                 ServerItem("Zweitteam übernehmen", "Ein freies Zweitteam übernehmen", ServerAktion.BROWSER, url = "$BASE/zweitteam.php", erfordertLogin = true),
-                ServerItem("Anmeldung", "Anmeldung erfolgt direkt über das App-Login", ServerAktion.HINWEIS),
+                ServerItem("Anmeldung", "Anmeldung erfolgt direkt über das App-Login", ServerAktion.ANMELDUNG),
                 ServerItem("Abmeldung", "Abmeldung vom Spiel ist nur per E-Mail an das OS-Team möglich", ServerAktion.HINWEIS),
             ),
         ),
@@ -123,6 +126,7 @@ fun ServerBereicheScreen(
     onManagerliste: () -> Unit = {},
     onManagersuche: () -> Unit = {},
     onSeite: (String) -> Unit = {},
+    onAnmeldung: () -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -169,6 +173,7 @@ fun ServerBereicheScreen(
                 onManagersuche = onManagersuche,
                 onSeite = onSeite,
                 onBrowser = ::oeffnenBrowser,
+                onAnmeldung = onAnmeldung,
             )
         }
 
@@ -194,6 +199,7 @@ private fun BereichCard(
     onManagersuche: () -> Unit,
     onSeite: (String) -> Unit,
     onBrowser: (String) -> Unit,
+    onAnmeldung: () -> Unit,
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(vertical = 8.dp)) {
@@ -208,7 +214,7 @@ private fun BereichCard(
                 if (index > 0) {
                     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
                 }
-                ItemZeile(item, demo, onFreieTeams, onFreieZweitteams, onManagerliste, onManagersuche, onSeite, onBrowser)
+                ItemZeile(item, demo, onFreieTeams, onFreieZweitteams, onManagerliste, onManagersuche, onSeite, onBrowser, onAnmeldung)
             }
         }
     }
@@ -224,9 +230,10 @@ private fun ItemZeile(
     onManagersuche: () -> Unit,
     onSeite: (String) -> Unit,
     onBrowser: (String) -> Unit,
+    onAnmeldung: () -> Unit,
 ) {
     val gesperrt = item.erfordertLogin && demo
-    val klickbar = item.aktion != ServerAktion.HINWEIS && !gesperrt
+    val klickbar = item.aktion != ServerAktion.HINWEIS && !gesperrt && !(item.aktion == ServerAktion.ANMELDUNG && !demo)
 
     Row(
         Modifier
@@ -241,6 +248,7 @@ private fun ItemZeile(
                     }
                     ServerAktion.READER -> item.path?.let(onSeite)
                     ServerAktion.BROWSER -> item.url?.let(onBrowser)
+                    ServerAktion.ANMELDUNG -> if (demo) onAnmeldung()
                     ServerAktion.HINWEIS -> Unit
                 }
             }
@@ -270,18 +278,19 @@ private fun ItemZeile(
             }
         }
         Spacer(Modifier.width(12.dp))
-        EndIcon(item.aktion, gesperrt)
+        EndIcon(item.aktion, gesperrt, demo)
     }
 }
 
 @Composable
-private fun EndIcon(aktion: ServerAktion, gesperrt: Boolean) {
+private fun EndIcon(aktion: ServerAktion, gesperrt: Boolean, demo: Boolean) {
+    val anmeldungGespert = aktion == ServerAktion.ANMELDUNG && !demo
     val icon: ImageVector
     val desc: String
     when {
-        gesperrt -> {
-            icon = Icons.Filled.Lock
-            desc = "Anmeldung nötig"
+        gesperrt || anmeldungGespert -> {
+            icon = if (anmeldungGespert) Icons.Filled.ChevronRight else Icons.Filled.Lock
+            desc = if (anmeldungGespert) "" else "Anmeldung nötig"
         }
         aktion == ServerAktion.BROWSER -> {
             icon = Icons.AutoMirrored.Filled.OpenInNew
@@ -299,7 +308,7 @@ private fun EndIcon(aktion: ServerAktion, gesperrt: Boolean) {
     Icon(
         icon,
         contentDescription = desc,
-        tint = if (gesperrt) {
+        tint = if (gesperrt || anmeldungGespert) {
             MaterialTheme.colorScheme.onSurfaceVariant
         } else {
             MaterialTheme.colorScheme.onSurface

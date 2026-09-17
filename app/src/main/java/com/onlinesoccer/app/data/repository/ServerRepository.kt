@@ -31,6 +31,8 @@ import com.onlinesoccer.app.data.model.TransferStatusErgebnis
 import com.onlinesoccer.app.data.model.TransferStatusZeile
 import com.onlinesoccer.app.data.model.VersteigerungsmarktEintrag
 import com.onlinesoccer.app.data.model.VersteigerungsmarktErgebnis
+import com.onlinesoccer.app.data.model.VmGebotInformation
+import com.onlinesoccer.app.data.model.VmSetzenAntwort
 import com.onlinesoccer.app.data.model.VmSetzenEintrag
 import com.onlinesoccer.app.data.model.VmSetzenErgebnis
 import java.io.IOException
@@ -365,6 +367,56 @@ class ServerRepository @Inject constructor(
         parseGebotErgebnis(html)
     }
 
+    /** Lädt die Gebots-Vorschau samt Absende-Formular für einen VM-Spieler (`vmgebot.php?s=<pid>`, nur lesend). */
+    suspend fun vmGebotInfo(pid: Long): VmGebotInformation? = withContext(Dispatchers.IO) {
+        val html = safeGet("${OsApi.BASE_URL}/vmgebot.php?s=$pid") ?: return@withContext null
+        parseVmGebotInfo(html, pid)
+    }
+
+    /**
+     * Gibt ein Versteigerungsmarkt-Gebot für einen VM-Spieler ab. Entspricht dem
+     * Website-Formular: `POST vmgebot.php?s=<pid>` mit dem Submit-Feld aus der Seite
+     * und – falls vorhanden – dem Betragsfeld (z. B. `Geld`). Ohne Betragsfeld wird
+     * nur der Submit-Button gesendet (entspricht dem Klick auf „Gebot abgeben").
+     */
+    suspend fun vmGebotAbgeben(pid: Long, betrag: String? = null): GebotsErgebnis = withContext(Dispatchers.IO) {
+        val info = vmGebotInfo(pid) ?: return@withContext GebotsErgebnis(erfolg = false, meldung = "Keine Gebots-Informationen geladen.")
+        val submitName = info.submitName.ifBlank { "Gebot" }
+        val submitValue = info.submitValue.ifBlank { "Gebot abgeben" }
+        val betragFeld = info.betragName.takeIf { it.isNotBlank() }
+        val body = FormBody.Builder().apply {
+            if (betragFeld != null) {
+                add(betragFeld, betrag?.takeIf { it.isNotBlank() } ?: info.betragWert)
+            }
+            add(submitName, submitValue)
+        }.build()
+        val html = post("${OsApi.BASE_URL}/vmgebot.php?s=$pid", body)
+            ?: return@withContext GebotsErgebnis(
+                erfolg = false,
+                meldung = "Die Antwort des Servers konnte nicht gelesen werden. Bitte Status unter „Eigene Gebote“ prüfen, ob das Gebot angekommen ist.",
+            )
+        parseGebotErgebnis(html)
+    }
+
+    /**
+     * Setzt einen eigenen Spieler auf den Versteigerungsmarkt. Entspricht exakt dem
+     * Website-Formular: `POST vmsetzen.php` mit Hidden `vmsetzen=<pid>` und gewähltem
+     * `startpreis` (Submit-Button besitzt keinen Namen und wird daher nicht gesendet).
+     * Die App sendet erst, nachdem der Nutzer im Dialog bestätigt hat.
+     */
+    suspend fun vmSetzen(spielerId: Long, startpreis: String): VmSetzenAntwort = withContext(Dispatchers.IO) {
+        val body = FormBody.Builder()
+            .add("vmsetzen", spielerId.toString())
+            .add("startpreis", startpreis)
+            .build()
+        val html = post("${OsApi.BASE_URL}/vmsetzen.php", body)
+            ?: return@withContext VmSetzenAntwort(
+                erfolg = false,
+                meldung = "Die Antwort des Servers konnte nicht gelesen werden. Bitte prüfen, ob der Spieler auf dem Versteigerungsmarkt gelistet ist.",
+            )
+        parseVmSetzenErgebnis(html, spielerId)
+    }
+
     /** Lädt die „Transferstatus"-Übersicht (`tstatus.php`): alle eigenen Spieler mit Status, Mindestablöse, Infotext und Details. */
     suspend fun transferStatus(): TransferStatusErgebnis = withContext(Dispatchers.IO) {
         val html = safeGet("${OsApi.BASE_URL}/tstatus.php") ?: return@withContext TransferStatusErgebnis()
@@ -522,23 +574,11 @@ class ServerRepository @Inject constructor(
      */
     internal fun parseGebotInfo(html: String, pid: Long = 0L): GebotInformation {
         val doc = Jsoup.parse(html)
-        val felder = mutableMapOf<String, String>()
-        doc.select("tr").forEach { tr ->
-            val tds = tr.select("td")
-            var i = 0
-            while (i + 1 < tds.size) {
-                val label = tds[i].text().trim()
-                if (label.endsWith(":") && label.length <= 40) {
-                    felder[label.removeSuffix(":").trim()] = tds[i + 1].text().trim()
-                    i += 2
-                } else {
-                    i += 1
-                }
-            }
-        }
+        val felder = gebotsFelder(doc)
         val gebotZeile = doc.select("b").firstOrNull { it.text().startsWith("Gebot:") }?.text()?.trim() ?: ""
         val submit = doc.select("form input[type=submit]").firstOrNull()
         val hoechstgebot = felder["Höchstgebot"]?.takeIf { it.isNotBlank() }
+            ?: felder["Mindestgebot"]?.takeIf { it.isNotBlank() }
             ?: gebotZeile.removePrefix("Gebot:").trim()
         return GebotInformation(
             spielerId = pid,
@@ -554,6 +594,82 @@ class ServerRepository @Inject constructor(
             submitName = submit?.attr("name").orEmpty(),
             submitValue = submit?.attr("value").orEmpty(),
         )
+    }
+
+    /**
+     * Parser für `vmgebot.php`: Kennzahlen, das zentrierte `<b>Gebot: <betrag></b>`,
+     * das Absende-Formular (`submit name/value`) sowie ein optionales Betragsfeld
+     * (`input type=text`, z. B. `Geld`). Der Seitenaufbau entspricht der Dokumentation
+     * (Analyse Phase 2, `vmgebot.php?s=<snr>`); fehlende Felder werden leer erfasst.
+     */
+    internal fun parseVmGebotInfo(html: String, pid: Long = 0L): VmGebotInformation {
+        val doc = Jsoup.parse(html)
+        val felder = gebotsFelder(doc)
+        val gebotZeile = doc.select("b").firstOrNull { it.text().startsWith("Gebot:") }?.text()?.trim() ?: ""
+        val submit = doc.select("form input[type=submit]").firstOrNull()
+        val betragInput = doc.select("form input[type=text]").firstOrNull()
+        val hoechstgebot = felder["Höchstgebot"]?.takeIf { it.isNotBlank() }
+            ?: felder["Mindestgebot"]?.takeIf { it.isNotBlank() }
+            ?: gebotZeile.removePrefix("Gebot:").trim()
+        return VmGebotInformation(
+            spielerId = pid,
+            name = felder["Name"].orEmpty(),
+            alter = felder["Alter"].orEmpty(),
+            nationalitaet = felder["Nationalität"].orEmpty(),
+            position = felder["Stammposition"].orEmpty(),
+            marktwert = felder["Marktwert"].orEmpty(),
+            angeboteBis = felder["Angebote bis"].orEmpty(),
+            hoechstgebot = hoechstgebot,
+            gehalt = felder["Gehalt"].orEmpty(),
+            bieter = felder["Bieter"].orEmpty(),
+            betragName = betragInput?.attr("name").orEmpty(),
+            betragWert = betragInput?.attr("value").orEmpty(),
+            submitName = submit?.attr("name").orEmpty(),
+            submitValue = submit?.attr("value").orEmpty(),
+        )
+    }
+
+    /**
+     * Antwort auf `POST vmsetzen.php` deuten: Nach dem Absenden rendert der Server die
+     * Spielerliste erneut. Erfolg liegt vor, wenn der gesetzte Spieler nicht mehr in der
+     * Liste auftaucht und die Seite keine Fehlermeldung enthält. Fehler werden über die
+     * bereits bekannten Fehler-Marker erkannt.
+     */
+    internal fun parseVmSetzenErgebnis(html: String, spielerId: Long): VmSetzenAntwort {
+        if (html.isBlank()) {
+            return VmSetzenAntwort(false, "Keine Antwort vom Server. Bitte prüfen, ob der Spieler auf dem Versteigerungsmarkt gelistet ist.")
+        }
+        val text = Jsoup.parse(html).body()?.text().orEmpty()
+        val fehlerSatz = text.lineSequence()
+            .firstOrNull { satz ->
+                satz.isNotBlank() && REAKTION_FEHLER.any { marker -> satz.contains(marker, ignoreCase = true) }
+            }
+        if (fehlerSatz != null) return VmSetzenAntwort(false, fehlerSatz.trim())
+        val nochVorhanden = parseVmSetzen(html).eintraege.any { it.spielerId == spielerId }
+        return if (!nochVorhanden) {
+            VmSetzenAntwort(true, "Spieler wurde auf den Versteigerungsmarkt gesetzt.")
+        } else {
+            VmSetzenAntwort(false, "Der Server hat den Spieler nicht auf den Versteigerungsmarkt gesetzt. Bitte prüfen und ggf. erneut versuchen.")
+        }
+    }
+
+    /** Liest `Label:`→Wert-Paare aus den `<tr>`-Zeilen der Gebots-Formulare (`gebot.php`, `vmgebot.php`). */
+    private fun gebotsFelder(doc: Document): Map<String, String> {
+        val felder = mutableMapOf<String, String>()
+        doc.select("tr").forEach { tr ->
+            val tds = tr.select("td")
+            var i = 0
+            while (i + 1 < tds.size) {
+                val label = tds[i].text().trim()
+                if (label.endsWith(":") && label.length <= 40) {
+                    felder[label.removeSuffix(":").trim()] = tds[i + 1].text().trim()
+                    i += 2
+                } else {
+                    i += 1
+                }
+            }
+        }
+        return felder
     }
 
     /**

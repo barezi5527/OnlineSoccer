@@ -221,6 +221,37 @@ data class GebotsErgebnis(
 )
 
 /**
+ * Vorschau mitsamt Absende-Formular für ein Versteigerungsmarkt-Gebot
+ * (`vmgebot.php?s=<pid>`). Wie `GebotInformation`, zusätzlich wird ein
+ * optionales Betragsfeld (`input type=text`, z. B. `Geld`) erfasst, damit das
+ * Gebot mit dem gewünschten Betrag abgegeben werden kann.
+ */
+data class VmGebotInformation(
+    val spielerId: Long = 0L,
+    val name: String = "",
+    val alter: String = "",
+    val nationalitaet: String = "",
+    val position: String = "",
+    val marktwert: String = "",
+    val angeboteBis: String = "",
+    val hoechstgebot: String = "",
+    val gehalt: String = "",
+    val bieter: String = "",
+    /** Name des optionalen Betrags-Eingabefelds (z. B. `Geld`), falls vorhanden. */
+    val betragName: String = "",
+    /** Vorbelegter Betrag im Betragsfeld. */
+    val betragWert: String = "",
+    val submitName: String = "",
+    val submitValue: String = "",
+)
+
+/** Antwort auf „Auf den VM setzen" (`POST vmsetzen.php`). */
+data class VmSetzenAntwort(
+    val erfolg: Boolean = false,
+    val meldung: String = "",
+)
+
+/**
  * Transferstatus-Option eines eigenen Spielers (`tstatus.php`, Radio-Gruppe U/N/A/T).
  * Reihenfolge entspricht der Website (Spalten „U | N | A | T"); `wert` ist der
  * Formularwert, `kuerzel` die in der Mannschafts-/Kaderansicht verwendete Kennung.

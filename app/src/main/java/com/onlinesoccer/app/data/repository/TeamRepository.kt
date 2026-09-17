@@ -1,5 +1,7 @@
 package com.onlinesoccer.app.data.repository
 
+import com.onlinesoccer.app.core.auth.AuthUiState
+import com.onlinesoccer.app.core.auth.SessionManager
 import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.OsApi
 import com.onlinesoccer.app.core.network.SessionGuard
@@ -53,6 +55,7 @@ import org.jsoup.nodes.Element
 class TeamRepository @Inject constructor(
     private val client: OkHttpClient,
     private val zugabgabeRepository: ZugabgabeRepository,
+    private val sessionManager: SessionManager? = null,
 ) {
 
     suspend fun ladeKader(): List<KaderSpieler> = withContext(Dispatchers.IO) {
@@ -1490,7 +1493,12 @@ class TeamRepository @Inject constructor(
         return try {
             client.newCall(request).execute().use { response ->
                 val bytes = response.body?.bytes() ?: return null
-                if (SessionGuard.isLoginView(bytes)) return null
+                // Im Demo-Modus ist die Demo-Ansicht („DemoTeam") die gewünschte Antwort –
+                // nur echte Login-Formulare blocken. In der persönlichen Sitzung bleibt die
+                // strikte Prüfung (Login ODER Demo-Marker), damit eine abgelaufene Session
+                // nicht als eigene Sitzung durchgeht.
+                val imDemo = sessionManager?.state?.value == AuthUiState.SignedInDemo
+                if (if (imDemo) SessionGuard.isPureLoginView(bytes) else SessionGuard.isLoginView(bytes)) return null
                 bytes.toString(Charsets.UTF_8)
             }
         } catch (e: IOException) {

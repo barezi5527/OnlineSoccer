@@ -9,6 +9,7 @@ import com.onlinesoccer.app.data.model.ElfErgebnis
 import com.onlinesoccer.app.data.model.ElfSpieler
 import com.onlinesoccer.app.data.model.SpielBericht
 import com.onlinesoccer.app.data.model.SpielerPosition
+import kotlin.math.round
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -42,6 +43,7 @@ class ElfDesSpieltagsTest {
         aufsTor: Int = 0,
         auffaelligkeit: Int = 0,
         gehalteneBalle: Int? = null,
+        berichtNote: Double? = null,
     ) = ElfKandidat(
         name = name,
         verein = verein,
@@ -66,6 +68,7 @@ class ElfDesSpieltagsTest {
         aufsTor = aufsTor,
         auffaelligkeit = auffaelligkeit,
         gehalteneBalle = gehalteneBalle,
+        berichtNote = berichtNote,
     )
 
     private fun note(kandidat: ElfKandidat): Double = ElfBewertung.bewerten(kandidat).gesamt
@@ -75,13 +78,13 @@ class ElfDesSpieltagsTest {
     @Test
     fun bewertung_stuermerZweiToreUndSieg() {
         val kandidat = kandidat("A", "V", SpielerPosition.STU, tore = 2, sieg = true)
-        assertEquals(7.8, note(kandidat), 0.001)
+        assertEquals(6.9, note(kandidat), 0.001)
     }
 
     @Test
     fun bewertung_torwartZuNullBekommtZuNullBonus() {
         val torwart = kandidat("TW", "V", SpielerPosition.TOR, sieg = true, gegenTore = 0)
-        assertEquals(6.3, note(torwart), 0.001)
+        assertEquals(6.1, note(torwart), 0.001)
     }
 
     @Test
@@ -101,13 +104,22 @@ class ElfDesSpieltagsTest {
 
     @Test
     fun bewertung_bleibtImKickertypischenRahmen() {
-        val max = kandidat("MAX", "V", SpielerPosition.STU, tore = 99, sieg = true)
+        // Schwächste denkbare Note: Niederlage + 4 Gelbe + 3 Rote.
         val min = kandidat(
             "MIN", "V", SpielerPosition.STU, niederlage = true,
             gelbeKarten = 4, roteKarten = 3,
         )
-        assertEquals(10.0, note(max), 0.001)
         assertEquals(1.5, note(min), 0.001)
+
+        // Stärkste theoretisch erreichbare Note: alle Kategorie-Caps ausgeschöpft.
+        val max = kandidat(
+            "MAX", "V", SpielerPosition.ABW,
+            tore = 2, vorlagen = 2, elfmeter = true, sieg = true, gegenTore = 0,
+            schuesse = 7, aufsTor = 6, auffaelligkeit = 6,
+            zweikaempfe = 30, zweikampfQuote = 70.0, berichtNote = 1.0,
+        )
+        assertEquals(9.7, note(max), 0.001)
+        assertTrue(note(max) <= 9.7)
     }
 
     @Test
@@ -130,53 +142,58 @@ class ElfDesSpieltagsTest {
         assertEquals("7,0", ElfBewertung.formatiere(7.0))
     }
 
-    // ---------- Bewertungsformel: 5,5 + Aktionen + Ergebnis − Negatives ----------
+    // ---------- Bewertungsformel: Basis + K1 + K2 + K3 + K4 + K5 − Karten ----------
 
     @Test
     fun formel_stuermerDreiToreUndVorlageMitSieg() {
         val kandidat = kandidat("A", "V", SpielerPosition.STU, tore = 3, vorlagen = 1, sieg = true)
-        assertEquals(9.4, note(kandidat), 0.001)
+        assertEquals(7.2, note(kandidat), 0.001)
     }
 
     @Test
     fun formel_spielerEinTorUndDreiVorlagenMitSieg() {
         val kandidat = kandidat("B", "V", SpielerPosition.STU, tore = 1, vorlagen = 3, sieg = true)
-        assertEquals(8.6, note(kandidat), 0.001)
+        assertEquals(7.1, note(kandidat), 0.001)
     }
 
     @Test
-    fun formel_mehrereToreWerdenAddiert() {
-        assertEquals(5.5 + 3.0, note(kandidat("C", "V", SpielerPosition.STU, tore = 3)), 0.001)
-        assertEquals(5.5 + 2.0, note(kandidat("C", "V", SpielerPosition.STU, tore = 2)), 0.001)
+    fun formel_torDeckelBegrenztMehrereTore() {
+        // K1-Torbonus ist bei 1,0 gedeckelt: 2 und 3 Tore bringen STU gleich viel.
+        assertEquals(5.5 + 0.5, note(kandidat("C", "V", SpielerPosition.STU, tore = 1)), 0.001)
+        assertEquals(5.5 + 1.0, note(kandidat("C", "V", SpielerPosition.STU, tore = 2)), 0.001)
+        assertEquals(5.5 + 1.0, note(kandidat("C", "V", SpielerPosition.STU, tore = 3)), 0.001)
     }
 
     @Test
-    fun formel_mehrereVorlagenWerdenAddiert() {
-        assertEquals(5.5 + 1.8, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 3)), 0.001)
+    fun formel_vorlagenDeckelBegrenztVieleVorlagen() {
+        // K1-Vorlagen sind bei 0,7 gedeckelt: 2 und 3 Vorlagen bringen gleich viel.
+        assertEquals(5.9, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 1)), 0.001)
+        assertEquals(6.2, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 2)), 0.001)
+        assertEquals(6.2, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 3)), 0.001)
     }
 
     @Test
     fun formel_torBonusHaengtVonDerPositionAb() {
-        assertEquals(5.5 + 1.0, note(kandidat("ST", "V", SpielerPosition.STU, tore = 1)), 0.001)
-        assertEquals(5.5 + 1.2, note(kandidat("MIT", "V", SpielerPosition.MIT, tore = 1)), 0.001)
-        assertEquals(5.5 + 1.2, note(kandidat("OMI", "V", SpielerPosition.OMI, tore = 1)), 0.001)
-        assertEquals(5.5 + 1.2, note(kandidat("DMI", "V", SpielerPosition.DMI, tore = 1)), 0.001)
+        assertEquals(5.5 + 0.5, note(kandidat("ST", "V", SpielerPosition.STU, tore = 1)), 0.001)
+        assertEquals(5.5 + 0.6, note(kandidat("MIT", "V", SpielerPosition.MIT, tore = 1)), 0.001)
+        assertEquals(5.5 + 0.6, note(kandidat("OMI", "V", SpielerPosition.OMI, tore = 1)), 0.001)
+        assertEquals(5.5 + 0.6, note(kandidat("DMI", "V", SpielerPosition.DMI, tore = 1)), 0.001)
         // Gegen-1-Tor, damit der Zu-Null-Bonus (ABW/TW) den Torbonus nicht überlagert.
-        assertEquals(5.5 + 1.5, note(kandidat("ABW", "V", SpielerPosition.ABW, tore = 1, gegenTore = 1)), 0.001)
-        assertEquals(5.5 + 2.0, note(kandidat("TW", "V", SpielerPosition.TOR, tore = 1, gegenTore = 1)), 0.001)
+        assertEquals(5.5 + 0.8, note(kandidat("ABW", "V", SpielerPosition.ABW, tore = 1, gegenTore = 1)), 0.001)
+        assertEquals(5.5 + 1.0, note(kandidat("TW", "V", SpielerPosition.TOR, tore = 1, gegenTore = 1)), 0.001)
     }
 
     @Test
     fun formel_siegUnentschiedenNiederlage() {
-        assertEquals(5.8, note(kandidat("S", "V", SpielerPosition.STU, sieg = true)), 0.001)
+        assertEquals(5.9, note(kandidat("S", "V", SpielerPosition.STU, sieg = true)), 0.001)
         assertEquals(5.6, note(kandidat("U", "V", SpielerPosition.STU, unentschieden = true)), 0.001)
         assertEquals(5.3, note(kandidat("N", "V", SpielerPosition.STU, niederlage = true)), 0.001)
     }
 
     @Test
     fun formel_zuNullNurFuerTorwartUndAbwehr() {
-        assertEquals(6.0, note(kandidat("TW", "V", SpielerPosition.TOR, gegenTore = 0)), 0.001)
-        assertEquals(5.8, note(kandidat("ABW", "V", SpielerPosition.ABW, gegenTore = 0)), 0.001)
+        assertEquals(5.8, note(kandidat("TW", "V", SpielerPosition.TOR, gegenTore = 0)), 0.001)
+        assertEquals(5.7, note(kandidat("ABW", "V", SpielerPosition.ABW, gegenTore = 0)), 0.001)
         // Mittelfeld und Sturm erhalten keinen Zu-Null-Bonus.
         assertEquals(5.5, note(kandidat("MIT", "V", SpielerPosition.MIT, gegenTore = 0)), 0.001)
         assertEquals(5.5, note(kandidat("ST", "V", SpielerPosition.STU, gegenTore = 0)), 0.001)
@@ -196,6 +213,8 @@ class ElfDesSpieltagsTest {
     fun formel_gelbeKarteMindert() {
         assertEquals(5.3, note(kandidat("G", "V", SpielerPosition.STU, gelbeKarten = 1)), 0.001)
         assertEquals(5.1, note(kandidat("G2", "V", SpielerPosition.STU, gelbeKarten = 2)), 0.001)
+        // Karten-Malus gilt unabhängig von der Basis (auch für Einwechsler).
+        assertEquals(3.8, note(kandidat("G3", "V", SpielerPosition.STU, startelf = false, gelbeKarten = 1)), 0.001)
     }
 
     @Test
@@ -214,24 +233,23 @@ class ElfDesSpieltagsTest {
     }
 
     @Test
-    fun formel_neunKommaAchtIstNochKeineZehn() {
-        // STU: 4 Tore + Sieg = 9,8 Rohbewertung → gerundet 9,8, NICHT 10,0.
-        val kandidat = kandidat("NA", "V", SpielerPosition.STU, tore = 4, sieg = true)
-        assertEquals(9.8, note(kandidat), 0.001)
-        assertTrue(note(kandidat) < 10.0)
+    fun formel_zehnBleibtAussergewoehnlicherSonderfall() {
+        // Selbst bei maximalem Ausschöpfen fast aller Caps bleibt die Note unter
+        // 10,0 – eine 10,0 erfordert eine ungerundete Rohnote von mindestens 9,95.
+        val monster = kandidat(
+            "MONSTER", "V", SpielerPosition.ABW,
+            tore = 2, vorlagen = 2, elfmeter = true, sieg = true, gegenTore = 0,
+            schuesse = 7, aufsTor = 6, auffaelligkeit = 6,
+            zweikaempfe = 30, zweikampfQuote = 70.0, berichtNote = 1.0,
+        )
+        assertEquals(9.7, note(monster), 0.001)
+        assertTrue(note(monster) < 10.0)
     }
 
     @Test
-    fun formel_ueberNeunKommaAchtMitBegrenzungAufZehn() {
-        // STU: 4 Tore + Vorlage + Sieg = 10,4 (> 9,8) → auf 10,0 begrenzt.
-        val kandidat = kandidat("ZEHN", "V", SpielerPosition.STU, tore = 4, vorlagen = 1, sieg = true)
-        assertEquals(10.0, note(kandidat), 0.001)
-    }
-
-    @Test
-    fun formel_extremLeistungBleibtAufZehnBegrenzt() {
+    fun formel_extremLeistungWirdUeberDieDeckelGedeckelt() {
         val mega = kandidat("MEGA", "V", SpielerPosition.STU, tore = 10, vorlagen = 5, sieg = true)
-        assertEquals(10.0, note(mega), 0.001)
+        assertEquals(7.5, note(mega), 0.001)
     }
 
     @Test
@@ -275,16 +293,20 @@ class ElfDesSpieltagsTest {
 
         val zeilen = result.zeilen.associate { it.kriterium to it.beitrag }
         assertEquals(5.5, zeilen["Grundbewertung"] ?: 0.0, 0.001)
-        assertEquals(2.0, zeilen["Tore"] ?: 0.0, 0.001)
-        assertEquals(0.3, zeilen["Ergebnis"] ?: 0.0, 0.001)
+        assertEquals(1.0, zeilen["Direkter Impact"] ?: 0.0, 0.001)
+        assertEquals(0.35, zeilen["Ergebnis & Teambonus"] ?: 0.0, 0.001)
 
-        // Keine versteckten Faktoren – weder Einsatzzeit noch Spielergebnis.
+        // Keine versteckten Faktoren – weder Einsatzzeit noch alte Einzelzeilen.
         assertNull(zeilen["Einsatzzeit"])
-        assertNull(zeilen["Spielergebnis"])
+        assertNull(zeilen["Tore"])
+        assertNull(zeilen["Vorlagen"])
 
-        // Die Summe der sichtbaren Einzelbestandteile ergibt die Endnote.
-        assertEquals(result.gesamt, result.zeilen.sumOf { it.beitrag }, 0.001)
-        assertEquals(7.8, result.gesamt, 0.001)
+        // Die Summe der sichtbaren Einzelbestandteile ist die ungerundete
+        // Rohbewertung; die Endnote ist deren Rundung auf eine Nachkommastelle.
+        val summe = result.zeilen.sumOf { it.beitrag }
+        assertEquals(6.85, summe, 0.00001)
+        assertEquals(round((summe + 1e-9) * 10.0) / 10.0, result.gesamt, 0.00001)
+        assertEquals(6.9, result.gesamt, 0.001)
     }
 
     @Test
@@ -292,27 +314,27 @@ class ElfDesSpieltagsTest {
         val kandidat = kandidat("RUHIG", "FC", SpielerPosition.ABW)
         val zeilen = ElfBewertung.bewerten(kandidat).zeilen
 
-        assertFalse(zeilen.any { it.kriterium == "Tore" })
-        assertFalse(zeilen.any { it.kriterium == "Vorlagen" })
-        assertFalse(zeilen.any { it.kriterium == "Gelbe Karte" })
+        assertFalse(zeilen.any { it.kriterium == "Direkter Impact" })
+        assertFalse(zeilen.any { it.kriterium == "Effizienz" })
+        assertFalse(zeilen.any { it.kriterium == "Zweikämpfe" })
+        assertFalse(zeilen.any { it.kriterium == "Bericht-Note" })
+        assertFalse(zeilen.any { it.kriterium == "Karten" })
         assertTrue(zeilen.any { it.kriterium == "Grundbewertung" })
     }
 
     @Test
-    fun bewertung_vorlagenErzeugenEigeneZeileUndElfmeterWirktNicht() {
+    fun bewertung_elfmeterErhoehtDenDirektenImpact() {
         val kandidat = kandidat("ELFM", "FC", SpielerPosition.STU, tore = 1, vorlagen = 1, elfmeter = true, sieg = true)
-        val zeilen = ElfBewertung.bewerten(kandidat).zeilen
-
-        assertTrue(zeilen.any { it.kriterium == "Vorlagen" })
-        assertFalse(zeilen.any { it.kriterium == "Eindruck im Bericht" })
-
-        // Ein (im Bericht erwähnter) Elfmeter ist kein eigenes Kriterium mehr.
         val ohneElfmeter = kandidat("ELFM", "FC", SpielerPosition.STU, tore = 1, vorlagen = 1, sieg = true)
-        assertEquals(note(ohneElfmeter), note(kandidat), 0.001)
+
+        // Ein (im Bericht erwähnter) verwandelter Elfmeter gibt +0,2 in K1.
+        assertEquals(6.9, note(kandidat), 0.001)
+        assertEquals(6.7, note(ohneElfmeter), 0.001)
+        assertTrue(note(kandidat) > note(ohneElfmeter))
     }
 
     @Test
-    fun bewertung_statistikWerteSindKeineBewertungskriterien() {
+    fun bewertung_zweikaempfeUndEffizienzSindKriterien() {
         val mitStats = kandidat(
             "MACHER", "FC", SpielerPosition.STU,
             sieg = true,
@@ -321,43 +343,117 @@ class ElfDesSpieltagsTest {
         )
         val ohneStats = kandidat("MACHER", "FC", SpielerPosition.STU, sieg = true)
 
-        val zeilen = ElfBewertung.bewerten(mitStats).zeilen
-        assertFalse(zeilen.any { it.kriterium == "Gewonnene Zweikämpfe" })
-        assertFalse(zeilen.any { it.kriterium == "Schüsse auf Tor" })
+        val zeilen = ElfBewertung.bewerten(mitStats).zeilen.associate { it.kriterium to it.beitrag }
+        // K2: Quote 66,7 % → +0,4 · aufs Tor 4 → +0,2 · 5 Nennungen → +0,2 = 0,8.
+        assertEquals(0.8, zeilen["Effizienz"] ?: 0.0, 0.001)
+        // K3: 10 gewonnene ZK × 0,03 = 0,3 · Quote 50 % → +0,1 = 0,4.
+        assertEquals(0.4, zeilen["Zweikämpfe"] ?: 0.0, 0.001)
 
-        // Zweikämpfe, Schüsse, Auffälligkeit und gehaltene Bälle erzeugen keinen
-        // Bonus – die Note entsteht ausschließlich aus der Formel.
-        assertEquals(note(ohneStats), note(mitStats), 0.001)
+        // Ohne Statistik bleiben K2/K3 neutral – die Note fällt niedriger aus.
+        assertTrue(note(mitStats) > note(ohneStats))
+        assertEquals(7.1, note(mitStats), 0.001)
+        assertEquals(5.9, note(ohneStats), 0.001)
     }
 
     @Test
-    fun bewertung_torwartParadenErzeugenKeinenBonusAberZuNullSchon() {
+    fun formel_dokumentiertesBeispielAStuermerDesSpieltags() {
+        // Referenzrechnung aus der Gewichtungs-Spezifikation (Beispiel A):
+        // Sieg, 2 Tore, 1 Vorlage, 5 Schüsse/3 aufs Tor (60 %), 3 Nennungen,
+        // 10 ZK/63 %, Bericht-Note 2,0 → K1 1,35 · K2 0,60 · K3 0,50 · K4 0,35 ·
+        // K5 0,25 → 5,5 + 3,05 = 8,6.
+        val kandidat = kandidat(
+            "STUERMER", "FC", SpielerPosition.STU,
+            tore = 2, vorlagen = 1, sieg = true,
+            schuesse = 5, aufsTor = 3, auffaelligkeit = 3,
+            zweikaempfe = 10, zweikampfQuote = 63.0,
+            berichtNote = 2.0,
+        )
+        val zeilen = ElfBewertung.bewerten(kandidat).zeilen.associate { it.kriterium to it.beitrag }
+        assertEquals(1.35, zeilen["Direkter Impact"] ?: 0.0, 0.001)
+        assertEquals(0.6, zeilen["Effizienz"] ?: 0.0, 0.001)
+        assertEquals(0.5, zeilen["Zweikämpfe"] ?: 0.0, 0.001)
+        assertEquals(0.35, zeilen["Ergebnis & Teambonus"] ?: 0.0, 0.001)
+        assertEquals(0.25, zeilen["Bericht-Note"] ?: 0.0, 0.001)
+        assertEquals(8.6, note(kandidat), 0.001)
+    }
+
+    @Test
+    fun bewertung_zweikampfDeckelBegrenztDenK3Beitrag() {
+        // 2.000 ZK @ 100 %: Quantität deckelt bei 0,4, Quote bei 0,3 → K3 = 0,7.
+        val monster = kandidat(
+            "ZK-MONSTER", "FC", SpielerPosition.MIT,
+            zweikaempfe = 2000, zweikampfQuote = 100.0,
+        )
+        val zeilen = ElfBewertung.bewerten(monster).zeilen.associate { it.kriterium to it.beitrag }
+        assertEquals(0.7, zeilen["Zweikämpfe"] ?: 0.0, 0.001)
+        assertEquals(6.2, note(monster), 0.001)
+    }
+
+    @Test
+    fun bewertung_ohneZweikampfStatistikKeinK3Bonus() {
+        val kandidat = kandidat("OHNE-ZK", "FC", SpielerPosition.MIT, zweikaempfe = 0, zweikampfQuote = 70.0)
+        val zeilen = ElfBewertung.bewerten(kandidat).zeilen
+        assertFalse(zeilen.any { it.kriterium == "Zweikämpfe" })
+        assertEquals(5.5, note(kandidat), 0.001)
+    }
+
+    @Test
+    fun bewertung_berichtNoteWirktAufK5() {
+        // Stürmer-Sieg als Basis: 5,5 + 0,35 = 5,85.
+        assertEquals(6.1, note(kandidat("N1", "FC", SpielerPosition.STU, sieg = true, berichtNote = 2.0)), 0.001)
+        assertEquals(5.7, note(kandidat("N2", "FC", SpielerPosition.STU, sieg = true, berichtNote = 6.0)), 0.001)
+        // 4,5 ergibt +0,0 und erzeugt keine Bericht-Note-Zeile.
+        val neutral = ElfBewertung.bewerten(kandidat("N3", "FC", SpielerPosition.STU, sieg = true, berichtNote = 4.5))
+        assertEquals(5.9, neutral.gesamt, 0.001)
+        assertFalse(neutral.zeilen.any { it.kriterium == "Bericht-Note" })
+        // Ohne Bericht-Note bleibt K5 neutral.
+        val ohne = ElfBewertung.bewerten(kandidat("N4", "FC", SpielerPosition.STU, sieg = true, berichtNote = null))
+        assertEquals(5.9, ohne.gesamt, 0.001)
+        assertFalse(ohne.zeilen.any { it.kriterium == "Bericht-Note" })
+    }
+
+    @Test
+    fun bewertung_torwartParadenZaehlenStattZweikaempfe() {
         val torwart = kandidat(
             "PARADE", "FC", SpielerPosition.TOR,
             sieg = true, gegenTore = 0, gehalteneBalle = 5,
         )
         val zeilen = ElfBewertung.bewerten(torwart).zeilen.associate { it.kriterium to it.beitrag }
 
-        // Gehaltene Bälle bilden KEIN Kriterium mehr; der Zu-Null-Bonus zählt.
-        assertEquals(0.5, zeilen["Zu null"] ?: 0.0, 0.001)
-        assertNull(zeilen["Defensive"])
-        assertEquals(6.3, note(torwart), 0.001)
+        // Gehaltene Bälle ersetzen beim Torwart die Zweikämpfe (5–6 → +0,5).
+        assertEquals(0.5, zeilen["Paraden"] ?: 0.0, 0.001)
+        assertNull(zeilen["Zweikämpfe"])
+        // Sieg + Zu-Null = 0,65 → Cap 0,55 in K4.
+        assertEquals(0.55, zeilen["Ergebnis & Teambonus"] ?: 0.0, 0.001)
+        assertEquals(6.6, note(torwart), 0.001)
     }
 
     // ---------- Einsatzzeit ----------
 
     @Test
-    fun bewertung_kurzerEinsatzErhaeltKeinenVollspielbonus() {
-        // Nur 30 Minuten und ein Tor: der Torbonus zählt voll, ein künstlicher
-        // Vollspielbonus gibt es nicht – identisch zur vollen Partie.
+    fun bewertung_einwechslerHatFesteNiedrigereBasis() {
+        // Einwechsler: Basis 4,0 (fix), Zuschläge unskaliert; Starter: Basis 5,5.
         val einwechsler = kandidat(
             "SUB", "V", SpielerPosition.STU,
             startelf = false, minuten = 30, tore = 1, sieg = true,
         )
         val volles = kandidat("VOLL", "V", SpielerPosition.STU, tore = 1, sieg = true)
 
-        assertEquals(note(volles), note(einwechsler), 0.001)
-        assertEquals(6.8, note(einwechsler), 0.001)
+        assertEquals(6.4, note(volles), 0.001)
+        assertEquals(4.9, note(einwechsler), 0.001)
+        // Der Unterschied liegt exakt in der Basis (1,5) – kein Minuten-Faktor.
+        assertEquals(note(volles) - note(einwechsler), 1.5, 0.001)
+    }
+
+    @Test
+    fun bewertung_grundbewertungIstFuerEinwechslerKennzeichnend() {
+        val starter = ElfBewertung.bewerten(kandidat("START", "V", SpielerPosition.STU))
+        val einwechsler = ElfBewertung.bewerten(kandidat("JOKER", "V", SpielerPosition.STU, startelf = false))
+
+        assertEquals("Grundbewertung", starter.zeilen.first().kriterium)
+        assertEquals("Grundbewertung (Einwechslung)", einwechsler.zeilen.first().kriterium)
+        assertEquals(5.5, starter.zeilen.first().beitrag, 0.001)
+        assertEquals(4.0, einwechsler.zeilen.first().beitrag, 0.001)
     }
 
     @Test
@@ -365,7 +461,7 @@ class ElfDesSpieltagsTest {
         val bank = kandidat("BANK", "V", SpielerPosition.STU, startelf = false)
         val starter = kandidat("START", "V", SpielerPosition.STU, sieg = true)
         assertTrue(note(bank) < note(starter))
-        assertTrue(note(bank) <= 5.5)
+        assertTrue(note(bank) <= 4.0)
     }
 
     // ---------- Keine Normalisierung / 10 ist Ausnahme ----------
@@ -390,9 +486,9 @@ class ElfDesSpieltagsTest {
         val einTor = kandidat("A", "V", SpielerPosition.STU, tore = 1, sieg = true)
         assertTrue(note(einTor) < 10.0)
 
-        // Auch ein Hattrick (3 Tore + Vorlage + Sieg) bleibt mit 9,4 unter 10,0.
+        // Auch ein Hattrick (3 Tore + Vorlage + Sieg) bleibt mit 7,2 unter 10,0.
         val hattrick = kandidat("B", "V", SpielerPosition.STU, tore = 3, vorlagen = 1, sieg = true)
-        assertEquals(9.4, note(hattrick), 0.001)
+        assertEquals(7.2, note(hattrick), 0.001)
         assertTrue(note(hattrick) < 10.0)
     }
 
@@ -400,7 +496,7 @@ class ElfDesSpieltagsTest {
     fun bewertung_unterlegenerSpielerKannHochBewertetWerden() {
         // Zwei Tore + Vorlage trotz Niederlage – individuelle Leistung dominiert.
         val kandidat = kandidat("VERLIERER", "V", SpielerPosition.STU, tore = 2, vorlagen = 1, niederlage = true)
-        assertEquals(7.9, note(kandidat), 0.001)
+        assertEquals(6.7, note(kandidat), 0.001)
     }
 
     // ---------- ElfAuswahl ----------
@@ -769,6 +865,7 @@ class ElfDesSpieltagsTest {
                     schuesse = 7,
                     aufsTor = 5,
                     auffaelligkeit = 4,
+                    berichtNote = 2.5,
                 ),
                 ElfSpieler(
                     name = "Tom Tormann",
@@ -805,7 +902,7 @@ class ElfDesSpieltagsTest {
         assertEquals(null, ElfCache.deserialisieren(alt))
 
         // Auch v3 (17 Felder, ohne Formation) und v4 (23 Felder, ohne teamId)
-        // werden zugunsten von v5 verworfen.
+        // werden zugunsten von v7 (26 Felder je Spieler) verworfen.
         val dritte = "ElfDesSpieltags|v3\u241FDeutschland\u241F1. Liga\u241F24\u241F7\u241F9\u241F9\u241Ftrue" +
             listOf("Max", "FC Test", "STU", "7.7", "", "true", "90", "2", "1", "0", "0", "true", "false", "false", "0", "true", "false")
                 .joinToString("\u241F", "\u241E")
@@ -816,6 +913,14 @@ class ElfDesSpieltagsTest {
             listOf("Max", "FC Test", "STU", "7.7", "5", "true", "90", "2", "1", "0", "0", "true", "false", "false", "0", "true", "false", "0", "0.0", "0", "0", "0", null)
                 .joinToString("\u241F", "\u241E")
         assertEquals(null, ElfCache.deserialisieren(vierte))
+
+        // v6 (25 Felder) ohne berichtNote wird zugunsten von v7 verworfen.
+        val sechste = "ElfDesSpieltags|v6\u241FDeutschland\u241F1. Liga\u241F24\u241F7\u241F9\u241F9\u241Ftrue" +
+            listOf(
+                "Max", "FC Test", "STU", "7.7", "5", "4711", "true", "90", "2", "1", "0", "0",
+                "true", "false", "false", "0", "true", "false", "12", "58.33", "7", "5", "4", null, "true",
+            ).joinToString("\u241F", "\u241E")
+        assertEquals(null, ElfCache.deserialisieren(sechste))
     }
 
     // ---------- ElfAuswertung ----------
@@ -1228,6 +1333,40 @@ class ElfDesSpieltagsTest {
     }
 
     @Test
+    fun auswertung_uebernimmtBerichtNoteAusSpielerstatistik() {
+        val bericht = SpielBericht(
+            saison = 24, zat = 5, ergebnis = "1:0",
+            heim = "FC Alpha", gast = "KSV Beta", heimId = 1, gastId = 2,
+            heimAufstellung = BerichtAufstellung(
+                spieler = listOf(BerichtSpieler("Aaron Muller", "A", "Sturm", 0)),
+            ),
+            gastAufstellung = BerichtAufstellung(spieler = emptyList()),
+            heimSpielerStatistik = mapOf(
+                "aaron muller" to com.onlinesoccer.app.data.model.BerichtSpielerStatistik(note = "3.5"),
+            ),
+            url = "test",
+        )
+
+        val aaron = ElfAuswertung.kandidatenAusBericht(bericht).first { it.name == "Aaron Muller" }
+        assertEquals(3.5, aaron.berichtNote ?: 0.0, 0.001)
+
+        // Komma-Schreibweise wird ebenso akzeptiert; leere/unbekannte Note bleibt null.
+        val mitKomma = ElfAuswertung.kandidatenAusBericht(
+            bericht.copy(
+                heimSpielerStatistik = mapOf(
+                    "aaron muller" to com.onlinesoccer.app.data.model.BerichtSpielerStatistik(note = "2,5"),
+                ),
+            ),
+        ).first()
+        assertEquals(2.5, mitKomma.berichtNote ?: 0.0, 0.001)
+
+        val ohneNote = ElfAuswertung.kandidatenAusBericht(
+            bericht.copy(heimSpielerStatistik = mapOf("aaron muller" to com.onlinesoccer.app.data.model.BerichtSpielerStatistik(note = ""))),
+        ).first()
+        assertNull(ohneNote.berichtNote)
+    }
+
+    @Test
     fun auswertung_minutenBleibenNeutralOhneWechselhinweise() {
         val bericht = SpielBericht(
             saison = 24, zat = 5, ergebnis = "1:0",
@@ -1247,7 +1386,7 @@ class ElfDesSpieltagsTest {
     fun kandidatVon_RekonstruiertSpielerFuerBewertung() {
         val spieler = ElfSpieler(
             name = "Max", verein = "FC", position = SpielerPosition.STU,
-            bewertung = 7.8, spielerId = 5, tore = 2, sieg = true,
+            bewertung = 6.9, spielerId = 5, tore = 2, sieg = true,
         )
         val original = ElfBewertung.kandidatVon(spieler)
         assertEquals("Max", original.name)

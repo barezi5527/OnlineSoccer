@@ -353,6 +353,7 @@ private fun MainScaffold(
                             Routes.SERVER_SEITE.replace("{path}", Uri.encode(path)),
                         ) { launchSingleTop = true }
                     },
+                    onAnmeldung = onLogout,
                 )
             }
             composable(Routes.FREIE_TEAMS) {
@@ -508,6 +509,7 @@ private fun MainScaffold(
             }
             composable(Routes.VERSTEIGERUNGSMARKT) {
                 VersteigerungsmarktScreen(
+                    demo = demo,
                     onClose = { navController.popBackStack() },
                     onSpielerClick = { pid ->
                         navController.navigate(buildSpielerRoute(pid, null)) {
@@ -523,6 +525,7 @@ private fun MainScaffold(
             }
             composable(Routes.VM_SETZEN) {
                 VmSetzenScreen(
+                    demo = demo,
                     onClose = { navController.popBackStack() },
                     onSpielerClick = { pid ->
                         navController.navigate(buildSpielerRoute(pid, null)) {
@@ -581,6 +584,7 @@ private fun MainScaffold(
             }
             composable(Routes.BEWERBE) {
                 BewerbeScreen(
+                    demo = demo,
                     onSpielbericht = { sid, url ->
                         val route = buildBerichtRoute(sid, url) ?: return@BewerbeScreen
                         navController.navigate(route) {

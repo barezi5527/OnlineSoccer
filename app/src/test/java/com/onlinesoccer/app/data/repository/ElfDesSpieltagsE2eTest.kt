@@ -176,11 +176,11 @@ class ElfDesSpieltagsE2eTest {
             assertNotNull("Keine Team-ID für ${spieler.name} (${spieler.verein})", spieler.teamId)
         }
 
-        // Cache-Round-Trip (v6, 25 Felder): Deserialisierung == Original.
+        // Cache-Round-Trip (v7, 26 Felder): Deserialisierung == Original.
         val wiederhergestellt = ElfCache.deserialisieren(ElfCache.serialisieren(ergebnis))
         assertNotNull("Cache-Round-Trip fehlgeschlagen", wiederhergestellt)
         assertEquals(ergebnis, wiederhergestellt)
-        assertTrue("Cache-Prefix v6 fehlt", ElfCache.serialisieren(ergebnis).startsWith("ElfDesSpieltags|v6"))
+        assertTrue("Cache-Prefix v7 fehlt", ElfCache.serialisieren(ergebnis).startsWith("ElfDesSpieltags|v7"))
 
         // ---- Dokumentations-Report ----
         println("=".repeat(78))

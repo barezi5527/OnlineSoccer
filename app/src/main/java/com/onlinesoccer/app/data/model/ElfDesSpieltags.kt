@@ -93,6 +93,12 @@ data class ElfSpieler(
      * Gegentore) – nur wenn Spielerstatistik und Endstand vorliegen; sonst null.
      */
     val gehalteneBalle: Int? = null,
+    /**
+     * Bericht-Note des Spielers aus der Spielerstatistik-Tabelle (Skala 1,0–6,0,
+     * 1 = beste Note). Nur berichtet, wenn der Bericht eine Note ausweist
+     * (sonst null → K5 bleibt neutral).
+     */
+    val berichtNote: Double? = null,
 ) {
     /** Kein eigener Gegentreffer (Zu-Null-Spiel) – nur bei bekanntem Ergebnis. */
     val zuNull: Boolean get() = hatErgebnis && gegenTore == 0

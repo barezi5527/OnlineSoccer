@@ -117,12 +117,14 @@ private val HINWEIS_RESERVE = 48.dp
  * Erklärender Text der „So wurde bewertet"-Sektion (exakt wie gefordert).
  */
 private const val SO_WURDE_BEWERTET_TEXT =
-    "Die Bewertung startet bei 5,5 und nutzt exakt sechs Kriterien aus dem Spielbericht: " +
-        "Tore (positionsabhängig), Vorlagen, Ergebnis (Sieg/Unentschieden/Niederlage, nur bei " +
-        "bekanntem Endstand), Zu null (Torwart/Abwehr) und Karten (Abzüge). Die Einsatzzeit ist " +
-        "kein Bonus – nicht eingesetzte Spieler bleiben von der Elf ausgeschlossen. Bewertet wird " +
-        "von 1,0 bis 10,0; eine 10,0 erfordert eine ungerundete Rohbewertung von mindestens 9,8. " +
-        "Es findet keine Normalisierung statt."
+    "Die Bewertung startet bei 5,5 (Startelf) bzw. 4,0 (Einwechslung) und baut auf fünf " +
+        "Kategorien aus dem Spielbericht auf: Direkter Impact (Tore, Vorlagen, Elfmeter), " +
+        "Effizienz (Schussquote, Abschlüsse, Auffälligkeit), Zweikämpfe (gewonnene Zweikämpfe, " +
+        "Quote; beim Torwart gehaltene Bälle), Ergebnis (Sieg/Unentschieden/Niederlage, Zu null, " +
+        "nur bei bekanntem Endstand) und die Bericht-Note. Karten zählen als Abzug. Die " +
+        "Einsatzzeit selbst ist kein Bonus – nicht eingesetzte Spieler bleiben von der Elf " +
+        "ausgeschlossen. Bewertet wird von 1,0 bis 10,0; eine 10,0 erfordert eine ungerundete " +
+        "Rohnote von mindestens 9,95. Es findet keine Normalisierung statt."
 
 /**
  * „Elf des Spieltags": Spieler aus den echten Spielberichten des gewählten
