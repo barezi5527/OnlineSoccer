@@ -75,6 +75,8 @@ fun BewerbeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var bereich by rememberSaveable { mutableStateOf(BewerbeBereich.TABELLE) }
     var spieltageUnteransicht by rememberSaveable { mutableStateOf(SpieltageUnteransicht.SPIELTAGE) }
+    var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
+    var pokalErgebnisseSichtbar by rememberSaveable { mutableStateOf(true) }
 
     LaunchedEffect(demo) {
         viewModel.setDemo(demo)
@@ -109,6 +111,12 @@ fun BewerbeScreen(
                 },
                 modifier = Modifier.weight(1f),
             )
+            if (bereich == BewerbeBereich.SPIELTAGE && spieltageUnteransicht == SpieltageUnteransicht.SPIELTAGE) {
+                ErgebnisCheckbox(ergebnisseSichtbar) { ergebnisseSichtbar = it }
+            }
+            if (bereich == BewerbeBereich.POKAL) {
+                ErgebnisCheckbox(pokalErgebnisseSichtbar) { pokalErgebnisseSichtbar = it }
+            }
             if (bereich == BewerbeBereich.SPIELTAGE && spieltageUnteransicht == SpieltageUnteransicht.ELF_DE_SPIELTAGS) {
                 IconButton(onClick = { spieltageUnteransicht = SpieltageUnteransicht.SPIELTAGE }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück zu den Spieltagen")
@@ -156,14 +164,18 @@ fun BewerbeScreen(
                         BewerbeBereich.SPIELTAGE -> SpieltageAnsicht(
                             spieltag = uiState.spieltag,
                             onZat = viewModel::ladeSpieltag,
+                            onSaison = viewModel::waehleSpieltagSaison,
                             onLiga = viewModel::waehleSpieltagLiga,
                             onLand = viewModel::waehleSpieltagLand,
+                            ergebnisseSichtbar = ergebnisseSichtbar,
+                            onErgebnisseSichtbar = { ergebnisseSichtbar = it },
                             onSpielbericht = onSpielbericht,
                             onElf = { spieltageUnteransicht = SpieltageUnteransicht.ELF_DE_SPIELTAGS },
                             demo = demo,
                         )
                         BewerbeBereich.POKAL -> PokalAnsicht(
                             pokal = uiState.pokal,
+                            ergebnisseSichtbar = pokalErgebnisseSichtbar,
                             onSpielbericht = onSpielbericht,
                             onSaison = viewModel::waehlePokalSaison,
                             onRunde = viewModel::waehlePokalRunde,
@@ -211,6 +223,22 @@ private fun FilterAuswahl(
                 )
             }
         }
+    }
+}
+
+/** Einheitliches „Ergeb."-Kästchen in der Bewerbe-Kopfzeile. */
+@Composable
+private fun ErgebnisCheckbox(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+        )
+        Text(
+            "Ergeb.",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.clickable { onCheckedChange(!checked) },
+        )
     }
 }
 
@@ -480,8 +508,11 @@ internal fun kompakteTabellenSpalten(header: List<String>): List<TabellenSpalte>
 private fun SpieltageAnsicht(
     spieltag: LigaSpieltag?,
     onZat: (Int) -> Unit,
+    onSaison: (Int) -> Unit,
     onLiga: (Int) -> Unit,
     onLand: (Int) -> Unit,
+    ergebnisseSichtbar: Boolean,
+    onErgebnisseSichtbar: (Boolean) -> Unit,
     onSpielbericht: (String?, String?) -> Unit,
     onElf: (() -> Unit)? = null,
     demo: Boolean = false,
@@ -519,7 +550,6 @@ private fun SpieltageAnsicht(
         Text("Keine Spieltage gefunden.", Modifier.padding(24.dp))
         return
     }
-    var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(
             Modifier
@@ -551,22 +581,17 @@ private fun SpieltageAnsicht(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ZatSelector(spieltag, onZat)
+            FilterAuswahl(
+                selected = spieltag.saison,
+                optionen = spieltag.saisonOptionen,
+                onSelect = onSaison,
+                leerLabel = "Saison",
+            )
             if (onElf != null) {
                 FilterChip(
                     selected = false,
                     onClick = onElf,
                     label = { Text("Elf des Spieltags") },
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = ergebnisseSichtbar,
-                    onCheckedChange = { ergebnisseSichtbar = it },
-                )
-                Text(
-                    "Ergebnisse",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.clickable { ergebnisseSichtbar = !ergebnisseSichtbar },
                 )
             }
         }
@@ -672,6 +697,7 @@ private fun SpielZeile(
 @Composable
 private fun PokalAnsicht(
     pokal: PokalAnsicht?,
+    ergebnisseSichtbar: Boolean,
     onSpielbericht: (String?, String?) -> Unit,
     onSaison: (Int) -> Unit,
     onRunde: (Int) -> Unit,
@@ -810,7 +836,7 @@ private fun PokalAnsicht(
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            spiel.ergebnis ?: "vs.",
+                            if (ergebnisseSichtbar) spiel.ergebnis ?: "vs." else "vs.",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 8.dp),

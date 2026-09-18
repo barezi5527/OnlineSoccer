@@ -326,6 +326,11 @@ class BewerbeViewModel @Inject constructor(
         ladeSpieltag(land = land)
     }
 
+    fun waehleSpieltagSaison(saison: Int) {
+        spieltagZat = null
+        ladeSpieltag(saison = saison)
+    }
+
     // ---------- Landespokal ----------
 
     fun ladePokal(saison: Int? = null, runde: Int? = null, land: Int? = null, force: Boolean = false) {
