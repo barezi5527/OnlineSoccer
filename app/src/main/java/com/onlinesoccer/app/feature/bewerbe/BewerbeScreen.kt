@@ -76,7 +76,7 @@ fun BewerbeScreen(
     var bereich by rememberSaveable { mutableStateOf(BewerbeBereich.TABELLE) }
     var spieltageUnteransicht by rememberSaveable { mutableStateOf(SpieltageUnteransicht.SPIELTAGE) }
     var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
-    var pokalErgebnisseSichtbar by rememberSaveable { mutableStateOf(true) }
+    var pokalErgebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(demo) {
         viewModel.setDemo(demo)
