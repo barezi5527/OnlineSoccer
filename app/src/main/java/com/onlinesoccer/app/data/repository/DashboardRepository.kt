@@ -8,6 +8,8 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,7 +20,34 @@ class DashboardRepository @Inject constructor(
     private val client: OkHttpClient,
 ) {
 
-    suspend fun fetchDashboard(): DashboardData = withContext(Dispatchers.IO) {
+    private val mutex = Mutex()
+    @Volatile
+    private var cacheDatensatz: CacheDatensatz? = null
+
+    private data class CacheDatensatz(
+        val data: DashboardData,
+        val abgerufenUm: Long,
+    )
+
+    /**
+     * Dashboard-Daten mit Kurzzeit-Cache: haupt.php wird nicht für jede Ansicht
+     * erneut geladen (Dashboard, Spiele, Bewerbe, Elf des Spieltags teilen sich
+     * ein Ergebnis). Parallel laufende Aufrufe warten auf EINEN Request.
+     *
+     * [forceRefresh] erzwingt einen frischen Abruf — genutzt vom
+     * „Aktualisieren"-Schalter und dem Tab-Tipp aufs Dashboard.
+     */
+    suspend fun fetchDashboard(forceRefresh: Boolean = false): DashboardData = mutex.withLock {
+        val vorhanden = cacheDatensatz
+        if (!forceRefresh && vorhanden != null && istFrisch(vorhanden)) {
+            return@withLock vorhanden.data
+        }
+        ladeVonServer().also { neu ->
+            cacheDatensatz = CacheDatensatz(neu, System.currentTimeMillis())
+        }
+    }
+
+    private suspend fun ladeVonServer(): DashboardData = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder().url(OsApi.MAIN).build()
             client.newCall(request).execute().use { response ->
@@ -35,6 +64,9 @@ class DashboardRepository @Inject constructor(
             throw IOException("Dashboard konnte nicht geladen werden: ${e.message}", e)
         }
     }
+
+    private fun istFrisch(cache: CacheDatensatz): Boolean =
+        System.currentTimeMillis() - cache.abgerufenUm < FRISCH_MS
 
     internal fun parse(html: String): DashboardData = Jsoup.parse(html).let { doc ->
 
@@ -169,4 +201,9 @@ class DashboardRepository @Inject constructor(
     private fun parseUrlSaison(url: String): Int? =
         Regex("rep/saison/(\\d+)/").find(url)
             ?.groupValues?.get(1)?.toIntOrNull()
+
+    companion object {
+        /** Frischhaltefenster des Dashboard-Caches in Millisekunden. */
+        private const val FRISCH_MS = 30_000L
+    }
 }

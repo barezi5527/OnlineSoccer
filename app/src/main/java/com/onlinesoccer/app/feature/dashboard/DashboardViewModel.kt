@@ -26,14 +26,19 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
-        refresh()
+        laden()
     }
 
+    /** Erzwungener Abruf (Aktualisieren-Schalter, Tab-Tipp): umgeht den Cache. */
     fun refresh() {
+        laden(forceRefresh = true)
+    }
+
+    private fun laden(forceRefresh: Boolean = false) {
         _uiState.value = DashboardUiState.Loading
         viewModelScope.launch {
             _uiState.value = try {
-                val data = repository.fetchDashboard()
+                val data = repository.fetchDashboard(forceRefresh = forceRefresh)
                 DashboardUiState.Ready(data)
             } catch (e: Exception) {
                 DashboardUiState.Error(e.message ?: "Unbekannter Fehler")
