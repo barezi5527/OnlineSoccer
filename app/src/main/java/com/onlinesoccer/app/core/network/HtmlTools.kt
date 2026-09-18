@@ -33,8 +33,20 @@ data class GeparsteTabelle(
             ?.takeIf { it.isNotBlank() }
 }
 
-/** Gemeinsame Jsoup-Hilfen für HTML-Tabellen (Website-Stil: klassische Tables). */
+/**
+ * Gemeinsame Jsoup-Hilfen für HTML-Tabellen (Website-Stil: klassische Tables).
+ */
 object HtmlTools {
+
+    /**
+     * Dekodiert die rohe Server-Antwort einheitlich als UTF-8-Text.
+     *
+     * Alle echten Server-Fixtures (app/src/test/resources/dumps/) sind UTF-8-kodiert –
+     * daher ist dies die einzige verbindliche Dekodierstelle. Frühere Inkonsistenz:
+     * SessionGuard/LoginErrorTexts nutzten Latin-1, was bei jedem Seitenaufruf zu
+     * kaputten deutschen Umlauten führte.
+     */
+    fun serverText(bytes: ByteArray): String = bytes.toString(Charsets.UTF_8)
 
     /** Erkennt die Tabelle(n) einer Seite und parst Header + Datenzeilen. */
     fun tabellen(doc: org.jsoup.nodes.Document): List<GeparsteTabelle> {

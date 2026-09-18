@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -30,8 +29,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.DashboardData
 import com.onlinesoccer.app.data.model.LivegameData
-import com.onlinesoccer.app.data.model.StatistikWerte
-import com.onlinesoccer.app.data.model.TaktikWerte
+import com.onlinesoccer.app.ui.components.SpielverlaufEreignisKarte
+import com.onlinesoccer.app.ui.components.SpielverlaufLegende
 
 @Composable
 fun SpieleScreen(
@@ -87,26 +86,13 @@ fun SpieleScreen(
                     val ereignisse = live.ereignisse
                     if (ereignisse.isNotEmpty()) {
                         item { Text("Spielverlauf", style = MaterialTheme.typography.titleMedium) }
+                        item { SpielverlaufLegende() }
                         items(ereignisse, key = { "${it.minute}-${it.text}" }) { ereignis ->
-                            Row(Modifier.fillMaxWidth()) {
-                                if (ereignis.minute >= 0) {
-                                    Text(
-                                        "${ereignis.minute}'",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier
-                                            .width(48.dp)
-                                            .wrapContentWidth(Alignment.Start),
-                                    )
-                                } else {
-                                    Spacer(Modifier.width(48.dp))
-                                }
-                                Text(
-                                    ereignis.text,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
+                            SpielverlaufEreignisKarte(
+                                minute = ereignis.minute.takeIf { it >= 0 }?.toString(),
+                                text = ereignis.text,
+                                typ = ereignis.typ,
+                            )
                         }
                     }
                 }

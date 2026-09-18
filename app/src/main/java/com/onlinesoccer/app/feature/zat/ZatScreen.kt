@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +42,7 @@ fun ZatScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val zugabgabeViewModel: ZugabgabeViewModel = hiltViewModel()
     val zugabgabeState by zugabgabeViewModel.uiState.collectAsStateWithLifecycle()
-    var bereich by remember { mutableStateOf(ZatBereich.AUFSTELLUNG) }
+    var bereich by rememberSaveable { mutableStateOf(ZatBereich.AUFSTELLUNG) }
 
     val aktionenViewModel: AktionenViewModel = hiltViewModel()
     val einstellungenViewModel: EinstellungenViewModel = hiltViewModel()
@@ -112,7 +113,7 @@ fun ZatScreen(
                 onClick = viewModel::zugabgabeSpeichern,
                 enabled = !uiState.speichernd,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (uiState.speicherErfolgreich) Color(0xFF2E7D32) else Color(0xFFC62828),
+                    containerColor = if (uiState.speicherErfolgreich) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
                     contentColor = Color.White,
                 ),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),

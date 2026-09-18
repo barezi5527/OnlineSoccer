@@ -54,6 +54,8 @@ internal object KiPressekonferenz {
             ueberschrift = ueberschrift(ausgang),
             text = buildString {
                 append(stellungnahme(ausgang, eigen, gegner))
+                append(" ")
+                append(perspektive(trainer, ausgang))
                 ballbesitz(bericht, trainer)?.let { append(" ").append(it) }
                 besonderes(bericht)?.let { append(" ").append(it) }
             },
@@ -91,6 +93,21 @@ internal object KiPressekonferenz {
         Ausgang.UNBESTIMMT -> buildString {
             append("Es war ein intensives Spiel, in dem sich beide Mannschaften nichts geschenkt haben. ")
             append("Ich bin mit der Moral meiner Spieler zufrieden – alles Weitere sehen wir uns genau an.")
+        }
+    }
+
+    private fun perspektive(trainer: Trainer, ausgang: Ausgang): String = when (trainer) {
+        Trainer.HEIM -> when (ausgang) {
+            Ausgang.SIEG -> "Vor unserem Publikum war die Unterstützung von den Rängen heute ein wichtiger Rückhalt."
+            Ausgang.UNENTSCHIEDEN -> "Zu Hause wollten wir mehr, nehmen diesen Punkt aber mit."
+            Ausgang.NIEDERLAGE -> "Vor den eigenen Fans müssen wir aus diesem Rückschlag die richtigen Schlüsse ziehen."
+            Ausgang.UNBESTIMMT -> "Als Heimmannschaft wollen wir die positiven Ansätze mitnehmen."
+        }
+        Trainer.GAST -> when (ausgang) {
+            Ausgang.SIEG -> "Auswärts in dieser Atmosphäre so aufzutreten, verdient besonderen Respekt."
+            Ausgang.UNENTSCHIEDEN -> "Auf fremdem Platz ist dieser Punkt für uns ein ordentliches Ergebnis."
+            Ausgang.NIEDERLAGE -> "Auswärts haben wir heute zu selten unser eigenes Spiel durchgesetzt."
+            Ausgang.UNBESTIMMT -> "Auch auswärts haben wir wichtige Eindrücke für die nächsten Spiele gesammelt."
         }
     }
 

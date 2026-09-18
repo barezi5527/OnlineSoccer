@@ -608,7 +608,7 @@ private fun KaderZuordnung(
             ExposedDropdownMenuBox(
                 expanded = offen,
                 onExpandedChange = { offen = it },
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(48.dp),
             ) {
                 Box(
                     Modifier

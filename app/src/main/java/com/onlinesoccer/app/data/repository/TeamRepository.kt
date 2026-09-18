@@ -1499,7 +1499,7 @@ class TeamRepository @Inject constructor(
                 // nicht als eigene Sitzung durchgeht.
                 val imDemo = sessionManager?.state?.value == AuthUiState.SignedInDemo
                 if (if (imDemo) SessionGuard.isPureLoginView(bytes) else SessionGuard.isLoginView(bytes)) return null
-                bytes.toString(Charsets.UTF_8)
+                HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
             null

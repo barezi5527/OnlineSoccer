@@ -1,6 +1,7 @@
 package com.onlinesoccer.app.data.repository
 
 import com.onlinesoccer.app.core.network.OsApi
+import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.SessionGuard
 import com.onlinesoccer.app.data.model.FreundschaftOption
 import com.onlinesoccer.app.data.model.FreundschaftSpiel
@@ -133,7 +134,7 @@ class FreundschaftRepository @Inject constructor(
             if (!response.isSuccessful) return null
             val bytes = response.body?.bytes() ?: return null
             if (SessionGuard.isLoginView(bytes)) return null
-            bytes.toString(Charsets.UTF_8)
+            HtmlTools.serverText(bytes)
         }
     } catch (_: IOException) {
         null

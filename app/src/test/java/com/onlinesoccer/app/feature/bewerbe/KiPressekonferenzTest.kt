@@ -104,6 +104,14 @@ class KiPressekonferenzTest {
     }
 
     @Test
+    fun heimUndGasttrainerErhaltenUnterschiedlicheAussagen() {
+        val heim = KiPressekonferenz.aussage(bericht(ergebnis = "1:1"), KiPressekonferenz.Trainer.HEIM)
+        val gast = KiPressekonferenz.aussage(bericht(ergebnis = "1:1"), KiPressekonferenz.Trainer.GAST)
+
+        assertFalse(heim.ganz() == gast.ganz())
+    }
+
+    @Test
     fun ballbesitzWirdAusTrainersichtGewertet() {
         val heim = KiPressekonferenz.aussage(bericht(ergebnis = "2:1", ballbesitz = "30 : 70"), KiPressekonferenz.Trainer.HEIM)
         val gast = KiPressekonferenz.aussage(bericht(ergebnis = "2:1", ballbesitz = "30 : 70"), KiPressekonferenz.Trainer.GAST)

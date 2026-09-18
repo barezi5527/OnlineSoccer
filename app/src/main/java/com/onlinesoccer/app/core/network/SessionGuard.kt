@@ -1,7 +1,5 @@
 package com.onlinesoccer.app.core.network
 
-import java.nio.charset.Charset
-
 /**
  * Erkennt den Anmeldezustand anhand des Seiteninhalts statt des HTTP-Statuscodes.
  *
@@ -15,8 +13,6 @@ import java.nio.charset.Charset
  * „eingeloggt" durchgehen und fremde Demo-Daten anzeigen.
  */
 object SessionGuard {
-
-    private val latin1: Charset = Charset.forName("ISO-8859-1")
 
     /** Persönliche, eingeloggte Ansicht (echtes Managerbüro ohne Demo-Marker). */
     fun isPersonalView(bytes: ByteArray): Boolean {
@@ -47,7 +43,7 @@ object SessionGuard {
     /** Positiv-Erkennung des Demo-Managerbüros (nur auf `haupt.php` relevant). */
     private fun isDemoOffice(html: String): Boolean = html.contains(MARKER_DEMO_OFFICE)
 
-    private fun html(bytes: ByteArray): String = String(bytes, latin1)
+    private fun html(bytes: ByteArray): String = HtmlTools.serverText(bytes)
 
     private const val MARKER_PERSONAL = "Kontostand"
     private const val MARKER_LOGIN_FORM = "loginemail"

@@ -30,7 +30,7 @@ class KiKommentarPromptTest {
         assertFalse(prompt.contains("Aktueller Spielstand: 2:2"))
         assertTrue(prompt.contains("AUFLÖSUNG - NUR AM ENDE VERWENDEN"))
         assertTrue(prompt.contains("ausschließlich in der abschließenden Auflösung"))
-        assertTrue(prompt.contains("Nenne nach jedem Tor ausdrücklich den neuen Spielstand"))
+        assertTrue(prompt.contains("Nenne nach jedem Tor den Spielstand natürlich in einen Satz eingebaut"))
         assertTrue(prompt.contains("Spielstand nach dem Tor"))
         assertFalse(prompt.contains("SPRACHAUSGABE - WICHTIG"))
         assertFalse(prompt.contains("starte die Sprachausgabe sofort"))

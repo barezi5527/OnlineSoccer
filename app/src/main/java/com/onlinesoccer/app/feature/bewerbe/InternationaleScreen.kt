@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -33,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,14 +63,26 @@ private enum class InternationaleBereich(val label: String, val path: String) {
     SUPERCUP("Supercup", "/osneu/supercup"),
 }
 
+/** Bereiche, die Begegnungs-Ergebnisse anzeigen und daher standardmäßig ausgeblendet werden. */
+private val ergebnisBereiche = setOf(
+    InternationaleBereich.OSC_QUALI,
+    InternationaleBereich.OSC_GRUPPE,
+    InternationaleBereich.OSC_FINAL,
+    InternationaleBereich.OSE_QUALI,
+    InternationaleBereich.OSE_GRUPPE,
+    InternationaleBereich.OSE_FINAL,
+    InternationaleBereich.SUPERCUP,
+)
+
 @Composable
 fun InternationaleScreen(
     onSpielbericht: (String?, String?) -> Unit,
     viewModel: InternationaleViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var bereich by remember { mutableStateOf(InternationaleBereich.OS_RANKING) }
+    var bereich by rememberSaveable { mutableStateOf(InternationaleBereich.OS_RANKING) }
     var ausgewaehltesRankingTeam by remember { mutableStateOf<String?>(null) }
+    var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
     val ansicht = uiState.ansicht
 
     LaunchedEffect(bereich) {
@@ -88,6 +102,9 @@ fun InternationaleScreen(
                 ansicht != null -> InternationaleAnsichtContent(
                     ansicht = ansicht,
                     istOsRanking = bereich == InternationaleBereich.OS_RANKING,
+                    istErgebnisBereich = bereich in ergebnisBereiche,
+                    ergebnisseSichtbar = ergebnisseSichtbar,
+                    onErgebnisseSichtbar = { ergebnisseSichtbar = it },
                     ausgewaehlteZeile = ausgewaehltesRankingTeam,
                     onRankingTeam = { ausgewaehltesRankingTeam = it },
                     onFilter = {
@@ -128,6 +145,9 @@ private fun FehlerAnsicht(fehler: String, onRetry: () -> Unit) {
 private fun InternationaleAnsichtContent(
     ansicht: InternationaleAnsicht,
     istOsRanking: Boolean,
+    istErgebnisBereich: Boolean,
+    ergebnisseSichtbar: Boolean,
+    onErgebnisseSichtbar: (Boolean) -> Unit,
     ausgewaehlteZeile: String?,
     onRankingTeam: (String) -> Unit,
     onFilter: (InternationaleFilter) -> Unit,
@@ -157,11 +177,27 @@ private fun InternationaleAnsichtContent(
                 }
             }
         }
-        FilterLeiste(ansicht, onFilter)
+        FilterLeiste(ansicht, onFilter, zeigeErgebnisFilter = !istErgebnisBereich)
+        if (istErgebnisBereich) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = ergebnisseSichtbar,
+                    onCheckedChange = onErgebnisseSichtbar,
+                )
+                Text(
+                    "Ergebnisse anzeigen",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.clickable { onErgebnisseSichtbar(!ergebnisseSichtbar) },
+                )
+            }
+        }
         if (ansicht.spiele.isNotEmpty()) {
             Text("Begegnungen", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             ansicht.spiele.forEach { spiel ->
-                BegegnungCard(spiel.heim, spiel.gast, spiel.ergebnis, spiel.berichtUrl, onSpielbericht)
+                BegegnungCard(spiel.heim, spiel.gast, spiel.ergebnis, spiel.berichtUrl, ergebnisseSichtbar, onSpielbericht)
             }
         }
         ansicht.tabellen.forEachIndexed { index, tabelle ->
@@ -193,6 +229,7 @@ private fun BegegnungCard(
     gast: String,
     ergebnis: String?,
     berichtUrl: String?,
+    ergebnisseSichtbar: Boolean,
     onSpielbericht: (String?, String?) -> Unit,
 ) {
     Card(Modifier.fillMaxWidth()) {
@@ -205,11 +242,12 @@ private fun BegegnungCard(
                     overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.Medium,
                 )
+                val resultat = ergebnis?.takeIf { ergebnisseSichtbar }
                 Text(
-                    ergebnis ?: "vs.",
+                    resultat ?: "vs.",
                     Modifier.padding(horizontal = 10.dp),
                     fontWeight = FontWeight.Bold,
-                    color = if (ergebnis != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (resultat != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     gast,
@@ -232,14 +270,24 @@ private fun BegegnungCard(
 }
 
 @Composable
-private fun FilterLeiste(ansicht: InternationaleAnsicht, onFilter: (InternationaleFilter) -> Unit) {
+private fun FilterLeiste(
+    ansicht: InternationaleAnsicht,
+    onFilter: (InternationaleFilter) -> Unit,
+    zeigeErgebnisFilter: Boolean = true,
+) {
     val filter = ansicht.filter
-    val auswahl = listOf(
+    val grundAuswahl = listOf(
         FilterAuswahl("Saison", ansicht.saisonen, filter.saison) { value -> onFilter(filter.copy(saison = value)) },
         FilterAuswahl("Runde", ansicht.runden, filter.runde) { value -> onFilter(filter.copy(runde = value)) },
         FilterAuswahl("Gruppe", ansicht.gruppen, filter.gruppe) { value -> onFilter(filter.copy(gruppe = value)) },
-        FilterAuswahl("Ergebnisse", ansicht.ergebnisOptionen, filter.ergebnisse) { value -> onFilter(filter.copy(ergebnisse = value)) },
-    ).filter { it.optionen.size >= 2 }
+    )
+    val auswahl = (if (zeigeErgebnisFilter) {
+        grundAuswahl + FilterAuswahl("Ergebnisse", ansicht.ergebnisOptionen, filter.ergebnisse) { value ->
+            onFilter(filter.copy(ergebnisse = value))
+        }
+    } else {
+        grundAuswahl
+    }).filter { it.optionen.size >= 2 }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         auswahl.chunked(2).forEach { zeile ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -1,6 +1,7 @@
 package com.onlinesoccer.app.data.repository
 
 import com.onlinesoccer.app.core.network.OsApi
+import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.SessionGuard
 import com.onlinesoccer.app.data.model.LigaFilter
 import com.onlinesoccer.app.data.model.LigaOption
@@ -292,7 +293,7 @@ private fun teamId(link: Element): Long? =
                 if (!response.isSuccessful) return null
                 val bytes = response.body?.bytes() ?: return null
                 if (SessionGuard.isPureLoginView(bytes)) return null
-                bytes.toString(Charsets.UTF_8)
+                HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
             null

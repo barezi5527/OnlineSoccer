@@ -77,7 +77,7 @@ fun TeamScreen(
     viewModel: TeamViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var bereich by remember { mutableStateOf(TeamBereich.MANNSCHAFT) }
+    var bereich by rememberSaveable { mutableStateOf(TeamBereich.MANNSCHAFT) }
 
     LaunchedEffect(bereich) {
         when (bereich) {

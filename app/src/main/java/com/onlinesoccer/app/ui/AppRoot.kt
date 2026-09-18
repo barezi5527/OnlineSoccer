@@ -35,7 +35,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -213,6 +215,7 @@ private fun MainScaffold(
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    var dashboardRefreshTrigger by remember { mutableStateOf(0) }
 
     fun parseSid(sid: String?): String? = sid?.takeIf { it.isNotBlank() }
 
@@ -291,6 +294,7 @@ private fun MainScaffold(
             ResponsiveNavigationBar(
                 currentRoute = currentRoute,
                 onSelectTab = { tab ->
+                    if (tab.route == Routes.DASHBOARD) dashboardRefreshTrigger++
                     navController.navigate(tab.route) {
                         popUpTo(navController.graph.findStartDestination().id)
                         launchSingleTop = true
@@ -306,6 +310,7 @@ private fun MainScaffold(
         ) {
             composable(Routes.DASHBOARD) {
                 DashboardScreen(
+                    refreshTrigger = dashboardRefreshTrigger,
                     onLiveClick = {
                         navController.navigate(Routes.SPIELE) { launchSingleTop = true }
                     },
@@ -768,7 +773,7 @@ private fun RowScope.BottomTabItem(
     NavigationBarItem(
         selected = selected,
         onClick = onClick,
-        icon = { Icon(tab.icon, contentDescription = tab.label) },
+        icon = { Icon(tab.icon, contentDescription = null) },
         label = { Text(tab.label) },
     )
 }

@@ -1,6 +1,7 @@
 package com.onlinesoccer.app.data.repository
 
 import com.onlinesoccer.app.core.network.OsApi
+import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.SessionGuard
 import com.onlinesoccer.app.data.model.AuswahlOption
 import com.onlinesoccer.app.data.model.Taktik
@@ -104,7 +105,7 @@ class TaktikRepository @Inject constructor(
             client.newCall(request).execute().use { response ->
                 val bytes = response.body?.bytes() ?: return null
                 if (SessionGuard.isLoginView(bytes)) return null
-                bytes.toString(Charsets.UTF_8)
+                HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
             null
@@ -119,7 +120,7 @@ class TaktikRepository @Inject constructor(
         return try {
             client.newCall(request).execute().use { response ->
                 val bytes = response.body?.bytes() ?: return null
-                if (SessionGuard.isLoginView(bytes)) null else bytes.toString(Charsets.UTF_8)
+                if (SessionGuard.isLoginView(bytes)) null else HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
             null

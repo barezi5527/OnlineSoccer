@@ -17,7 +17,7 @@ internal object KiKommentarPrompt {
         appendLine("- Verändere niemals das tatsächliche Endergebnis.")
         appendLine("- Halte die chronologische Reihenfolge ein.")
         appendLine("- Gib das Endergebnis weder im Einstieg noch während des Hauptteils der Reportage vorweg.")
-        appendLine("- Nenne nach jedem Tor ausdrücklich den neuen Spielstand, wie er im Ereignistext steht (z. B. „Neuer Spielstand: 2:1“), damit die Zuhörer den Spielverlauf mitbekommen.")
+        appendLine("- Nenne nach jedem Tor den Spielstand natürlich in einen Satz eingebaut, z. B. „Zum Stand von 2:1“ oder „Jetzt steht es 2:1“, damit die Zuhörer informiert sind, ohne sich an Wiederholungen zu stören.")
         appendLine("- Baue Spannung auf, als wäre der Ausgang der Partie noch unbekannt; nur die Zwischenstände nach Toren werden genannt.")
         appendLine("- Nenne das tatsächliche Endergebnis ausschließlich in der abschließenden Auflösung am Ende – nicht als Zwischenstand vorweg.")
         appendLine("- Nach dem Endergebnis folgt eine kurze, ehrliche Bewertung der Partie durch den Reporter (z. B. verdient oder glücklich, stark oder schwach, Schlüsselmomente) – eine Sichtweise, keine Faktenwiederholung.")

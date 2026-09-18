@@ -1,16 +1,18 @@
 package com.onlinesoccer.app.data.repository
 
 import com.onlinesoccer.app.core.network.OsApi
+import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.SessionGuard
-import com.onlinesoccer.app.data.model.BerichtEreignis
-import com.onlinesoccer.app.data.model.BerichtEreignisTyp
 import com.onlinesoccer.app.data.model.BerichtAufstellung
 import com.onlinesoccer.app.data.model.BerichtEinstellungen
+import com.onlinesoccer.app.data.model.BerichtEreignis
 import com.onlinesoccer.app.data.model.BerichtSpieler
 import com.onlinesoccer.app.data.model.BerichtSpielerStatistik
 import com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag
 import com.onlinesoccer.app.data.model.BerichtStatistik
 import com.onlinesoccer.app.data.model.SpielBericht
+import com.onlinesoccer.app.data.model.klassifiziereEreignis
+import com.onlinesoccer.app.data.model.torSpielstandRegex
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,8 +31,6 @@ import org.jsoup.Jsoup
 class BerichtRepository @Inject constructor(
     private val client: OkHttpClient,
 ) {
-    private val torRegex = Regex("TOR\\s+Neuer Spielstand:\\s*(\\d+):(\\d+)\\s*\\(([^)]+)\\)")
-
     suspend fun ladeBericht(sid: String?, url: String? = null): SpielBericht? = withContext(Dispatchers.IO) {
         val basis = OsApi.BASE_URL
         val staticUrl = url?.takeIf { it.startsWith("http") }
@@ -113,14 +113,14 @@ class BerichtRepository @Inject constructor(
             val minute = minuteMatch?.groupValues?.get(1)
             val text = (minuteMatch?.let { segment.removeRange(it.range) } ?: segment).trim()
             if (minute != null && text.isNotBlank() && text.length < 700) {
-                ereignisse += BerichtEreignis(minute = minute, text = text, typ = ereignisTyp(segment))
+                ereignisse += BerichtEreignis(minute = minute, text = text, typ = klassifiziereEreignis(segment))
             }
         }
 
         // Endstand aus den Statistiken, sonst letzter Spielstand aus dem Ticker
         val endstand = Regex("Endstand\\s*(\\d+)\\s+(\\d+)").find(bodyText)?.let {
             it.groupValues[1] + ":" + it.groupValues[2]
-        } ?: torRegex.findAll(ticker).lastOrNull()?.let {
+        } ?: torSpielstandRegex.findAll(ticker).lastOrNull()?.let {
             it.groupValues[1] + ":" + it.groupValues[2]
         }
 
@@ -150,15 +150,6 @@ class BerichtRepository @Inject constructor(
             rohtext = bodyText,
             url = url,
         )
-    }
-
-    private fun ereignisTyp(text: String): BerichtEreignisTyp = when {
-        torRegex.containsMatchIn(text) || Regex("\\btor\\b", RegexOption.IGNORE_CASE).containsMatchIn(text) -> BerichtEreignisTyp.TOR
-        Regex("gelb[- ]rote?\\s+karte|zweite gelbe|rote?\\s+karte|platzverweis|des feldes verwiesen", RegexOption.IGNORE_CASE).containsMatchIn(text) -> BerichtEreignisTyp.ROTE_KARTE
-        Regex("gelbe?\\s+karte", RegexOption.IGNORE_CASE).containsMatchIn(text) -> BerichtEreignisTyp.GELBE_KARTE
-        Regex("verletz", RegexOption.IGNORE_CASE).containsMatchIn(text) -> BerichtEreignisTyp.VERLETZUNG
-        Regex("elfmeter|11[- ]?meter|strafstoß|penalty", RegexOption.IGNORE_CASE).containsMatchIn(text) -> BerichtEreignisTyp.ELFMETER
-        else -> BerichtEreignisTyp.SONSTIGES
     }
 
     private fun parseAufstellung(doc: org.jsoup.nodes.Document, teamClass: String, einstellungen: BerichtEinstellungen): BerichtAufstellung? {
@@ -379,7 +370,7 @@ class BerichtRepository @Inject constructor(
                 if (!response.isSuccessful) return null
                 val bytes = response.body?.bytes() ?: return null
                 if (SessionGuard.isPureLoginView(bytes)) return null
-                bytes.toString(Charsets.UTF_8)
+                HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
             null

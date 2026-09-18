@@ -25,6 +25,12 @@ import com.onlinesoccer.app.data.model.SpielerPosition
  */
 object ElfAuswertung {
 
+    internal data class TorschuetzenEreignis(
+        val minute: String?,
+        val name: String,
+        val spielstand: String?,
+    )
+
     private val spielstandRegex = Regex(
         "Neuer\\s+Spielstand:\\s*(\\d+)\\s*:\\s*(\\d+)\\s*\\(([^()]*)\\)",
         RegexOption.IGNORE_CASE,
@@ -239,16 +245,102 @@ object ElfAuswertung {
      */
     private fun kartenSpieler(ereignisse: List<BerichtEreignis>, bekannteNamen: Set<String>): Map<String, Pair<Int, Int>> {
         val ergebnis = mutableMapOf<String, MutablePair>()
-        ereignisse.forEach { ereignis ->
-            val rot = ereignis.typ == BerichtEreignisTyp.ROTE_KARTE
-            val gelb = ereignis.typ == BerichtEreignisTyp.GELBE_KARTE
-            if (!rot && !gelb) return@forEach
-            val name = spielerDerKarte(ereignis.text, bekannteNamen) ?: return@forEach
+        kartenEreignisse(ereignisse, bekannteNamen).forEach { (_, name, typ) ->
             val paar = ergebnis.getOrPut(name.lowercase()) { MutablePair() }
-            if (rot) paar.rote++ else paar.gelbe++
+            if (typ == BerichtEreignisTyp.ROTE_KARTE) paar.rote++ else paar.gelbe++
         }
         return ergebnis.mapValues { it.value.gelbe to it.value.rote }
     }
+
+    /**
+     * Karten-Ereignisse je Bericht: (Index im Ereignis-Array, zugeordneter
+     * Spielername, Kartenart). Nur für Gelb-/Rot-Ereignisse mit eindeutig
+     * erkennbarem Spieler. Treibt sowohl die Karten-Zählung ([kartenSpieler])
+     * als auch die farbliche Namens-Hervorhebung im Spielbericht an, damit
+     * nie zwei verschiedene Zuordnungslogiken auseinanderlaufen.
+     */
+    internal fun kartenEreignisse(
+        ereignisse: List<BerichtEreignis>,
+        bekannteNamen: Set<String>,
+    ): List<Triple<Int, String, BerichtEreignisTyp>> =
+        ereignisse.mapIndexedNotNull { index, ereignis ->
+            val typ = ereignis.typ.takeIf { it == BerichtEreignisTyp.GELBE_KARTE || it == BerichtEreignisTyp.ROTE_KARTE }
+                ?: return@mapIndexedNotNull null
+            spielerDerKarte(ereignis.text, bekannteNamen)?.let { Triple(index, it, typ) }
+        }
+
+    /**
+     * Stärkste Kartenart je Spielername (kleingeschrieben als Schlüssel):
+     * Rot gewinnt gegen Gelb („Gelb-Rot"/„zweite Gelbe" ist [BerichtEreignisTyp.ROTE_KARTE]).
+     * Für die Namens-Einfärbung in der Spielerstatistik-Tabelle.
+     */
+    internal fun kartenJeSpieler(
+        ereignisse: List<BerichtEreignis>,
+        bekannteNamen: Set<String>,
+    ): Map<String, BerichtEreignisTyp> {
+        val ergebnis = mutableMapOf<String, BerichtEreignisTyp>()
+        kartenEreignisse(ereignisse, bekannteNamen).forEach { (_, name, typ) ->
+            val schluessel = name.lowercase()
+            if (typ == BerichtEreignisTyp.ROTE_KARTE) ergebnis[schluessel] = typ
+            else ergebnis.getOrPut(schluessel) { typ }
+        }
+        return ergebnis
+    }
+
+    /** Ordnet Torereignisse dem Torschützen zu und liefert sie in Spielreihenfolge. */
+    internal fun torschuetzenEreignisse(
+        ereignisse: List<BerichtEreignis>,
+        bekannteNamen: Set<String>,
+    ): List<TorschuetzenEreignis> = ereignisse.mapNotNull { ereignis ->
+        if (ereignis.typ != BerichtEreignisTyp.TOR) return@mapNotNull null
+        val spielstand = spielstandRegex.find(ereignis.text)
+        val namen = spielstand?.groupValues?.getOrNull(3)
+            ?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }.orEmpty()
+        val name = namen.firstOrNull { kandidat -> bekannteNamen.any { it.equals(kandidat, ignoreCase = true) } }
+            ?: namen.firstOrNull()
+        name?.let {
+            TorschuetzenEreignis(
+                minute = ereignis.minute,
+                name = it,
+                spielstand = spielstand?.let { match -> "${match.groupValues[1]}:${match.groupValues[2]}" },
+            )
+        }
+    }
+
+    /** Spielername je Verletzungsereignis, sofern genau ein bekannter Name vorkommt. */
+    internal fun verletzteSpieler(
+        ereignisse: List<BerichtEreignis>,
+        bekannteNamen: Set<String>,
+    ): Map<Int, String> = ereignisse.mapIndexedNotNull { index, ereignis ->
+        if (ereignis.typ != BerichtEreignisTyp.VERLETZUNG) return@mapIndexedNotNull null
+        bekannteNamen.filter { istGenannt(ereignis.text, it) }.singleOrNull()?.let { index to it }
+    }.toMap()
+
+    /**
+     * Verletzte Spieler je Spielername (kleingeschrieben als Schlüssel).
+     * Für die Namens-Einfärbung in der Spielerstatistik-Tabelle – analog zu
+     * [kartenJeSpieler], aber anhand der Verletzungsereignisse.
+     */
+    internal fun verletzteJeSpieler(
+        ereignisse: List<BerichtEreignis>,
+        bekannteNamen: Set<String>,
+    ): Map<String, BerichtEreignisTyp> =
+        verletzteSpieler(ereignisse, bekannteNamen)
+            .values
+            .associate { it.lowercase() to BerichtEreignisTyp.VERLETZUNG }
+
+    /** Torschütze je Torereignisindex für die farbliche Hervorhebung im Ticker. */
+    internal fun torschuetzenJeEreignis(
+        ereignisse: List<BerichtEreignis>,
+        bekannteNamen: Set<String>,
+    ): Map<Int, String> = ereignisse.mapIndexedNotNull { index, ereignis ->
+        if (ereignis.typ != BerichtEreignisTyp.TOR) return@mapIndexedNotNull null
+        val namen = spielstandRegex.find(ereignis.text)?.groupValues?.getOrNull(3)
+            ?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }.orEmpty()
+        val name = namen.firstOrNull { kandidat -> bekannteNamen.any { it.equals(kandidat, ignoreCase = true) } }
+            ?: namen.firstOrNull()
+        name?.let { index to it }
+    }.toMap()
 
     private fun spielerDerKarte(text: String, bekannteNamen: Set<String>): String? {
         // Bevorzugt: Name steht unmittelbar vor „kassiert dafür die … Karte".

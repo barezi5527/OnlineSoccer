@@ -18,7 +18,11 @@ data class LivegameData(
     val gastStatistik: StatistikWerte?,
 )
 
-data class LiveEreignis(val minute: Int, val text: String)
+data class LiveEreignis(
+    val minute: Int,
+    val text: String,
+    val typ: BerichtEreignisTyp = BerichtEreignisTyp.SONSTIGES,
+)
 
 data class TaktikWerte(
     val commitment: Int,

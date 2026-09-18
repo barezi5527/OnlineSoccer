@@ -170,7 +170,7 @@ class InternationaleRepository @Inject constructor(
             if (!response.isSuccessful) return null
             val bytes = response.body?.bytes() ?: return null
             if (SessionGuard.isPureLoginView(bytes)) return null
-            bytes.toString(Charsets.UTF_8)
+            HtmlTools.serverText(bytes)
         }
     } catch (_: IOException) {
         null

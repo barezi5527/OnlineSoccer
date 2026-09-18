@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -58,9 +59,14 @@ fun DashboardScreen(
     onZugabgabeClick: () -> Unit = {},
     onServerBereicheClick: () -> Unit = {},
     onZatReportClick: (zat: Int?, saison: Int?) -> Unit = { _, _ -> },
+    refreshTrigger: Int = 0,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0) viewModel.refresh()
+    }
 
     when (val state = uiState) {
         is DashboardUiState.Loading -> LoadingState()

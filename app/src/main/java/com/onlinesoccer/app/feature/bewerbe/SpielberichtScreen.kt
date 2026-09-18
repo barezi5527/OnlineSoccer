@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -35,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -57,10 +57,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.core.ui.theme.trikotFarbe
-import com.onlinesoccer.app.data.model.BerichtEreignisTyp
 import com.onlinesoccer.app.data.model.BerichtAufstellung
 import com.onlinesoccer.app.data.model.BerichtEinstellungen
+import com.onlinesoccer.app.data.model.BerichtEreignisTyp
 import com.onlinesoccer.app.data.model.SpielerPosition
+import com.onlinesoccer.app.data.repository.ElfAuswertung
+import com.onlinesoccer.app.ui.components.SpielverlaufEreignisKarte
+import com.onlinesoccer.app.ui.components.SpielverlaufLegende
+import com.onlinesoccer.app.ui.components.kartenNameFarbe
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.widget.Toast
@@ -99,6 +103,31 @@ fun SpielberichtScreen(
 @Composable
 private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBericht, onClose: () -> Unit) {
     var zeigePressekonferenz by remember { mutableStateOf(false) }
+    val bekannteNamen = remember(bericht) {
+        buildSet {
+            bericht.heimAufstellung?.spieler?.forEach { add(it.name) }
+            bericht.gastAufstellung?.spieler?.forEach { add(it.name) }
+        }
+    }
+    val kartenEreignisse = remember(bericht, bekannteNamen) {
+        ElfAuswertung.kartenEreignisse(bericht.ereignisse, bekannteNamen)
+    }
+    val nameJeKartenIndex = remember(kartenEreignisse) { kartenEreignisse.associate { it.first to it.second } }
+    val kartenTypProName = remember(bericht, bekannteNamen) {
+        ElfAuswertung.kartenJeSpieler(bericht.ereignisse, bekannteNamen)
+    }
+    val torschuetzenJeEreignis = remember(bericht, bekannteNamen) {
+        ElfAuswertung.torschuetzenJeEreignis(bericht.ereignisse, bekannteNamen)
+    }
+    val verletzteSpieler = remember(bericht, bekannteNamen) {
+        ElfAuswertung.verletzteSpieler(bericht.ereignisse, bekannteNamen)
+    }
+    val verletzteSpielerNamen = remember(bericht, bekannteNamen) {
+        ElfAuswertung.verletzteJeSpieler(bericht.ereignisse, bekannteNamen)
+    }
+    val torschuetzen = remember(bericht, bekannteNamen) {
+        ElfAuswertung.torschuetzenEreignisse(bericht.ereignisse, bekannteNamen)
+    }
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -157,41 +186,16 @@ private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBerich
         if (bericht.ereignisse.isNotEmpty()) {
             item { KiKommentarButton(bericht) }
             item { Text("Spielverlauf", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
-            items(bericht.ereignisse) { ereignis ->
-                val istHervorgehoben = ereignis.typ != BerichtEreignisTyp.SONSTIGES
-                val ereignisFarbe = when (ereignis.typ) {
-                    BerichtEreignisTyp.TOR -> Color(0xFFB9F6CA)
-                    BerichtEreignisTyp.GELBE_KARTE -> Color(0xFFFFE082)
-                    BerichtEreignisTyp.ROTE_KARTE -> Color(0xFFFFB4AB)
-                    BerichtEreignisTyp.VERLETZUNG -> Color(0xFFD0BCFF)
-                    BerichtEreignisTyp.ELFMETER -> Color(0xFFB3E5FC)
-                    BerichtEreignisTyp.SONSTIGES -> MaterialTheme.colorScheme.surfaceVariant
-                }
-                Card(
-                    Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = ereignisFarbe,
-                        contentColor = if (istHervorgehoben) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                ) {
-                    Row(Modifier.padding(10.dp)) {
-                        ereignis.minute?.let {
-                            Text(
-                                "$it'",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.width(48.dp),
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                        Text(
-                            ereignis.text,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f),
-                            fontWeight = if (ereignis.typ != BerichtEreignisTyp.SONSTIGES) FontWeight.Bold else FontWeight.Normal,
-                        )
-                    }
-                }
+            item { SpielverlaufLegende() }
+            itemsIndexed(bericht.ereignisse, key = { _, ereignis -> "${ereignis.typ}-${ereignis.minute}-${ereignis.text}" }) { index, ereignis ->
+                SpielverlaufEreignisKarte(
+                    minute = ereignis.minute,
+                    text = ereignis.text,
+                    typ = ereignis.typ,
+                    spielerName = nameJeKartenIndex[index]
+                        ?: torschuetzenJeEreignis[index]
+                        ?: verletzteSpieler[index],
+                )
             }
         }
 
@@ -203,6 +207,38 @@ private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBerich
                         Text(bericht.heim ?: "Heim", modifier = Modifier.weight(1f), textAlign = TextAlign.End, fontWeight = FontWeight.Bold)
                         Text("  ${bericht.ergebnis ?: "–"}  ", modifier = Modifier.padding(horizontal = 12.dp), fontWeight = FontWeight.Bold)
                         Text(bericht.gast ?: "Gast", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    }
+                    if (torschuetzen.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Torschützen", style = MaterialTheme.typography.labelMedium)
+                        torschuetzen.forEach { torschuetze ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    torschuetze.name,
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                )
+                                Text(
+                                    torschuetze.minute?.let { "$it'" } ?: "–",
+                                    modifier = Modifier.width(36.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                )
+                                Text(
+                                    torschuetze.spielstand ?: "–",
+                                    modifier = Modifier.width(40.dp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.End,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -241,6 +277,8 @@ private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBerich
                     gastEintraege = bericht.gastSpielerStatistikListe,
                     heimAufstellung = bericht.heimAufstellung,
                     gastAufstellung = bericht.gastAufstellung,
+                    kartenTypProName = kartenTypProName,
+                    verletzteProName = verletzteSpielerNamen,
                 )
             }
         }
@@ -619,11 +657,13 @@ private fun SpielerstatistikenVergleich(
     gastEintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
     heimAufstellung: BerichtAufstellung?,
     gastAufstellung: BerichtAufstellung?,
+    kartenTypProName: Map<String, BerichtEreignisTyp>,
+    verletzteProName: Map<String, BerichtEreignisTyp>,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Spielerstatistiken", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        SpielerstatistikTabelle(heim ?: "Heimteam", heimEintraege, heimAufstellung)
-        SpielerstatistikTabelle(gast ?: "Gastteam", gastEintraege, gastAufstellung)
+        SpielerstatistikTabelle(heim ?: "Heimteam", heimEintraege, heimAufstellung, kartenTypProName, verletzteProName)
+        SpielerstatistikTabelle(gast ?: "Gastteam", gastEintraege, gastAufstellung, kartenTypProName, verletzteProName)
     }
 }
 
@@ -641,6 +681,8 @@ private fun SpielerstatistikTabelle(
     teamName: String,
     eintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
     aufstellung: BerichtAufstellung?,
+    kartenTypProName: Map<String, BerichtEreignisTyp>,
+    verletzteProName: Map<String, BerichtEreignisTyp>,
 ) {
     if (eintraege.isEmpty()) return
     val zeigeNote = eintraege.any { !it.statistik.note.isNullOrBlank() }
@@ -666,7 +708,7 @@ private fun SpielerstatistikTabelle(
                 StatKopfZelle("Vorl.", vorlagenBreite)
             }
             eintraege.forEach { eintrag ->
-                SpielerstatistikZeile(eintrag, aufstellung, zeigeNote)
+                SpielerstatistikZeile(eintrag, aufstellung, zeigeNote, kartenTypProName, verletzteProName)
             }
         }
     }
@@ -690,9 +732,14 @@ private fun SpielerstatistikZeile(
     eintrag: com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag,
     aufstellung: BerichtAufstellung?,
     zeigeNote: Boolean,
+    kartenTypProName: Map<String, BerichtEreignisTyp>,
+    verletzteProName: Map<String, BerichtEreignisTyp>,
 ) {
     val spieler = aufstellung?.spieler?.firstOrNull { it.name.equals(eintrag.name, ignoreCase = true) }
     val stat = eintrag.statistik
+    val nameSchluessel = (spieler?.name ?: eintrag.name).lowercase()
+    val nameFarbe = kartenTypProName[nameSchluessel]?.let { kartenNameFarbe(it) }
+        ?: verletzteProName[nameSchluessel]?.let { kartenNameFarbe(it) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (spieler?.nummer != null) {
             Box(
@@ -712,6 +759,7 @@ private fun SpielerstatistikZeile(
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
+            color = nameFarbe ?: LocalContentColor.current,
         )
         if (zeigeNote) {
             StatWertZelle(stat.note ?: "–", noteBreite)

@@ -1,6 +1,7 @@
 package com.onlinesoccer.app.data.repository
 
 import com.onlinesoccer.app.core.network.OsApi
+import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.SessionGuard
 import com.onlinesoccer.app.data.model.DashboardData
 import java.io.IOException
@@ -25,7 +26,7 @@ class DashboardRepository @Inject constructor(
                 if (!SessionGuard.isPersonalView(bytes) && !SessionGuard.isDemoView(bytes)) {
                     throw IOException("Session abgelaufen – bitte neu anmelden")
                 }
-                val html = bytes.toString(Charsets.UTF_8)
+                val html = HtmlTools.serverText(bytes)
                 parse(html)
             }
         } catch (e: IOException) {

@@ -85,7 +85,7 @@ class ZatRepository @Inject constructor(
             client.newCall(request).execute().use { response ->
                 val bytes = response.body?.bytes() ?: return@withContext null
                 if (SessionGuard.isPureLoginView(bytes)) return@withContext null
-                bytes.toString(Charsets.UTF_8)
+                HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
             null
@@ -258,7 +258,7 @@ class ZatRepository @Inject constructor(
             client.newCall(request).execute().use { response ->
                 val bytes = response.body?.bytes() ?: return null
                 if (SessionGuard.isPureLoginView(bytes)) return null
-                bytes.toString(Charsets.UTF_8)
+                HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
             null

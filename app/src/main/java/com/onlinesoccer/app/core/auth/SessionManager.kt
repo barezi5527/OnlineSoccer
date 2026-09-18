@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.core.auth
 
+import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.OsApi
 import com.onlinesoccer.app.core.network.OsCookieStore
 import com.onlinesoccer.app.core.network.SessionGuard
@@ -176,10 +177,9 @@ class SessionManager @Inject constructor(
     }
 
     private object LoginErrorTexts {
-        private val latin1 = Charsets.ISO_8859_1
         private val TEXT = "Der Username oder das Passwort ist falsch."
 
         fun matches(bytes: ByteArray): Boolean =
-            bytes.toString(latin1).contains(TEXT)
+            HtmlTools.serverText(bytes).contains(TEXT)
     }
 }

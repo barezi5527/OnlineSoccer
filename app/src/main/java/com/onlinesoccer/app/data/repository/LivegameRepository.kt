@@ -6,6 +6,7 @@ import com.onlinesoccer.app.data.model.LiveEreignis
 import com.onlinesoccer.app.data.model.LivegameData
 import com.onlinesoccer.app.data.model.StatistikWerte
 import com.onlinesoccer.app.data.model.TaktikWerte
+import com.onlinesoccer.app.data.model.klassifiziereEreignis
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -80,7 +81,7 @@ class LivegameRepository @Inject constructor(
                     val minute = intWert(a, "minute", -1)
                     val text = a.optString("text").takeIf { it.isNotBlank() && it != "null" }
                         ?: a.optString("event").takeIf { it.isNotBlank() && it != "null" }
-                    if (text != null) add(LiveEreignis(minute, text))
+                    if (text != null) add(LiveEreignis(minute, text, klassifiziereEreignis(text)))
                 }
             }
         } else emptyList()
