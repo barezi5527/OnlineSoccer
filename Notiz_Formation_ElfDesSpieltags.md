@@ -11,8 +11,8 @@ wählt aus 10 klassischen Formationen diejenige mit der höchsten Gesamtsumme de
 bestbewerteten Spieler je Position.
 
 - Logik: `app/src/main/java/com/onlinesoccer/app/data/repository/ElfBewertung.kt`
-  - `FORMATIONEN` (Reihenfolge = Bevorzugung bei Gleichstand), L546-557
-  - Auswahl-Schleife (maximiert die Summe), L622-639
+  - `FORMATIONEN` (Reihenfolge = Bevorzugung bei Gleichstand), L562-573
+  - Auswahl-Schleife (maximiert die Summe), L638-655
   - Bei Gleichstand gewinnt die frühere Formation (strikes `>`).
 
 ## Warum systematisch 3-4-3?

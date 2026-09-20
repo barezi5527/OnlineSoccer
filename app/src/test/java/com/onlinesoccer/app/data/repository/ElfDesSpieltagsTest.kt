@@ -112,14 +112,15 @@ class ElfDesSpieltagsTest {
         assertEquals(1.5, note(min), 0.001)
 
         // Stärkste theoretisch erreichbare Note: alle Kategorie-Caps ausgeschöpft.
+        // Roh 10,1 → geklemmt auf 10,0; der 9,95-Gate ist erfüllt (keine Untergrenze).
         val max = kandidat(
             "MAX", "V", SpielerPosition.ABW,
             tore = 2, vorlagen = 2, elfmeter = true, sieg = true, gegenTore = 0,
             schuesse = 7, aufsTor = 6, auffaelligkeit = 6,
             zweikaempfe = 30, zweikampfQuote = 70.0, berichtNote = 1.0,
         )
-        assertEquals(9.7, note(max), 0.001)
-        assertTrue(note(max) <= 9.7)
+        assertEquals(10.0, note(max), 0.001)
+        assertTrue(note(max) <= 10.0)
     }
 
     @Test
@@ -147,29 +148,34 @@ class ElfDesSpieltagsTest {
     @Test
     fun formel_stuermerDreiToreUndVorlageMitSieg() {
         val kandidat = kandidat("A", "V", SpielerPosition.STU, tore = 3, vorlagen = 1, sieg = true)
-        assertEquals(7.2, note(kandidat), 0.001)
+        assertEquals(7.7, note(kandidat), 0.001)
     }
 
     @Test
     fun formel_spielerEinTorUndDreiVorlagenMitSieg() {
         val kandidat = kandidat("B", "V", SpielerPosition.STU, tore = 1, vorlagen = 3, sieg = true)
-        assertEquals(7.1, note(kandidat), 0.001)
+        assertEquals(7.4, note(kandidat), 0.001)
     }
 
     @Test
-    fun formel_torDeckelBegrenztMehrereTore() {
-        // K1-Torbonus ist bei 1,0 gedeckelt: 2 und 3 Tore bringen STU gleich viel.
+    fun formel_torStufenBisHattrick() {
+        // K1: 1 Tor positionsabhängig (STU 0,5), 2 Tore gedeckelt (1,0), 3 Tore
+        // bricht den Deckel (1,5), 4+ Tore gedeckelt bei 2,0 (positionsunabhängig).
         assertEquals(5.5 + 0.5, note(kandidat("C", "V", SpielerPosition.STU, tore = 1)), 0.001)
         assertEquals(5.5 + 1.0, note(kandidat("C", "V", SpielerPosition.STU, tore = 2)), 0.001)
-        assertEquals(5.5 + 1.0, note(kandidat("C", "V", SpielerPosition.STU, tore = 3)), 0.001)
+        assertEquals(5.5 + 1.5, note(kandidat("C", "V", SpielerPosition.STU, tore = 3)), 0.001)
+        assertEquals(5.5 + 2.0, note(kandidat("C", "V", SpielerPosition.STU, tore = 4)), 0.001)
     }
 
     @Test
-    fun formel_vorlagenDeckelBegrenztVieleVorlagen() {
-        // K1-Vorlagen sind bei 0,7 gedeckelt: 2 und 3 Vorlagen bringen gleich viel.
+    fun formel_vorlagenZaehlenBisZurViertenVorlage() {
+        // K1-Vorlagen: +0,35 je, unter der 4. Vorlage noch nicht gedeckelt
+        // (max. 1,4): 1=0,35 · 2=0,7 · 3=1,05 · 4=1,4 · 5=1,4 (Deckel).
         assertEquals(5.9, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 1)), 0.001)
         assertEquals(6.2, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 2)), 0.001)
-        assertEquals(6.2, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 3)), 0.001)
+        assertEquals(6.6, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 3)), 0.001)
+        assertEquals(6.9, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 4)), 0.001)
+        assertEquals(6.9, note(kandidat("D", "V", SpielerPosition.STU, vorlagen = 5)), 0.001)
     }
 
     @Test
@@ -235,21 +241,77 @@ class ElfDesSpieltagsTest {
     @Test
     fun formel_zehnBleibtAussergewoehnlicherSonderfall() {
         // Selbst bei maximalem Ausschöpfen fast aller Caps bleibt die Note unter
-        // 10,0 – eine 10,0 erfordert eine ungerundete Rohnote von mindestens 9,95.
+        // 10,0 – reale Berichte liefern keine Bericht-Note (K5 = 0), und eine
+        // 10,0 erfordert eine ungerundete Rohnote von mindestens 9,95.
         val monster = kandidat(
             "MONSTER", "V", SpielerPosition.ABW,
             tore = 2, vorlagen = 2, elfmeter = true, sieg = true, gegenTore = 0,
             schuesse = 7, aufsTor = 6, auffaelligkeit = 6,
-            zweikaempfe = 30, zweikampfQuote = 70.0, berichtNote = 1.0,
+            zweikaempfe = 30, zweikampfQuote = 70.0, berichtNote = null,
         )
-        assertEquals(9.7, note(monster), 0.001)
+        assertEquals(9.9, note(monster), 0.001)
         assertTrue(note(monster) < 10.0)
     }
 
     @Test
     fun formel_extremLeistungWirdUeberDieDeckelGedeckelt() {
+        // 10 Tore geben 2,0 (4+-Stufe), 5 Vorlagen 0,7 → K1-Cap 2,0: 5,5+2,0+0,35 = 7,85 → 7,9.
         val mega = kandidat("MEGA", "V", SpielerPosition.STU, tore = 10, vorlagen = 5, sieg = true)
-        assertEquals(7.5, note(mega), 0.001)
+        assertEquals(7.9, note(mega), 0.001)
+    }
+
+    @Test
+    fun stresstest_kanterspielBleibtImKickertypischenRahmenUndOrdnetKorrekt() {
+        // Simulierter Kantersieg 7:0 mit mehreren herausragenden Einzelleistungen:
+        // Die Deckel müssen beide >9,5-Spieler-Paare verhindern, die Reihenfolge
+        // darf nicht kippen und ohne Bericht-Note darf niemand eine 10,0 erreichen.
+        val torjäger = kandidat(
+            "TORJÄGER", "KAN", SpielerPosition.STU,
+            tore = 4, vorlagen = 1, schuesse = 9, aufsTor = 6, auffaelligkeit = 6,
+            zweikaempfe = 22, zweikampfQuote = 62.0, sieg = true, gegenTore = 0,
+        )
+        val assistMaschine = kandidat(
+            "ASSIST", "KAN", SpielerPosition.MIT,
+            vorlagen = 4, schuesse = 3, aufsTor = 2, auffaelligkeit = 5,
+            zweikaempfe = 30, zweikampfQuote = 58.0, sieg = true, gegenTore = 0,
+        )
+        val soliderStürmer = kandidat(
+            "SOLIDE", "KAN", SpielerPosition.STU,
+            tore = 1, vorlagen = 1, schuesse = 3, aufsTor = 2, auffaelligkeit = 2,
+            zweikaempfe = 8, zweikampfQuote = 50.0, sieg = true, gegenTore = 0,
+        )
+        val aufräumer = kandidat(
+            "AUFRÄUMER", "KAN", SpielerPosition.ABW,
+            vorlagen = 1, auffaelligkeit = 3, zweikaempfe = 14, zweikampfQuote = 68.0,
+            sieg = true, gegenTore = 0,
+        )
+        val keeper = kandidat(
+            "KEEPER", "KAN", SpielerPosition.TOR,
+            gehalteneBalle = 6, sieg = true, gegenTore = 0,
+        )
+
+        // Einzelwerte: Torjäger 9,6, Assist 8,7, Solide 7,7, Aufräumer 7,2, Keeper 6,6.
+        assertEquals(9.6, note(torjäger), 0.001)
+        assertEquals(8.7, note(assistMaschine), 0.001)
+        assertEquals(7.7, note(soliderStürmer), 0.001)
+        assertEquals(7.2, note(aufräumer), 0.001)
+        assertEquals(6.6, note(keeper), 0.001)
+
+        // Reihenfolge muss der Leistung folgen: Torjäger vor Assist vor Solide
+        // vor Aufräumer vor Keeper – trotz Kanterspiel.
+        val noten = listOf(
+            note(torjäger), note(assistMaschine), note(soliderStürmer),
+            note(aufräumer), note(keeper),
+        )
+        assertEquals(noten.sortedDescending(), noten)
+
+        // Selbst im Kanterspiel bleibt die ganze Elf unter 9,95 → keine 10,0,
+        // solange der Bericht keine Note (K5) liefert.
+        val elf = ElfAuswahl.erstelleElf(
+            listOf(torjäger, assistMaschine, soliderStürmer, aufräumer, keeper)
+        ).spieler
+        assertTrue("Top-Spieler muss an der Spitze stehen", elf.first().name == "TORJÄGER")
+        assertTrue("Elf bleibt unter der 10,0-Schwelle", elf.maxOf { it.bewertung } < 9.95)
     }
 
     @Test
@@ -346,8 +408,8 @@ class ElfDesSpieltagsTest {
         val zeilen = ElfBewertung.bewerten(mitStats).zeilen.associate { it.kriterium to it.beitrag }
         // K2: Quote 66,7 % → +0,4 · aufs Tor 4 → +0,2 · 5 Nennungen → +0,2 = 0,8.
         assertEquals(0.8, zeilen["Effizienz"] ?: 0.0, 0.001)
-        // K3: 10 gewonnene ZK × 0,03 = 0,3 · Quote 50 % → +0,1 = 0,4.
-        assertEquals(0.4, zeilen["Zweikämpfe"] ?: 0.0, 0.001)
+        // K3: 10 gewonnene ZK × 0,03 = 0,3 · Quote 50 % → +0,15 = 0,45.
+        assertEquals(0.45, zeilen["Zweikämpfe"] ?: 0.0, 0.001)
 
         // Ohne Statistik bleiben K2/K3 neutral – die Note fällt niedriger aus.
         assertTrue(note(mitStats) > note(ohneStats))
@@ -379,14 +441,14 @@ class ElfDesSpieltagsTest {
 
     @Test
     fun bewertung_zweikampfDeckelBegrenztDenK3Beitrag() {
-        // 2.000 ZK @ 100 %: Quantität deckelt bei 0,4, Quote bei 0,3 → K3 = 0,7.
+        // 2.000 ZK @ 100 %: Quantität deckelt bei 0,6, Quote bei 0,3 → K3 = 0,9 (K3-Budget).
         val monster = kandidat(
             "ZK-MONSTER", "FC", SpielerPosition.MIT,
             zweikaempfe = 2000, zweikampfQuote = 100.0,
         )
         val zeilen = ElfBewertung.bewerten(monster).zeilen.associate { it.kriterium to it.beitrag }
-        assertEquals(0.7, zeilen["Zweikämpfe"] ?: 0.0, 0.001)
-        assertEquals(6.2, note(monster), 0.001)
+        assertEquals(0.9, zeilen["Zweikämpfe"] ?: 0.0, 0.001)
+        assertEquals(6.4, note(monster), 0.001)
     }
 
     @Test
@@ -486,9 +548,9 @@ class ElfDesSpieltagsTest {
         val einTor = kandidat("A", "V", SpielerPosition.STU, tore = 1, sieg = true)
         assertTrue(note(einTor) < 10.0)
 
-        // Auch ein Hattrick (3 Tore + Vorlage + Sieg) bleibt mit 7,2 unter 10,0.
+        // Auch ein Hattrick (3 Tore + Vorlage + Sieg) bleibt mit 7,7 unter 10,0.
         val hattrick = kandidat("B", "V", SpielerPosition.STU, tore = 3, vorlagen = 1, sieg = true)
-        assertEquals(7.2, note(hattrick), 0.001)
+        assertEquals(7.7, note(hattrick), 0.001)
         assertTrue(note(hattrick) < 10.0)
     }
 

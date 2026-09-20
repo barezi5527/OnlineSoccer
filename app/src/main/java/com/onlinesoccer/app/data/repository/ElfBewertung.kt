@@ -99,17 +99,18 @@ data class ElfKandidat(
  * von der Elf ausgeschlossen.
  *
  * Die fünf Kategorien werden durch feste Budgets (Caps) begrenzt; deren Summe
- * (4,5) setzt die Zielverteilung 35/25/20/12/8 um:
+ * (4,9) setzt die Zielverteilung 41/22/18/11/8 um:
  *
- *  – K1 Direkter Impact (Cap 1,6): Tore (STU 0,5 · MIT/OMI/DMI 0,6 · ABW 0,8 ·
- *    TW 1,0 je Tor, max. 1,0 für Tore insgesamt), Vorlagen (+0,35 je, max. 0,7),
- *    verwandelter Elfmeter (+0,2)
+ *  – K1 Direkter Impact (Cap 2,0): Tore (STU 0,5 · MIT/OMI/DMI 0,6 · ABW 0,8 ·
+ *    TW 1,0 je Tor; 1–2 Tore max. 1,0 · 3 Tore [Hattrick] 1,5 · 4+ Tore 2,0),
+ *    Vorlagen (+0,35 je, bis zur 4. ∈ max. 1,4), verwandelter Elfmeter (+0,2)
  *  – K2 Effizienz & Spielkontrolle (Cap 1,1, Proxy): Schussquote
  *    (`aufsTor/schuesse`, nur bei `schuesse ≥ 3`): ≥40 % 0,2 · ≥50 % 0,3 ·
  *    ≥60 % 0,4 · ≥75 % 0,5; Abschlusspräsenz (`aufsTor ≥2` 0,1 · `≥4` 0,2);
  *    Auffälligkeit (2–3 0,1 · 4–5 0,2 · 6+ 0,3)
- *  – K3 Zweikämpfe (Cap 0,9): +0,03 je gewonnener ZK (max. 0,4) und
- *    Zweikampfquote ≥45 % 0,05 … ≥70 % 0,3 – nur bei vorhandener Statistik
+ *  – K3 Zweikämpfe (Cap 0,9): +0,03 je gewonnener ZK (max. 0,6) und
+ *    Zweikampfquote ≥45 % 0,10 · ≥50 % 0,15 · ≥60 % 0,2 · ≥65 % 0,25 · ≥70 % 0,3 –
+ *    nur bei vorhandener Statistik
  *    (`zweikaempfe > 0`); beim Torwart stattdessen gehaltene Bälle (3–4 0,3 ·
  *    5–6 0,5 · 7+ 0,7)
  *  – K4 Ergebnis & Teambonus (Cap 0,55): Sieg +0,35 · Unentschieden +0,1 ·
@@ -151,8 +152,8 @@ object ElfBewertung {
     private const val BASIS_STARTELF = 5.5
     private const val BASIS_EINWECHSLER = 4.0
 
-    /** Kategorie-Budgets (Caps) – Summe = 4,5 → Startelf max. Roh ≈ 10,0. */
-    private const val IMPACT_MAX = 1.6
+    /** Kategorie-Budgets (Caps) – Summe = 4,9 → Startelf max. Roh ≈ 10,4 (geklemmt auf 10,0). */
+    private const val IMPACT_MAX = 2.0
     private const val EFFIZIENZ_MAX = 1.1
     private const val ZWEIKAMPF_MAX = 0.9
     private const val TEAM_MAX = 0.55
@@ -164,11 +165,16 @@ object ElfBewertung {
     private const val TOR_MIT = 0.6
     private const val TOR_ABW = 0.8
     private const val TOR_TW = 1.0
-    /** Maximaler Torbonus insgesamt (deutlich gedeckelt, "Tore sind kein Selbstläufer"). */
+    /** Maximaler Torbonus für 1–2 Tore ("Tore sind kein Selbstläufer"); 3+ Tore brechen den Deckel. */
     private const val TOR_MAX = 1.0
-    /** Vorlagen-Bonus je Vorlage. */
+    /** Torbonus für einen Dreierpack (3 Tore), positionsunabhängig. */
+    private const val TOR_HATTRICK = 1.5
+    /** Torbonus bei 4 und mehr Toren (harte Obergrenze), positionsunabhängig. */
+    private const val TOR_VIER_UND_MEHR = 2.0
+    /** Vorlagen-Bonus je Vorlage (positionsunabhängig). */
     private const val VORLAGE_BONUS = 0.35
-    private const val VORLAGEN_MAX = 0.7
+    /** Maximaler Vorlagen-Bonus insgesamt (ab der 4. Vorlage gedeckelt). */
+    private const val VORLAGEN_MAX = 1.4
     /** Bonus für einen verwandelten Elfmeter (zusätzlich zum Tor). */
     private const val ELFMETER_BONUS = 0.2
 
@@ -186,7 +192,7 @@ object ElfBewertung {
     // K3 – Zweikämpfe.
     /** Zuschlag je gewonnener Zweikampf (ZK), max. [ZK_QUANTITAET_MAX]. */
     private const val ZK_PRO_ZWIKAMPF = 0.03
-    private const val ZK_QUANTITAET_MAX = 0.4
+    private const val ZK_QUANTITAET_MAX = 0.6
     /** Gehaltene Bälle (Torwart ersetzt damit die ZK-Werte). */
     private const val TW_GEHALTEN_7 = 0.7
     private const val TW_GEHALTEN_5_6 = 0.5
@@ -232,7 +238,7 @@ object ElfBewertung {
             if (kandidat.startelf) BASIS_STARTELF else BASIS_EINWECHSLER,
         )
 
-        // 2. K1 – Direkter Impact (Tore/Vorlagen/Elfmeter), Cap 1,6.
+        // 2. K1 – Direkter Impact (Tore/Vorlagen/Elfmeter), Cap 2,0.
         val impact = impactBonus(kandidat)
         if (impact != 0.0) {
             zeilen += BewertungsZeile(IMPACT, impact)
@@ -311,10 +317,21 @@ object ElfBewertung {
 
     /** K1 – Direkter Impact (Tore/Vorlagen/Elfmeter), Cap [IMPACT_MAX]. */
     private fun impactBonus(kandidat: ElfKandidat): Double {
-        val tore = (kandidat.tore * torBonus(kandidat.position)).coerceAtMost(TOR_MAX)
+        val tore = torTier(kandidat.tore, kandidat.position)
         val vorlagen = (kandidat.vorlagen * VORLAGE_BONUS).coerceAtMost(VORLAGEN_MAX)
         val elfmeter = if (kandidat.elfmeter) ELFMETER_BONUS else 0.0
         return (tore + vorlagen + elfmeter).coerceAtMost(IMPACT_MAX)
+    }
+
+    /**
+     * K1 – Tore: 1–2 Tore positionsabhängig mit Cap [TOR_MAX]; 3 Tore (Hattrick)
+     * und 4+ Tore brechen den Deckel auf [TOR_HATTRICK] bzw. [TOR_VIER_UND_MEHR]
+     * – positionsunabhängig, da der alte Deckel bereits ab 2 Toren griff.
+     */
+    private fun torTier(tore: Int, position: SpielerPosition): Double = when {
+        tore >= 4 -> TOR_VIER_UND_MEHR
+        tore == 3 -> TOR_HATTRICK
+        else -> (tore * torBonus(position)).coerceAtMost(TOR_MAX)
     }
 
     /** K2 – Effizienz & Spielkontrolle (Proxy), Cap [EFFIZIENZ_MAX]. */
@@ -376,9 +393,8 @@ object ElfBewertung {
         quote >= 70 -> 0.3
         quote >= 65 -> 0.25
         quote >= 60 -> 0.2
-        quote >= 55 -> 0.15
-        quote >= 50 -> 0.1
-        quote >= 45 -> 0.05
+        quote >= 50 -> 0.15
+        quote >= 45 -> 0.10
         else -> 0.0
     }
 

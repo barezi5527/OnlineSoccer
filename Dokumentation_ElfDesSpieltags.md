@@ -35,7 +35,7 @@ ls.php  (Spieltag der Liga, Parameter liga/land/saison/zat)
                  └─ ElfAuswertung.kandidatenAusBericht  → List<ElfKandidat>
                       └─ ElfBewertung.bewerten  (1,0–10,0)
                            └─ ElfAuswahl.erstelleElf  (dynamische Formation, Fallback)
-                                └─ ElfErgebnis  → Cache (ElfCache v6)
+                                └─ ElfErgebnis  → Cache (ElfCache v7)
                                      └─ UI (Spielfeld, Dialoge)
 ```
 
@@ -48,12 +48,12 @@ wartet nicht auf Zugangsdaten.)
 ### Prüfobjekt 1: England 1. Liga, Saison 24, Spieltag 1 (anonym)
 
 | Kennzahl | Wert |
-|---|---|
+|---|---|---|
 | Begegnungen | 10 (alle gespielt) |
 | Spielberichte erfolgreich geladen | 10 / 10 |
 | Kandidaten (Spieler) gesamt | 220 (22 je Spiel) |
 | Elf | vollständig, dynamische Formation 3‑4‑3 (1 TOR, 3 ABW, 4 MIT, 3 STU) |
-| Spieler des Spieltags | Ebulfez Mammadov (FC Moor) – 9,4 |
+| Spieler des Spieltags | Ebulfez Mammadov (FC Moor) – 9,3 |
 | 10,0‑Bewertungen | 0 von 11 (keine Normalisierung) |
 
 Formationswahl: Es wird die erste erlaubte Formation (Reihenfolge 4‑2‑3‑1,
@@ -69,27 +69,29 @@ DMI (defensiv). Das ist eine reine Darstellung der Formation im Spielfeld –
 die Bewertung bleibt unverändert, weil OMI/DMI bei der Notenberechnung
 wie MIT behandelt werden (funktional identisch, siehe [Bewertungsmodell]).
 
-Resultierende Elf (Noten absteigend):
+Resultierende Elf (Noten absteigend, Stand Bewertungsmodell K1–K5):
 
 | Platz | Spieler | Verein | Position | Note | Kennzahlen |
 |---|---|---|---|---|---|
-| 1 | Ebulfez Mammadov | FC Moor | STU | 9,4 | 3 Tore, 1 Vorlage |
-| 2 | Chisha Chisala | AC Northampton | MIT | 8,8 | 1 Tor, 3 Vorlagen |
-| 3 | Elvis Voorhees | FC Leicester | STU | 8,8 | 3 Tore |
-| 4 | Sven Simonsen | Blackburn City | STU | 7,8 | 2 Tore |
-| 5 | Chad Halford | FC Leicester | MIT | 7,6 | 3 Vorlagen |
-| 6 | Tibor Andrasi | Blackburn City | MIT | 7,4 | 3 Vorlagen, 1 Gelb |
-| 7 | Daryll Trumble | FC Moor | MIT | 7,0 | 2 Vorlagen |
-| 8 | Jupp Petrasen | AC Northampton | ABW | 6,4 | 1 Vorlage |
-| 9 | Elvis Arnaldi | FC Leicester | TOR | 6,3 | Zu‑Null‑Spiel |
-| 10 | Panfilo Licci | FC Leicester | ABW | 6,1 | Zu‑Null‑Spiel |
-| 11 | Elvis Delman | FC Leicester | ABW | 6,1 | Zu‑Null‑Spiel |
+| 1 | Ebulfez Mammadov | FC Moor | STU | 9,3 | 3 Tore, 1 Vorlage |
+| 2 | Chisha Chisala | AC Northampton | MIT | 9,2 | 1 Tor, 3 Vorlagen |
+| 3 | Elvis Voorhees | FC Leicester | STU | 9,0 | 3 Tore |
+| 4 | Sven Simonsen | Blackburn City | STU | 8,3 | 2 Tore |
+| 5 | Tibor Andrasi | Blackburn City | MIT | 8,2 | 3 Vorlagen, 1 Gelb |
+| 6 | Chad Halford | FC Leicester | MIT | 8,0 | 3 Vorlagen |
+| 7 | Alexander Lenert | Luton City | MIT | 7,6 | 2 Vorlagen |
+| 8 | Risto Rakitic | Tottenham United | TOR | 6,9 | Zu‑Null‑Spiel |
+| 9 | Mario Rizzi | FC Moor | ABW | 6,9 | Zu‑Null‑Spiel |
+| 10 | Elvis Delman | FC Leicester | ABW | 6,8 | Zu‑Null‑Spiel |
+| 11 | Stratos Kromidas | Gravesend AFC | ABW | 6,8 | Zu‑Null‑Spiel |
 
-Stichprobe „Newcastle Glory – FC Moor" (1:4): Ebulfez Mammadov exakt **3 Tore,
-1 Vorlage, 60 Einsatzminuten, 10 Schüsse (9 aufs Tor)** – im Abgleich mit der
-Spielerstatistik-Tabelle des Rohberichts bestätigt. Wegen der reinen
-Aktions‑+‑Endstands‑Formel schafft selbst der beste Stürmer des Spieltags keine
-10,0 (9,4 < 9,8-Schwelle).
+Stichprobe „Newcastle Glory – FC Moor" (1:4): Ebulfez Mammadov exakt
+**3 Tore, 1 Vorlage, 60 Einsatzminuten** – im Abgleich mit der
+Spielerstatistik-Tabelle des Rohberichts bestätigt. Seine Aufschlüsselung
+(9,3): Grundbewertung +5,5 · Direkter Impact +1,9 · Effizienz +1,0 ·
+Zweikämpfe +0,6 · Ergebnis & Teambonus +0,4. Auch der beste Stürmer des
+Spieltags schafft keine 10,0 (9,3 < 9,95-Schwelle; reale Berichte liefern
+keine Bericht-Note, siehe [Bewertungsmodell]).
 
 ### Prüfobjekt 2: Persönliche Liga (Gerät, angemeldete Session)
 
@@ -120,34 +122,55 @@ Reale Berichte verwenden andere Formate als die ursprünglich erwarteten:
 
 ## Bewertungsmodell (ElfBewertung)
 
-Jeder eingesetzte Spieler startet bei **5,5**. Genutzt werden **exakt sechs
-Kriterien**, alle ausschließlich aus den im Spielbericht tatsächlich vorhandenen
-Werten:
+Die Note entsteht ausschließlich aus der im Spielbericht tatsächlich
+vorhandenen Information nach der additiven Formel
 
-1. **Grundbewertung** – immer **5,5**.
-2. **Tore** – positionsabhängig je Tor: STU **+1,0** · MIT/OMI/DMI **+1,2** ·
-   ABW **+1,5** · TOR **+2,0**. Mehrere Tore/Vorlagen addieren sich.
-3. **Vorlagen** – **+0,6** je Vorlage.
-4. **Ergebnis** – nur bei bekanntem Endstand (`hatErgebnis`): Sieg **+0,3**,
-   Unentschieden **+0,1**, Niederlage **−0,2**. Ohne Endstand weder Bonus noch Malus.
-5. **Zu null** – nur bei bekanntem Endstand und 0 Gegentoren: TOR **+0,5**,
-   ABW **+0,3** (andere Positionen kein Bonus).
-6. **Karten** – je Gelb **−0,2**; je Rot-Ereignis **−1,0** (kein Doppel-Abzug: ein
-   Rot-Ereignis wird nicht zusätzlich als Gelb gewertet – Summe aus `gelbeKarten`
-   und `roteKarten`, siehe Einschränkung unten).
+    Endnote = Basis + K1 + K2 + K3 + K4 + K5 − Karten
 
-- **Keine künstlichen Zusatzgrößen:** Zweikämpfe, Schüsse, Passquote/xG, Paraden,
-  Auffälligkeit, Elfmeter-Treffer und Einsatzminuten fließen bewusst **nicht** ein.
-  Die Einsatzzeit ist kein Bonus – ein kurzer Einsatz mit Tor erhält denselben
-  Torbonus, aber nie einen „Vollspielbonus".
-- **Nicht eingesetzte** Spieler (keine berichtete Einsatzzeit, `hatEinsatz` == false)
-  werden von der Elf ausgeschlossen. Die Einsatzzeit selbst wird weiter aus
-  berichteten Wechseln ermittelt (`einsatzMinuten`, nie geschätzt; ohne Angabe
-  startelf = volle Partie, eingewechselt ohne Ereignis = 0 Min.).
-- Rohbewertung auf **eine Nachkommastelle** gerundet, Skala 1,0–10,0. Eine
-  **10,0 verlangt eine ungerundete Rohbewertung ≥ 9,8**; darüber wird bei 10,0
-  gekappt. **Keine Normalisierung** – eine Elf ganz ohne 10,0 ist ausdrücklich in
-  Ordnung (im realen E2E-Lauf: 0 von 11).
+Basis: Startelf **5,5** · Einwechsler **4,0** (fix, kein Minuten‑Faktor). Die
+Leistungszuschläge werden nach Einsatzzeit **nicht** skaliert; die Einsatzminuten
+entscheiden nur, ob ein Spieler überhaupt als eingesetzt gilt – nicht eingesetzte
+Bank‑Spieler werden von der Elf ausgeschlossen. Die fünf Kategorien sind durch
+feste Budgets (Caps) begrenzt; deren Summe (4,9) setzt die Zielverteilung
+41/22/18/11/8 um:
+
+1. **K1 Direkter Impact** (Cap **2,0**): Tore – positionsabhängig je Tor: STU
+   **+0,5** · MIT/OMI/DMI **+0,6** · ABW **+0,8** · TW **+1,0**; für 1–2 Tore gilt
+   zusätzlich ein Torbonus‑Deckel von **1,0** (mehr als ein Tor zahlt nur noch
+   anteilig in den Deckel). Ab dem **3. Tor** bricht der Hattrick (`+1,5`) und
+   ab dem 4. Tor (`+2,0`) den Deckel – positionsunabhängig. Vorlagen: **+0,35**
+   je Vorlage, mehrfach, bis zur 4. linear (max. **1,4**), positionsunabhängig.
+   Verwandelter Elfmeter zusätzlich **+0,2** (aus dem Tickerverlauf „verwandelt").
+2. **K2 Effizienz & Spielkontrolle** (Cap **1,1**, Proxy): Schussquote
+   (`aufsTor/schuesse`, nur bei `schuesse ≥ 3`): ≥40 % 0,2 · ≥50 % 0,3 ·
+   ≥60 % 0,4 · ≥75 % 0,5; Abschlusspräsenz (`aufsTor ≥2` 0,1 · `≥4` 0,2);
+   Auffälligkeit aus den Ticker‑Nennungen (2–3 0,1 · 4–5 0,2 · 6+ 0,3).
+3. **K3 Zweikämpfe** (Cap **0,9**): **+0,03** je gewonnener Zweikampf (ZK), max.
+   **0,6** (Deckel ab ~20 Duellen), plus Zweikampfquote‑Stufe (Stufen: ≥45 % 0,10 ·
+   ≥50 % 0,15 · ≥60 % 0,2 · ≥65 % 0,25 · ≥70 % 0,3; nur eine Stufe zählt) – nur bei
+   vorhandener Statistik (`zweikaempfe > 0`). Beim Torwart ersetzt die Zahl der
+   **gehaltenen Bälle** die ZK‑Werte (3–4 0,3 · 5–6 0,5 · 7+ 0,7).
+4. **K4 Ergebnis & Teambonus** (Cap **0,55**): Sieg **+0,35** · Unentschieden
+   **+0,1** · Niederlage **−0,2** (Malus ungedeckelt); Zu‑null: TW **+0,3** ·
+   ABW **+0,2** – jeweils nur bei bekanntem Endstand (`hatErgebnis`).
+5. **K5 Bericht‑Note** (Cap +0,35/−0,15): Bericht‑Note 1,0–6,0 aus der
+   Spielerstatistik (1,0 = beste Note): 1,0 +0,35 · 1,5 +0,30 · … · 4,0 +0,05 ·
+   4,5 0 · 5,0 −0,05 · 5,5 −0,10 · 6,0 −0,15. Ohne Note im Bericht bleibt der
+   Beitrag 0 (in realen Berichten gibt es keine Note → K5 = 0).
+6. **Karten** (unskaliert, extra): je Gelb **−0,2** · je Rot‑Ereignis **−1,0**
+   (kein Doppel‑Abzug: ein Rot‑Ereignis wird nicht zusätzlich als Gelb gewertet).
+
+- **Deckel statt Normalisierung**: Die Caps (K1 2,0 · K2 1,1 · K3 0,9 · K4 0,55 ·
+  K5 0,35) sorgen dafür, dass extreme Einzelleistungen (4+ Tore, 4+ Vorlagen,
+  20+ Duellen…) bis zur genannten Stufe voll zählen, darüber hinaus aber nicht
+  übermäßig reinkommen – ein Kanterspiel erzeugt keine 10,0-Flut. Die Summe der
+  sichtbaren Kriterienzeilen entspricht exakt der Rohbewertung.
+- **Rohbewertung ist transparent**: auf **eine Nachkommastelle gerundet**; eine
+  **10,0 verlangt eine ungerundete Rohbewertung von mindestens 9,95**, darunter
+  wird bei 9,9 gekappt. **Keine Normalisierung** – eine Elf ganz ohne 10,0 ist
+  ausdrücklich in Ordnung (im realen E2E-Lauf: 0 von 11).
+- **Fehlende Daten** (kein Endstand, keine Zweikampf‑Statistik, keine
+  Schussstatistik, keine Bericht‑Note) erzeugen weder Bonus noch Malus.
 - **Einschränkung Rot-Ereignis:** Der Parser unterscheidet Gelb-Rot („zweite Gelbe")
   nicht von der direkten Roten Karte – beide landen als ein `roteKarten`-Ereignis.
   Der Malus folgt der üblichen Form Gelb-Rot (−1,0); die strengere direkte Rote
@@ -163,13 +186,13 @@ Werten:
 
 ## Cache (ElfDesSpieltagsRepository / ElfCache)
 
-- Klartext‑Serialisierung ohne Fremdbibliothek, Versions-Prefix `ElfDesSpieltags|v5`,
-  24 Felder je Spieler (inkl. teamId für das Vereinswappen, Zweikämpfe, Schüsse,
-  Auffälligkeit, gehaltene Bälle) plus Formations-Label im Kopf.
+- Klartext‑Serialisierung ohne Fremdbibliothek, Versions-Prefix `ElfDesSpieltags|v7`,
+  26 Felder je Spieler (inkl. teamId für das Vereinswappen, Zweikämpfe, Schüsse,
+  Auffälligkeit, gehaltene Bälle, Bericht-Note) plus Formations-Label im Kopf.
 - Schlüssel: Server + Benutzer‑Team‑ID (falls bekannt) + Land + Liga + Saison + Spieltag.
 - Qualitätseigenschaften (per Unit‑Tests abgesichert): Deserialisierung == Original,
   Note aus dem Cache exakt per `ElfBewertung.bewerten(kandidatVon(spieler))` reproduzierbar,
-  abgelaufene/ungültige Versionen (v1/v3) werden verworfen und neu ermittelt.
+  abgelaufene/ungültige Versionen (v3/v4/v5/v6) werden verworfen und neu ermittelt.
 
 ## Bekannte Grenzen (Server-seitig)
 
@@ -186,13 +209,16 @@ Werten:
 
 ## Automatisierte Tests
 
-- `ElfDesSpieltagsTest.kt` – Bewertung (Formel 5,5 + Tore/Vorlagen/Ergebnis/Zu‑null/
-  Karten, Positionsprofile, Runden/10,0-Schwelle, Karten-Doppel-Abzug, kein
-  Vollspielbonus, Ausschluss nicht eingesetzter Spieler), Transparenz, keine
-  Normalisierung, dynamische Formationswahl (3‑5‑2-Fall, Lücken-Fallback, OMI/MIT/DMI-Verteilung,
+- `ElfDesSpieltagsTest.kt` – Bewertung (K1–K5-Formel mit Caps und Stufen:
+  Tor-Deckel/‑Tiers bis Hattrick & 4+ Tore, Vorlagen-Deckel bis zur 4. Vorlage,
+  Zweikampf-Quantität/‑Quote, Elfmeter, Zu‑null, Ergebnis, Bericht-Note,
+  Positionsprofile, Runden/10,0-Schwelle ≥ 9,95, Karten-Doppel-Abzug, kein
+  Vollspielbonus, Ausschluss nicht eingesetzter Spieler, Kanterspiel-Stresstest:
+  Reihenfolge stabil und keine 10,0-Flut), Transparenz, keine Normalisierung,
+  dynamische Formationswahl (3‑5‑2-Fall, Lücken-Fallback, OMI/MIT/DMI-Verteilung,
   Deduplizierung, Elf ohne 10,0), Auswertung (Startelf/Bank, Tore, Karten,
-  Kapitäns-Erkennung, Spielerstatistik, gehaltene Bälle, Auffälligkeit), Cache (v6-Round-Trip,
-  v3/v4/v5-Verwerfung), Spieler des Spieltags, alle Parser‑Formate.
+  Kapitäns-Erkennung, Spielerstatistik, gehaltene Bälle, Auffälligkeit), Cache (v7-Round-Trip,
+  v3/v4/v5/v6-Verwerfung), Spieler des Spieltags, alle Parser‑Formate.
 - `ElfDesSpieltagsE2eTest.kt` – realer Lauf gegen den Server (s. o.), Cache‑Round‑Trip,
   Transparenz‑Check (Bewertung == Neuberechnung aus Fake‑Kandidat),
   10,0‑Zählung (0 von 11 ohne Normalisierung).
