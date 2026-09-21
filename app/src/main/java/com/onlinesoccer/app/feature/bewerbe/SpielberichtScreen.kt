@@ -1,5 +1,8 @@
 package com.onlinesoccer.app.feature.bewerbe
 
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.sizeIn
@@ -50,18 +54,24 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.core.ui.theme.trikotFarbe
 import com.onlinesoccer.app.data.model.BerichtAufstellung
 import com.onlinesoccer.app.data.model.BerichtEinstellungen
 import com.onlinesoccer.app.data.model.BerichtEreignisTyp
+import com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag
 import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.data.repository.ElfAuswertung
+import com.onlinesoccer.app.data.repository.ElfBewertung
 import com.onlinesoccer.app.ui.components.SpielverlaufEreignisKarte
 import com.onlinesoccer.app.ui.components.SpielverlaufLegende
 import com.onlinesoccer.app.ui.components.kartenNameFarbe
@@ -103,6 +113,14 @@ fun SpielberichtScreen(
 @Composable
 private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBericht, onClose: () -> Unit) {
     var zeigePressekonferenz by remember { mutableStateOf(false) }
+    var markierterName by remember { mutableStateOf<String?>(null) }
+    val noteProName = remember(bericht) {
+        ElfAuswertung.kandidatenAusBericht(bericht)
+            .associate { it.name.lowercase() to ElfBewertung.bewerten(it).gesamt }
+    }
+    val spielerKlick: (String) -> Unit = { name ->
+        markierterName = if (markierterName == name) null else name
+    }
     val bekannteNamen = remember(bericht) {
         buildSet {
             bericht.heimAufstellung?.spieler?.forEach { add(it.name) }
@@ -167,7 +185,16 @@ private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBerich
             }
         }
 
-        item { AufstellungsVergleich(bericht.heim, bericht.gast, bericht.heimAufstellung, bericht.gastAufstellung) }
+        item {
+            AufstellungsVergleich(
+                heim = bericht.heim,
+                gast = bericht.gast,
+                heimAufstellung = bericht.heimAufstellung,
+                gastAufstellung = bericht.gastAufstellung,
+                markierterName = markierterName,
+                onSpielerKlick = spielerKlick,
+            )
+        }
 
         bericht.rohtext?.let {
             if (bericht.ereignisse.isEmpty() && !bericht.url.contains("bericht.php")) {
@@ -279,6 +306,9 @@ private fun BerichtsAnsicht(bericht: com.onlinesoccer.app.data.model.SpielBerich
                     gastAufstellung = bericht.gastAufstellung,
                     kartenTypProName = kartenTypProName,
                     verletzteProName = verletzteSpielerNamen,
+                    noteProName = noteProName,
+                    markierterName = markierterName,
+                    onSpielerKlick = spielerKlick,
                 )
             }
         }
@@ -404,6 +434,8 @@ private fun AufstellungsVergleich(
     gast: String?,
     heimAufstellung: com.onlinesoccer.app.data.model.BerichtAufstellung?,
     gastAufstellung: com.onlinesoccer.app.data.model.BerichtAufstellung?,
+    markierterName: String? = null,
+    onSpielerKlick: (String) -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Taktische Aufstellungen und Spieleraufgebot", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -412,12 +444,12 @@ private fun AufstellungsVergleich(
             Text(gast ?: "Auswärtsteam", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, color = Color(0xFFFF1744))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-            Box(Modifier.weight(1f)) { FormationSpielfeld(heimAufstellung) }
-            Box(Modifier.weight(1f)) { FormationSpielfeld(gastAufstellung) }
+            Box(Modifier.weight(1f)) { FormationSpielfeld(heimAufstellung, markierterName, onSpielerKlick) }
+            Box(Modifier.weight(1f)) { FormationSpielfeld(gastAufstellung, markierterName, onSpielerKlick) }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-            Box(Modifier.weight(1f)) { SpielerListe(heimAufstellung) }
-            Box(Modifier.weight(1f)) { SpielerListe(gastAufstellung) }
+            Box(Modifier.weight(1f)) { SpielerListe(heimAufstellung, markierterName, onSpielerKlick) }
+            Box(Modifier.weight(1f)) { SpielerListe(gastAufstellung, markierterName, onSpielerKlick) }
         }
         EinstellungenTabelle(heim, gast, heimAufstellung?.einstellungen ?: BerichtEinstellungen(), gastAufstellung?.einstellungen ?: BerichtEinstellungen())
     }
@@ -453,7 +485,11 @@ private fun Aufstellung(
 }
 
 @Composable
-private fun FormationSpielfeld(aufstellung: BerichtAufstellung?) {
+private fun FormationSpielfeld(
+    aufstellung: BerichtAufstellung?,
+    markierterName: String? = null,
+    onSpielerKlick: (String) -> Unit = {},
+) {
     val spieler = aufstellung?.startspieler.orEmpty()
     if (spieler.none { it.feldzeile != null && it.feldspalte != null }) {
         Text("Keine Rasterpositionen im Spielbericht gefunden.", style = MaterialTheme.typography.bodySmall)
@@ -500,13 +536,25 @@ private fun FormationSpielfeld(aufstellung: BerichtAufstellung?) {
                                 contentAlignment = Alignment.Center,
                             ) {
                                 player?.let {
+                                    val markiert = it.name.lowercase() == markierterName
                                     Box(
                                         Modifier
                                             .sizeIn(minWidth = 18.dp, minHeight = 18.dp)
-                                            .background(markerColor(it.position), RoundedCornerShape(5.dp)),
+                                            .background(markerColor(it.position), RoundedCornerShape(5.dp))
+                                            .border(
+                                                if (markiert) 2.dp else 0.dp,
+                                                MaterialTheme.colorScheme.onPrimary,
+                                                RoundedCornerShape(5.dp),
+                                            )
+                                            .clickable { onSpielerKlick(it.name.lowercase()) },
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        Text(it.nummer ?: "?", color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                        Text(
+                                            it.nummer ?: "?",
+                                            color = if (markiert) MaterialTheme.colorScheme.primary else Color.Black,
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
                                     }
                                 }
                             }
@@ -524,14 +572,26 @@ private fun FormationSpielfeld(aufstellung: BerichtAufstellung?) {
                         contentAlignment = Alignment.Center,
                     ) {
                         if (column == 5) {
+                            val markiert = goalkeeper.name.lowercase() == markierterName
                             Box(
                                 Modifier
                                     .fillMaxSize()
                                     .padding(3.dp)
-                                    .background(markerColor(goalkeeper.position), RoundedCornerShape(5.dp)),
+                                    .background(markerColor(goalkeeper.position), RoundedCornerShape(5.dp))
+                                    .border(
+                                        if (markiert) 2.dp else 0.dp,
+                                        MaterialTheme.colorScheme.onPrimary,
+                                        RoundedCornerShape(5.dp),
+                                    )
+                                    .clickable { onSpielerKlick(goalkeeper.name.lowercase()) },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text(goalkeeper.nummer ?: "T", color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                Text(
+                                    goalkeeper.nummer ?: "T",
+                                    color = if (markiert) MaterialTheme.colorScheme.primary else Color.Black,
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
                             }
                         }
                     }
@@ -550,16 +610,41 @@ private fun markerColor(position: String?): Color = when (position) {
 }
 
 @Composable
-private fun SpielerListe(aufstellung: BerichtAufstellung?) {
+private fun SpielerListe(
+    aufstellung: BerichtAufstellung?,
+    markierterName: String? = null,
+    onSpielerKlick: (String) -> Unit = {},
+) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text("Spieleraufgebot", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
         if (aufstellung?.spieler.isNullOrEmpty()) {
             Text("Keine Spielerdaten im Bericht gefunden.", style = MaterialTheme.typography.bodySmall)
         } else {
             aufstellung!!.spieler.forEach { spieler ->
-                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                    Text(spieler.nummer.orEmpty(), modifier = Modifier.width(32.dp), fontWeight = FontWeight.Bold)
-                    Text(spieler.name, style = MaterialTheme.typography.bodySmall)
+                val markiert = spieler.name.lowercase() == markierterName
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (markiert) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        )
+                        .clickable { onSpielerKlick(spieler.name.lowercase()) }
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        spieler.nummer.orEmpty(),
+                        modifier = Modifier.width(32.dp),
+                        fontWeight = FontWeight.Bold,
+                        color = if (markiert) MaterialTheme.colorScheme.onPrimaryContainer else LocalContentColor.current,
+                    )
+                    Text(
+                        spieler.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (markiert) FontWeight.Bold else FontWeight.Normal,
+                        color = if (markiert) MaterialTheme.colorScheme.onPrimaryContainer else LocalContentColor.current,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
                 }
             }
         }
@@ -653,62 +738,138 @@ private fun StatistikZeile(label: String, wert: String?) {
 private fun SpielerstatistikenVergleich(
     heim: String?,
     gast: String?,
-    heimEintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
-    gastEintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
+    heimEintraege: List<BerichtSpielerStatistikEintrag>,
+    gastEintraege: List<BerichtSpielerStatistikEintrag>,
     heimAufstellung: BerichtAufstellung?,
     gastAufstellung: BerichtAufstellung?,
     kartenTypProName: Map<String, BerichtEreignisTyp>,
     verletzteProName: Map<String, BerichtEreignisTyp>,
+    noteProName: Map<String, Double>,
+    markierterName: String? = null,
+    onSpielerKlick: (String) -> Unit = {},
 ) {
+    val textMeasurer = rememberTextMeasurer()
+    val spaltenBreiten = statSpaltenBreiten(textMeasurer, heimEintraege + gastEintraege, noteProName)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Spielerstatistiken", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        SpielerstatistikTabelle(heim ?: "Heimteam", heimEintraege, heimAufstellung, kartenTypProName, verletzteProName)
-        SpielerstatistikTabelle(gast ?: "Gastteam", gastEintraege, gastAufstellung, kartenTypProName, verletzteProName)
+        SpielerstatistikTabelle(
+            teamName = heim ?: "Heimteam",
+            eintraege = heimEintraege,
+            aufstellung = heimAufstellung,
+            noteProName = noteProName,
+            spaltenBreiten = spaltenBreiten,
+            markierterName = markierterName,
+            onSpielerKlick = onSpielerKlick,
+            kartenTypProName = kartenTypProName,
+            verletzteProName = verletzteProName,
+        )
+        SpielerstatistikTabelle(
+            teamName = gast ?: "Gastteam",
+            eintraege = gastEintraege,
+            aufstellung = gastAufstellung,
+            noteProName = noteProName,
+            spaltenBreiten = spaltenBreiten,
+            markierterName = markierterName,
+            onSpielerKlick = onSpielerKlick,
+            kartenTypProName = kartenTypProName,
+            verletzteProName = verletzteProName,
+        )
     }
 }
 
-private val noteBreite = 34.dp
-private val zkBreite = 26.dp
-private val zkProzentBreite = 44.dp
-private val schuesseBreite = 38.dp
-private val aufsTorBreite = 46.dp
-private val toreBreite = 30.dp
-private val vorlagenBreite = 40.dp
 private val nummernBreite = 24.dp
+private val spielerNameBreite = 120.dp
+
+/** Auf die Inhalte gemessene Spaltenbreiten der Spielerstatistik-Tabelle. */
+private data class StatSpaltenBreiten(
+    val note: androidx.compose.ui.unit.Dp,
+    val zk: androidx.compose.ui.unit.Dp,
+    val quote: androidx.compose.ui.unit.Dp,
+    val tore: androidx.compose.ui.unit.Dp,
+    val vorlagen: androidx.compose.ui.unit.Dp,
+    val schuesse: androidx.compose.ui.unit.Dp,
+    val aufsTor: androidx.compose.ui.unit.Dp,
+)
+
+@Composable
+private fun statSpaltenBreiten(
+    textMeasurer: TextMeasurer,
+    eintraege: List<BerichtSpielerStatistikEintrag>,
+    noteProName: Map<String, Double>,
+): StatSpaltenBreiten {
+    val density = LocalDensity.current
+    val kopfStil = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+    val zellenStil = MaterialTheme.typography.bodySmall
+    fun breite(label: String, werte: List<String>): androidx.compose.ui.unit.Dp = with(density) {
+        val labelPx = textMeasurer.measure(label, kopfStil).size.width
+        val wertPx = werte.maxOfOrNull { textMeasurer.measure(it, zellenStil).size.width } ?: 0
+        maxOf(labelPx, wertPx).toDp() + 12.dp
+    }
+    fun noteText(eintrag: BerichtSpielerStatistikEintrag): String =
+        noteProName[eintrag.name.lowercase()]?.let(ElfBewertung::formatiere) ?: "–"
+    val note = breite("Note", eintraege.map { noteText(it) })
+    val zk = breite("ZK", eintraege.map { it.statistik.zweikaempfe.toString() })
+    val quote = breite("Quote", eintraege.map { it.statistik.zweikampfQuote.formatProzent() })
+    val tore = breite("Tore", eintraege.map { it.statistik.tore.toString() })
+    val vorlagen = breite("Vorl.", eintraege.map { it.statistik.vorlagen.toString() })
+    val schuesse = breite("Schüsse", eintraege.map { it.statistik.schuesse.toString() })
+    val aufsTor = breite("aufs Tor", eintraege.map { it.statistik.aufsTor.toString() })
+    return StatSpaltenBreiten(note, zk, quote, tore, vorlagen, schuesse, aufsTor)
+}
 
 @Composable
 private fun SpielerstatistikTabelle(
     teamName: String,
-    eintraege: List<com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag>,
+    eintraege: List<BerichtSpielerStatistikEintrag>,
     aufstellung: BerichtAufstellung?,
+    noteProName: Map<String, Double>,
+    spaltenBreiten: StatSpaltenBreiten,
+    markierterName: String? = null,
+    onSpielerKlick: (String) -> Unit = {},
     kartenTypProName: Map<String, BerichtEreignisTyp>,
     verletzteProName: Map<String, BerichtEreignisTyp>,
 ) {
     if (eintraege.isEmpty()) return
-    val zeigeNote = eintraege.any { !it.statistik.note.isNullOrBlank() }
+    val scrollState = rememberScrollState()
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(teamName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Row(Modifier.fillMaxWidth()) {
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Spacer(Modifier.width(nummernBreite))
                 Text(
                     "Spieler",
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.width(spielerNameBreite),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 2,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
-                if (zeigeNote) StatKopfZelle("Note", noteBreite)
-                StatKopfZelle("ZK", zkBreite)
-                StatKopfZelle("ZK-%", zkProzentBreite)
-                StatKopfZelle("Schüsse", schuesseBreite)
-                StatKopfZelle("aufs Tor", aufsTorBreite)
-                StatKopfZelle("Tore", toreBreite)
-                StatKopfZelle("Vorl.", vorlagenBreite)
+                Row(Modifier.weight(1f).horizontalScroll(scrollState)) {
+                    StatKopfZelle("Note", spaltenBreiten.note)
+                    StatKopfZelle("ZK", spaltenBreiten.zk)
+                    StatKopfZelle("Quote", spaltenBreiten.quote)
+                    StatKopfZelle("Tore", spaltenBreiten.tore)
+                    StatKopfZelle("Vorl.", spaltenBreiten.vorlagen)
+                    StatKopfZelle("Schüsse", spaltenBreiten.schuesse)
+                    StatKopfZelle("aufs Tor", spaltenBreiten.aufsTor)
+                }
             }
             eintraege.forEach { eintrag ->
-                SpielerstatistikZeile(eintrag, aufstellung, zeigeNote, kartenTypProName, verletzteProName)
+                SpielerstatistikZeile(
+                    eintrag = eintrag,
+                    aufstellung = aufstellung,
+                    noteProName = noteProName,
+                    spaltenBreiten = spaltenBreiten,
+                    markierterName = markierterName,
+                    onSpielerKlick = onSpielerKlick,
+                    kartenTypProName = kartenTypProName,
+                    verletzteProName = verletzteProName,
+                    scrollState = scrollState,
+                )
             }
         }
     }
@@ -723,24 +884,37 @@ private fun StatKopfZelle(label: String, breite: androidx.compose.ui.unit.Dp) {
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontWeight = FontWeight.Bold,
-        maxLines = 2,
+        maxLines = 1,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
     )
 }
 
 @Composable
 private fun SpielerstatistikZeile(
-    eintrag: com.onlinesoccer.app.data.model.BerichtSpielerStatistikEintrag,
+    eintrag: BerichtSpielerStatistikEintrag,
     aufstellung: BerichtAufstellung?,
-    zeigeNote: Boolean,
+    noteProName: Map<String, Double>,
+    spaltenBreiten: StatSpaltenBreiten,
+    markierterName: String? = null,
+    onSpielerKlick: (String) -> Unit = {},
     kartenTypProName: Map<String, BerichtEreignisTyp>,
     verletzteProName: Map<String, BerichtEreignisTyp>,
+    scrollState: ScrollState,
 ) {
     val spieler = aufstellung?.spieler?.firstOrNull { it.name.equals(eintrag.name, ignoreCase = true) }
     val stat = eintrag.statistik
     val nameSchluessel = (spieler?.name ?: eintrag.name).lowercase()
-    val nameFarbe = kartenTypProName[nameSchluessel]?.let { kartenNameFarbe(it) }
+    val markiert = nameSchluessel == markierterName
+    val grundNameFarbe = kartenTypProName[nameSchluessel]?.let { kartenNameFarbe(it) }
         ?: verletzteProName[nameSchluessel]?.let { kartenNameFarbe(it) }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    val nameFarbe = if (markiert) MaterialTheme.colorScheme.onPrimaryContainer else grundNameFarbe ?: LocalContentColor.current
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(if (markiert) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+            .clickable { onSpielerKlick(nameSchluessel) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (spieler?.nummer != null) {
             Box(
                 Modifier
@@ -748,7 +922,7 @@ private fun SpielerstatistikZeile(
                     .background(markerColor(spieler.position), RoundedCornerShape(4.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(spieler.nummer, color = Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                Text(spieler.nummer, color = if (markiert) MaterialTheme.colorScheme.primary else Color.Black, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
             }
             Spacer(Modifier.width(6.dp))
         } else {
@@ -756,20 +930,23 @@ private fun SpielerstatistikZeile(
         }
         Text(
             eintrag.name,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.width(spielerNameBreite),
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium,
-            color = nameFarbe ?: LocalContentColor.current,
+            fontWeight = if (markiert) FontWeight.Bold else FontWeight.Medium,
+            color = nameFarbe,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
         )
-        if (zeigeNote) {
-            StatWertZelle(stat.note ?: "–", noteBreite)
+        Row(Modifier.weight(1f).horizontalScroll(scrollState)) {
+            val note = noteProName[nameSchluessel]?.let(ElfBewertung::formatiere) ?: "–"
+            StatWertZelle(note, spaltenBreiten.note)
+            StatWertZelle(stat.zweikaempfe.toString(), spaltenBreiten.zk)
+            StatWertZelle(stat.zweikampfQuote.formatProzent(), spaltenBreiten.quote)
+            StatWertZelle(stat.tore.toString(), spaltenBreiten.tore)
+            StatWertZelle(stat.vorlagen.toString(), spaltenBreiten.vorlagen)
+            StatWertZelle(stat.schuesse.toString(), spaltenBreiten.schuesse)
+            StatWertZelle(stat.aufsTor.toString(), spaltenBreiten.aufsTor)
         }
-        StatWertZelle(stat.zweikaempfe.toString(), zkBreite)
-        StatWertZelle(stat.zweikampfQuote.formatProzent(), zkProzentBreite)
-        StatWertZelle(stat.schuesse.toString(), schuesseBreite)
-        StatWertZelle(stat.aufsTor.toString(), aufsTorBreite)
-        StatWertZelle(stat.tore.toString(), toreBreite)
-        StatWertZelle(stat.vorlagen.toString(), vorlagenBreite)
     }
 }
 
@@ -780,10 +957,10 @@ private fun StatWertZelle(wert: String, breite: androidx.compose.ui.unit.Dp) {
         modifier = Modifier.width(breite),
         textAlign = TextAlign.End,
         style = MaterialTheme.typography.bodySmall,
+        maxLines = 1,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
     )
 }
 
-private fun Double.formatProzent(): String {
-    val ganze = this % 1.0 == 0.0
-    return if (ganze) toInt().toString() else toString()
-}
+private fun Double.formatProzent(): String =
+    String.format(Locale.GERMANY, "%.1f", this).removeSuffix(",0")

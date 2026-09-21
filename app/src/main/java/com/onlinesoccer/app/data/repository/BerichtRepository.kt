@@ -307,7 +307,7 @@ class BerichtRepository @Inject constructor(
     ): SpielerStatistikErgebnis {
         val tabelle = doc.select("table").firstOrNull { table ->
             table.select("tr").any { row ->
-                row.select("td").firstOrNull()?.text()?.trim() == "Spielername"
+                row.select("td, th").firstOrNull()?.text()?.trim() == "Spielername"
             }
         } ?: return SpielerStatistikErgebnis()
 
