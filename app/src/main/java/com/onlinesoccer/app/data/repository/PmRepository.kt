@@ -5,11 +5,14 @@ import com.onlinesoccer.app.core.network.SessionGuard
 import com.onlinesoccer.app.data.model.PmDetail
 import com.onlinesoccer.app.data.model.PmNachricht
 import com.onlinesoccer.app.data.model.PmAntwortFormular
+import com.onlinesoccer.app.data.model.PmEmpfaengerVorschlag
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.FormBody
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -49,27 +52,32 @@ class PmRepository @Inject constructor(
             .addPathSegments("osneu/pm")
             .addQueryParameter("action", "writeNew")
             .build()
-        val body = okhttp3.FormBody.Builder()
+        val body = FormBody.Builder()
             .add("pn_empfaenger", formular.empfaenger)
             .add("pn_empfaenger_id", formular.empfaengerId)
             .add("pn_betreff", formular.betreff)
             .add("pn_transfer_id", formular.transferId)
             .add("pn_text", formular.text)
             .build()
-        client.newCall(Request.Builder().url(url).post(body).build()).execute().use { response ->
-            val responseBody = response.body?.string().orEmpty()
-            pruefeAktionAntwort(response.isSuccessful, responseBody, "Antwort konnte nicht gesendet werden.")
-        }
+        val antwort = post(url, body)
+            ?: throw IOException("Nachricht konnte nicht gesendet werden.")
+        pruefeAktionAntwort(antwort, "Nachricht konnte nicht gesendet werden.")
     }
 
     suspend fun loeschen(pmId: Long): Unit = withContext(Dispatchers.IO) {
+        val antwort = get("osneu/pm/delete/$pmId")
+            ?: throw IOException("Nachricht konnte nicht gelöscht werden.")
+        pruefeAktionAntwort(antwort, "Nachricht konnte nicht gelöscht werden.")
+    }
+
+    /** Empfänger-Autovervollständigung für eine neue Nachricht (`osneu/ajax/findUser`). */
+    suspend fun empfaengerSuchen(keyword: String): List<PmEmpfaengerVorschlag> = withContext(Dispatchers.IO) {
         val url = OsApi.BASE_URL.toHttpUrl().newBuilder()
-            .addPathSegments("osneu/pm/delete/$pmId")
+            .addPathSegments("osneu/ajax/findUser")
             .build()
-        client.newCall(Request.Builder().url(url).build()).execute().use { response ->
-            val responseBody = response.body?.string().orEmpty()
-            pruefeAktionAntwort(response.isSuccessful, responseBody, "Nachricht konnte nicht gelöscht werden.")
-        }
+        val body = FormBody.Builder().add("keyword", keyword).build()
+        val antwort = post(url, body) ?: return@withContext emptyList()
+        parseEmpfaengerVorschlaege(antwort)
     }
 
     private suspend fun get(path: String, parameter: List<Pair<String, String>> = emptyList()): String? = runCatching {
@@ -82,6 +90,15 @@ class PmRepository @Inject constructor(
             val body = response.body?.string().orEmpty()
             if (!response.isSuccessful || body.isBlank()) return@use null
             if (SessionGuard.isPureLoginView(body.toByteArray())) null else body
+        }
+    }.getOrNull()
+
+    private suspend fun post(url: HttpUrl, body: FormBody): String? = runCatching {
+        val request = Request.Builder().url(url).post(body).build()
+        client.newCall(request).execute().use { response ->
+            val antwort = response.body?.string().orEmpty()
+            if (!response.isSuccessful || antwort.isBlank()) return@use null
+            if (SessionGuard.isPureLoginView(antwort.toByteArray())) null else antwort
         }
     }.getOrNull()
 
@@ -154,12 +171,37 @@ class PmRepository @Inject constructor(
         )
     }
 
-    private fun pruefeAktionAntwort(erfolgreich: Boolean, body: String, fehlermeldung: String) {
-        if (!erfolgreich || SessionGuard.isPureLoginView(body.toByteArray())) {
+    /** Vorschläge aus `osneu/ajax/findUser` – Server liefert `<li>` mit `input[name=userID]` und `<b>Name</b>` (live verifiziert), Fallback auf `userID|<name>`-Zeilen. */
+    internal fun parseEmpfaengerVorschlaege(html: String): List<PmEmpfaengerVorschlag> {
+        val doc = Jsoup.parse(html, "UTF-8")
+        val ergebnis = LinkedHashMap<Long, String>()
+        doc.select("li").forEach { li ->
+            val id = li.selectFirst("input[name=userID]")?.attr("value")?.toLongOrNull() ?: return@forEach
+            val name = li.selectFirst("b")?.text()?.trim()?.takeIf { it.isNotBlank() } ?: return@forEach
+            ergebnis.putIfAbsent(id, name)
+        }
+        if (ergebnis.isEmpty()) {
+            val eintraege = doc.select("div, p").mapNotNull { element ->
+                element.text().trim().takeIf { it.isNotBlank() }
+            }.ifEmpty {
+                html.lineSequence().filter { it.isNotBlank() }.toList()
+            }
+            eintraege.forEach { zeile ->
+                val treffer = Regex("(\\d+)[|](.*)").find(zeile) ?: return@forEach
+                val id = treffer.groupValues[1].toLongOrNull() ?: return@forEach
+                val name = treffer.groupValues[2].trim().removeSuffix(",").trim()
+                if (name.isNotBlank()) ergebnis.putIfAbsent(id, name)
+            }
+        }
+        return ergebnis.map { (id, name) -> PmEmpfaengerVorschlag(id, name) }
+    }
+
+    private fun pruefeAktionAntwort(body: String, fehlermeldung: String) {
+        if (body.isBlank() || SessionGuard.isPureLoginView(body.toByteArray())) {
             throw IOException(fehlermeldung)
         }
         val doc = Jsoup.parse(body)
-        val fehler = doc.select(".error, .errorbox, .errortext").firstOrNull()?.text()
+        val fehler = doc.select(".error, .errorbox, .errortext, .warning").firstOrNull()?.text()
             ?.takeIf { it.isNotBlank() }
         if (fehler != null) throw IOException(fehler)
     }

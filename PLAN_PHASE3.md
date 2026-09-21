@@ -262,7 +262,7 @@ Nach jedem M: `./gradlew assembleDebug` + manueller/ADB-Test; Bugs sofort behebe
 |---|---|
 | Schreibaktionen | **`checkza.php` („Zugabgabe speichern“) live verifiziert** (Server-Antwort „Zugabgabe erfolgreich gespeichert" im App-UI + Dump), ebenso Taktik-Laden `raster1=…&raster=Laden`. POST-Speichern Zugabgabe-Beta/Taktik-Editor/PM-schreiben noch **nicht** live getestet |
 | M8 Transfers | **Bewusst durch „Vorbereitung“ ersetzt** (Transfer findet Live statt; siehe Wunsch-Änderung) – TM/VM/Leihe nur mit Live-Playback sinnvoll |
-| PM schreiben | `/osneu/pm?action=writeNew` (POST) noch nicht abgebildet (Lesen/Löschen nativ vorhanden) |
+| PM schreiben | **`/osneu/pm?action=writeNew` (POST) live verifiziert** (eigenes Konto, Testnachricht gesendet → „PN Erfolgreich versendet!“, Postausgang-Eintrag, danach gelöscht). Empfänger-Autovervollständigung `osneu/ajax/findUser` liefert real `<li>` mit `input[name=userID]` + `<b>Name</b>` (UTF-8, nicht das dokumentierte `userID|<name>`) – Parser entsprechend angepasst. Fehlererkennung um `div.warning` erweitert (reales Beispiel: „Du kannst nicht an dich selber schreiben!!“) |
 | Spieleberichte | Spielberichte (HTML/XML) und ZAT-Zusammenfassung für ausgewachsene Saisonansicht; statische Bericht-URLs aus Spieltagen sind **auf dem Gerät klick-verifiziert** (SC Viktoria Ulm 2:2 Kaiserslautern öffnete den Vollbericht) |
 
 > Alle Parser/Formulare sind defensiv (Jsoup) und nach Phase-2-Vorgaben gebaut; eine echte

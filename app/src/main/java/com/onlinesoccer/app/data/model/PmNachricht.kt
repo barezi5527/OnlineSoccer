@@ -22,3 +22,9 @@ data class PmAntwortFormular(
     val text: String,
     val transferId: String = "0",
 )
+
+/** Ein Treffer der Empfänger-Autovervollständigung (`osneu/ajax/findUser`). */
+data class PmEmpfaengerVorschlag(
+    val id: Long,
+    val name: String,
+)

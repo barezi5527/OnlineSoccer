@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.PmNachricht
+import com.onlinesoccer.app.data.model.PmEmpfaengerVorschlag
 
 @Composable
 fun PmScreen(
@@ -59,6 +60,9 @@ fun PmScreen(
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
             }
             Text("Nachrichten", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            if (uiState.detail == null && uiState.neueNachricht == null) {
+                TextButton(onClick = viewModel::starteNeueNachricht) { Text("Neue Nachricht") }
+            }
             if (uiState.detail != null && uiState.antwort == null) {
                 TextButton(onClick = viewModel::starteAntwort, enabled = !uiState.antwortLadend) {
                     Text(if (uiState.antwortLadend) "Lade …" else "Antworten")
@@ -70,6 +74,16 @@ fun PmScreen(
         }
 
         when {
+            uiState.neueNachricht != null -> NeueNachrichtAnsicht(
+                uiState = uiState,
+                onEmpfaenger = viewModel::sucheEmpfaenger,
+                onWaehleEmpfaenger = viewModel::waehleEmpfaenger,
+                onBetreff = viewModel::setNeueBetreff,
+                onText = viewModel::setNeueText,
+                onSenden = viewModel::sendeNeueNachricht,
+                onAbbrechen = viewModel::abbrechenNeueNachricht,
+            )
+
             uiState.detail != null -> DetailAnsicht(
                 uiState = uiState,
                 onSenden = viewModel::sendeAntwort,
@@ -245,6 +259,79 @@ private fun DetailAnsicht(
                         modifier = Modifier.padding(12.dp),
                     )
                 }
+            }
+        }
+        uiState.meldung?.let { meldung -> item { Text(meldung, color = MaterialTheme.colorScheme.primary) } }
+        uiState.fehler?.let { fehler -> item { Text(fehler, color = MaterialTheme.colorScheme.error) } }
+    }
+}
+
+@Composable
+private fun NeueNachrichtAnsicht(
+    uiState: PmUiState,
+    onEmpfaenger: (String) -> Unit,
+    onWaehleEmpfaenger: (PmEmpfaengerVorschlag) -> Unit,
+    onBetreff: (String) -> Unit,
+    onText: (String) -> Unit,
+    onSenden: () -> Unit,
+    onAbbrechen: () -> Unit,
+) {
+    val formular = uiState.neueNachricht ?: return
+    LazyColumn(
+        Modifier
+            .fillMaxSize()
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item {
+            OutlinedTextField(
+                value = formular.empfaenger,
+                onValueChange = onEmpfaenger,
+                label = { Text("Empfänger (ab 3 Zeichen suchen)") },
+                singleLine = true,
+                enabled = !uiState.sendend,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (uiState.empfaengerSucheLadend) {
+            item { Text("Suche …", style = MaterialTheme.typography.bodySmall) }
+        } else {
+            items(uiState.empfaengerSuche, key = { it.id }) { vorschlag ->
+                Card(onClick = { onWaehleEmpfaenger(vorschlag) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        vorschlag.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    )
+                }
+            }
+        }
+        item {
+            OutlinedTextField(
+                value = formular.betreff,
+                onValueChange = onBetreff,
+                label = { Text("Betreff") },
+                singleLine = true,
+                enabled = !uiState.sendend,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = formular.text,
+                onValueChange = onText,
+                label = { Text("Nachricht") },
+                minLines = 8,
+                enabled = !uiState.sendend,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onSenden, enabled = !uiState.sendend, modifier = Modifier.weight(1f)) {
+                    Text(if (uiState.sendend) "Sende …" else "Senden")
+                }
+                TextButton(onClick = onAbbrechen, modifier = Modifier.weight(1f)) { Text("Abbrechen") }
             }
         }
         uiState.meldung?.let { meldung -> item { Text(meldung, color = MaterialTheme.colorScheme.primary) } }

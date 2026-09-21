@@ -54,4 +54,26 @@ class PmRepositoryParseTest {
         assertEquals("Empfänger", liste.first { it.id == 11L }.empfänger)
         assertTrue(!liste.first { it.id == 10L }.gelesen)
     }
+
+    @Test
+    fun empfaengerVorschlaegeLiestLiveLiStruktur() {
+        val vorschlaege = repo.parseEmpfaengerVorschlaege(
+            """
+            <li><input type="hidden" name="userID" value="1062" /><b>Björn Weyer</b><br />Kein Team</li>
+            <li><input type="hidden" name="userID" value="97" /><b>Michael Schunk</b><br />Kein Team</li>
+            <li><b>ohne id</b></li>
+            """.trimIndent(),
+        )
+        assertEquals(2, vorschlaege.size)
+        assertEquals("Björn Weyer", vorschlaege.first { it.id == 1062L }.name)
+        assertEquals("Michael Schunk", vorschlaege.first { it.id == 97L }.name)
+    }
+
+    @Test
+    fun empfaengerVorschlaegeFallbackAufPipeZeilen() {
+        val vorschlaege = repo.parseEmpfaengerVorschlaege("1062|Björn Weyer\n97|Michael Schunk\nkeinTreffer")
+        assertEquals(2, vorschlaege.size)
+        assertEquals("Björn Weyer", vorschlaege.first { it.id == 1062L }.name)
+        assertEquals("Michael Schunk", vorschlaege.first { it.id == 97L }.name)
+    }
 }
