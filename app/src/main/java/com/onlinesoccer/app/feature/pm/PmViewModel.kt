@@ -37,6 +37,8 @@ class PmViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PmUiState())
     val uiState: StateFlow<PmUiState> = _uiState.asStateFlow()
 
+    private var empfaengerSucheVersion = 0L
+
     init {
         lade()
     }
@@ -121,25 +123,37 @@ class PmViewModel @Inject constructor(
     }
 
     fun sucheEmpfaenger(keyword: String) {
+        val formular = _uiState.value.neueNachricht
+        _uiState.value = _uiState.value.copy(
+            neueNachricht = formular?.copy(
+                empfaenger = keyword,
+                empfaengerId = if (formular.empfaenger == keyword) formular.empfaengerId else "",
+            ),
+        )
         val text = keyword.trim()
         if (text.length < 3) {
             _uiState.value = _uiState.value.copy(empfaengerSuche = emptyList(), empfaengerSucheLadend = false)
             return
         }
+        empfaengerSucheVersion++
+        val version = empfaengerSucheVersion
         _uiState.value = _uiState.value.copy(empfaengerSucheLadend = true)
         viewModelScope.launch {
             _uiState.value = try {
-                _uiState.value.copy(
-                    empfaengerSucheLadend = false,
-                    empfaengerSuche = pmRepository.empfaengerSuchen(text),
-                )
+                val treffer = pmRepository.empfaengerSuchen(text)
+                if (version < empfaengerSucheVersion) _uiState.value else {
+                    _uiState.value.copy(empfaengerSucheLadend = false, empfaengerSuche = treffer)
+                }
             } catch (e: Exception) {
-                _uiState.value.copy(empfaengerSucheLadend = false, empfaengerSuche = emptyList())
+                if (version < empfaengerSucheVersion) _uiState.value else {
+                    _uiState.value.copy(empfaengerSucheLadend = false, empfaengerSuche = emptyList())
+                }
             }
         }
     }
 
     fun waehleEmpfaenger(vorschlag: PmEmpfaengerVorschlag) {
+        empfaengerSucheVersion++
         _uiState.value = _uiState.value.copy(
             neueNachricht = _uiState.value.neueNachricht?.copy(
                 empfaenger = vorschlag.name,
