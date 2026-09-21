@@ -72,6 +72,7 @@ fun LoginScreen(
         Text(
             text = "Online Soccer",
             style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(4.dp))
         Text(
