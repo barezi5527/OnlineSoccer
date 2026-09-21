@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -337,6 +339,19 @@ fun StatistikWert(wert: String) {
 fun StatistikFilterCard(content: @Composable ColumnScope.() -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) { content() }
+    }
+}
+
+/** Umschalter zum Ein-/Ausblenden der Filterkarten (neben der Überschrift). */
+@Composable
+fun StatistikFilterToggle(offen: Boolean, onToggle: () -> Unit) {
+    FilledTonalButton(onClick = onToggle) {
+        Icon(
+            if (offen) Icons.Filled.ExpandLess else Icons.Filled.FilterList,
+            contentDescription = null,
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(if (offen) "Filter ausblenden" else "Filter")
     }
 }
 
