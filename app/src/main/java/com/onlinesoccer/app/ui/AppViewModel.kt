@@ -6,6 +6,8 @@ import com.onlinesoccer.app.core.auth.AuthUiState
 import com.onlinesoccer.app.core.auth.LoginResult
 import com.onlinesoccer.app.core.auth.SessionManager
 import com.onlinesoccer.app.core.storage.TokenStorage
+import com.onlinesoccer.app.data.model.VertragZeile
+import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,10 +15,25 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/** Höchste Restlaufzeit (in ZAT), ab der beim Login gewarnt wird. */
+internal const val VERTRAGS_WARNUNG_ZAT = 2
+
+/**
+ * Spieler, deren Vertrag höchstens [schwelle] ZAT Restlaufzeit hat.
+ * Nicht-numerische oder fehlende Laufzeitangaben werden ignoriert.
+ */
+internal fun vertraegeKurzVorAuslauf(
+    vertraege: List<VertragZeile>,
+    schwelle: Int = VERTRAGS_WARNUNG_ZAT,
+): List<VertragZeile> = vertraege.filter { zeile ->
+    zeile.laufzeit?.trim()?.toIntOrNull()?.let { it <= schwelle } == true
+}
+
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val sessionManager: SessionManager,
     private val tokenStorage: TokenStorage,
+    private val teamRepository: TeamRepository,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthUiState> = sessionManager.state
@@ -33,8 +50,29 @@ class AppViewModel @Inject constructor(
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
+    /** Spieler mit höchstens [VERTRAGS_WARNUNG_ZAT] ZAT Restlaufzeit (Popup beim Login). */
+    private val _vertragsWarnung = MutableStateFlow<List<VertragZeile>>(emptyList())
+    val vertragsWarnung: StateFlow<List<VertragZeile>> = _vertragsWarnung.asStateFlow()
+
     init {
-        viewModelScope.launch { sessionManager.restore() }
+        viewModelScope.launch {
+            sessionManager.restore()
+            if (sessionManager.state.value == AuthUiState.SignedIn) pruefeVertragslaufzeiten()
+        }
+    }
+
+    /** Lädt die Vertragstabelle und warnt, sobald ein Vertrag höchstens 2 ZAT läuft. */
+    private fun pruefeVertragslaufzeiten() {
+        viewModelScope.launch {
+            val kurz = runCatching {
+                vertraegeKurzVorAuslauf(teamRepository.ladeVertraege())
+            }.getOrDefault(emptyList())
+            _vertragsWarnung.value = kurz
+        }
+    }
+
+    fun dismissVertragsWarnung() {
+        _vertragsWarnung.value = emptyList()
     }
 
     fun onEmailChange(value: String) {
@@ -58,7 +96,7 @@ class AppViewModel @Inject constructor(
             _loginError.value = null
             tokenStorage.lastEmail = email
             when (val result = sessionManager.login(email, password)) {
-                is LoginResult.Success -> Unit
+                is LoginResult.Success -> pruefeVertragslaufzeiten()
                 is LoginResult.Failure -> _loginError.value = result.message
             }
             _loggingIn.value = false
@@ -77,6 +115,7 @@ class AppViewModel @Inject constructor(
     }
 
     fun logout() {
+        _vertragsWarnung.value = emptyList()
         viewModelScope.launch { sessionManager.logout() }
     }
 }

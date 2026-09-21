@@ -131,22 +131,31 @@ fun AppRoot(
     onThemeCycle: () -> Unit = {},
 ) {
     val authState by viewModel.authState.collectAsStateWithLifecycle()
-    when (authState) {
-        AuthUiState.Restoring -> Box(Modifier.fillMaxSize())
-        AuthUiState.SignedOut -> LoginScreen(viewModel = viewModel)
-        AuthUiState.SignedIn -> MainScaffold(
-            onLogout = viewModel::logout,
-            themeDark = themeDark,
-            themeFollowsSystem = themeFollowsSystem,
-            onThemeCycle = onThemeCycle,
-        )
-        AuthUiState.SignedInDemo -> MainScaffold(
-            demo = true,
-            onLogout = viewModel::logout,
-            themeDark = themeDark,
-            themeFollowsSystem = themeFollowsSystem,
-            onThemeCycle = onThemeCycle,
-        )
+    val vertragsWarnung by viewModel.vertragsWarnung.collectAsStateWithLifecycle()
+    Box(Modifier.fillMaxSize()) {
+        when (authState) {
+            AuthUiState.Restoring -> Box(Modifier.fillMaxSize())
+            AuthUiState.SignedOut -> LoginScreen(viewModel = viewModel)
+            AuthUiState.SignedIn -> MainScaffold(
+                onLogout = viewModel::logout,
+                themeDark = themeDark,
+                themeFollowsSystem = themeFollowsSystem,
+                onThemeCycle = onThemeCycle,
+            )
+            AuthUiState.SignedInDemo -> MainScaffold(
+                demo = true,
+                onLogout = viewModel::logout,
+                themeDark = themeDark,
+                themeFollowsSystem = themeFollowsSystem,
+                onThemeCycle = onThemeCycle,
+            )
+        }
+        if (authState == AuthUiState.SignedIn && vertragsWarnung.isNotEmpty()) {
+            VertragsWarnungDialog(
+                vertraege = vertragsWarnung,
+                onDismiss = viewModel::dismissVertragsWarnung,
+            )
+        }
     }
 }
 
