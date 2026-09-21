@@ -37,6 +37,7 @@ private enum class ZatBereich { ZUSATZ, AUFSTELLUNG, AKTIONEN, EINSTELLUNGEN }
 
 @Composable
 fun ZatScreen(
+    onSpielerClick: (Long) -> Unit = {},
     viewModel: ZatViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -147,10 +148,12 @@ fun ZatScreen(
                     onPreiseSpeichern = zuzuViewModel::preiseSpeichern,
                     onToggleAuswahl = zuzuViewModel::toggleAuswahl,
                     onPhysioSchicken = zuzuViewModel::physioSchicken,
+                    onSpielerClick = onSpielerClick,
                 )
                 ZatBereich.AUFSTELLUNG -> ZugabgabeScreen(
                     viewModel = zugabgabeViewModel,
                     showModusToggle = false,
+                    onSpielerClick = onSpielerClick,
                 )
                 ZatBereich.AKTIONEN -> ZatElementeEditor(
                     uiState = aktionenState,

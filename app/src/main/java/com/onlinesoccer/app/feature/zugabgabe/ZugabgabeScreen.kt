@@ -111,6 +111,7 @@ fun ZugabgabeScreen(
     viewModel: ZugabgabeViewModel = hiltViewModel(),
     taktikViewModel: TaktikViewModel = hiltViewModel(),
     showModusToggle: Boolean = true,
+    onSpielerClick: (Long) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val taktikUiState by taktikViewModel.uiState.collectAsStateWithLifecycle()
@@ -175,6 +176,7 @@ fun ZugabgabeScreen(
                     onSetzeTorwart = viewModel::setzeAufTorwart,
                     onSetzeAufBank = viewModel::setzeAufBank,
                     onAktualisieren = viewModel::ladeAufstellung,
+                    onSpielerClick = onSpielerClick,
                 )
                 ZugabgabeModus.TAKTIK -> TaktikEditor(
                     uiState = taktikUiState,
@@ -208,6 +210,7 @@ private fun AufstellungAnsicht(
     onSetzeTorwart: (Long) -> Unit,
     onSetzeAufBank: (Long, Int) -> Unit,
     onAktualisieren: () -> Unit,
+    onSpielerClick: (Long) -> Unit = {},
 ) {
     var taktikBestaetigt by remember { mutableStateOf<String?>(null) }
     var zatBestaetigt by remember { mutableStateOf<String?>(null) }
@@ -275,6 +278,7 @@ private fun AufstellungAnsicht(
             onSetzeSlot = onSetzeKaderSlot,
             onSpeichern = { kaderBestaetigt = true },
             onLoeschen = { kaderLoeschenBestaetigt = true },
+            onSpielerClick = onSpielerClick,
         )
 
         Spacer(Modifier.height(12.dp))
@@ -555,6 +559,7 @@ private fun KaderZuordnung(
     onSetzeSlot: (Long, String) -> Unit,
     onSpeichern: () -> Unit,
     onLoeschen: () -> Unit,
+    onSpielerClick: (Long) -> Unit = {},
 ) {
     if (aufstellung.kaderSlots.isEmpty() || aufstellung.spieler.isEmpty()) {
         return

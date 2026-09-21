@@ -444,8 +444,8 @@ private fun AufstellungsVergleich(
             Text(gast ?: "Auswärtsteam", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, color = Color(0xFFFF1744))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-            Box(Modifier.weight(1f)) { FormationSpielfeld(heimAufstellung, markierterName, onSpielerKlick) }
-            Box(Modifier.weight(1f)) { FormationSpielfeld(gastAufstellung, markierterName, onSpielerKlick) }
+            Box(Modifier.weight(1f)) { FormationSpielfeld(heimAufstellung) }
+            Box(Modifier.weight(1f)) { FormationSpielfeld(gastAufstellung) }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
             Box(Modifier.weight(1f)) { SpielerListe(heimAufstellung, markierterName, onSpielerKlick) }
@@ -487,8 +487,6 @@ private fun Aufstellung(
 @Composable
 private fun FormationSpielfeld(
     aufstellung: BerichtAufstellung?,
-    markierterName: String? = null,
-    onSpielerKlick: (String) -> Unit = {},
 ) {
     val spieler = aufstellung?.startspieler.orEmpty()
     if (spieler.none { it.feldzeile != null && it.feldspalte != null }) {
@@ -536,22 +534,15 @@ private fun FormationSpielfeld(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 player?.let {
-                                    val markiert = it.name.lowercase() == markierterName
                                     Box(
                                         Modifier
                                             .sizeIn(minWidth = 18.dp, minHeight = 18.dp)
-                                            .background(markerColor(it.position), RoundedCornerShape(5.dp))
-                                            .border(
-                                                if (markiert) 2.dp else 0.dp,
-                                                MaterialTheme.colorScheme.onPrimary,
-                                                RoundedCornerShape(5.dp),
-                                            )
-                                            .clickable { onSpielerKlick(it.name.lowercase()) },
+                                            .background(markerColor(it.position), RoundedCornerShape(5.dp)),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Text(
                                             it.nummer ?: "?",
-                                            color = if (markiert) MaterialTheme.colorScheme.primary else Color.Black,
+                                            color = Color.Black,
                                             fontWeight = FontWeight.Bold,
                                             style = MaterialTheme.typography.labelSmall,
                                         )
@@ -572,23 +563,16 @@ private fun FormationSpielfeld(
                         contentAlignment = Alignment.Center,
                     ) {
                         if (column == 5) {
-                            val markiert = goalkeeper.name.lowercase() == markierterName
                             Box(
                                 Modifier
                                     .fillMaxSize()
                                     .padding(3.dp)
-                                    .background(markerColor(goalkeeper.position), RoundedCornerShape(5.dp))
-                                    .border(
-                                        if (markiert) 2.dp else 0.dp,
-                                        MaterialTheme.colorScheme.onPrimary,
-                                        RoundedCornerShape(5.dp),
-                                    )
-                                    .clickable { onSpielerKlick(goalkeeper.name.lowercase()) },
+                                    .background(markerColor(goalkeeper.position), RoundedCornerShape(5.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     goalkeeper.nummer ?: "T",
-                                    color = if (markiert) MaterialTheme.colorScheme.primary else Color.Black,
+                                    color = Color.Black,
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.labelSmall,
                                 )

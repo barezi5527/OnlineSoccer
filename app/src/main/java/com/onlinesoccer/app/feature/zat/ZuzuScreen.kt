@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.feature.zat
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ fun ZuzuZusatzInhalt(
     onPreiseSpeichern: () -> Unit,
     onToggleAuswahl: (Long) -> Unit,
     onPhysioSchicken: () -> Unit,
+    onSpielerClick: (Long) -> Unit = {},
 ) {
     when {
         uiState.ladend && !uiState.geladen && uiState.spieler.isEmpty() -> Box(
@@ -70,6 +72,7 @@ fun ZuzuZusatzInhalt(
                 uiState = uiState,
                 onToggleAuswahl = onToggleAuswahl,
                 onPhysioSchicken = onPhysioSchicken,
+                onSpielerClick = onSpielerClick,
             )
         }
     }
@@ -128,6 +131,7 @@ private fun PhysioKarte(
     uiState: ZuzuUiState,
     onToggleAuswahl: (Long) -> Unit,
     onPhysioSchicken: () -> Unit,
+    onSpielerClick: (Long) -> Unit = {},
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -144,7 +148,7 @@ private fun PhysioKarte(
                 )
             } else {
                 uiState.spieler.forEach { spieler ->
-                    PhysioZeile(spieler, uiState, onToggleAuswahl)
+                    PhysioZeile(spieler, uiState, onToggleAuswahl, onSpielerClick)
                 }
                 if (uiState.auswahl.isNotEmpty()) {
                     FilledTonalButton(
@@ -165,6 +169,7 @@ private fun PhysioZeile(
     spieler: ZuzuSpieler,
     uiState: ZuzuUiState,
     onToggleAuswahl: (Long) -> Unit,
+    onSpielerClick: (Long) -> Unit = {},
 ) {
     val fitFarbe = when {
         spieler.fit >= 90 -> Color(0xFF2E7D32)
@@ -181,7 +186,7 @@ private fun PhysioZeile(
         )
         Text(
             spieler.name,
-            Modifier.weight(1f),
+            Modifier.weight(1f).clickable { onSpielerClick(spieler.pid) },
             style = MaterialTheme.typography.bodySmall,
         )
         Text(

@@ -482,7 +482,15 @@ private fun MainScaffold(
                     },
                 )
             }
-            composable(Routes.ZAT) { ZatScreen() }
+            composable(Routes.ZAT) {
+                ZatScreen(
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
             composable(Routes.TRANSFERS) {
                 TransfersScreen(
                     onEintrag = { bereich ->
