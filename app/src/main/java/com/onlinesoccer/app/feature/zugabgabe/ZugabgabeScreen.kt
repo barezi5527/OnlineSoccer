@@ -582,7 +582,7 @@ private fun KaderZuordnung(
                 .padding(vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f).clickable { onSpielerClick(spieler.pid) }) {
                 Text(
                     buildString {
                         append(spieler.name)
