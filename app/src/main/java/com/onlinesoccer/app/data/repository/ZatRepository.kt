@@ -100,6 +100,9 @@ class ZatRepository @Inject constructor(
         fun selectedWert(name: String): Int? =
             doc.selectFirst("select[name=$name] option[selected]")?.attr("value")?.toIntOrNull()
 
+        fun optionen(name: String): List<Int> =
+            doc.select("select[name=$name] option").mapNotNull { it.attr("value").toIntOrNull() }
+
         val einnahmen = mutableListOf<ZatReportEinnahme>()
         val trainingserfolge = mutableListOf<ZatReportTraining>()
 
@@ -147,6 +150,8 @@ class ZatRepository @Inject constructor(
             saison = selectedWert("saison"),
             einnahmen = einnahmen,
             trainingserfolge = trainingserfolge,
+            zats = optionen("zat"),
+            saisons = optionen("saison"),
         )
     }
 

@@ -18,14 +18,22 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.core.ui.theme.PositionsBadge
-import com.onlinesoccer.app.data.model.ZatReport
 import com.onlinesoccer.app.data.model.ZatReportEinnahme
 import com.onlinesoccer.app.data.model.ZatReportTraining
 
@@ -71,12 +78,25 @@ fun ZatReportScreen(
             }
         }
 
-        uiState.report != null -> ZatReportInhalt(uiState.report!!, onClose, onSpielerClick)
+        uiState.report != null -> ZatReportInhalt(
+            uiState = uiState,
+            onClose = onClose,
+            onSpielerClick = onSpielerClick,
+            onSaisonWaehlen = viewModel::saisonWaehlen,
+            onZatWaehlen = viewModel::zatWaehlen,
+        )
     }
 }
 
 @Composable
-private fun ZatReportInhalt(report: ZatReport, onClose: () -> Unit, onSpielerClick: (Long) -> Unit) {
+private fun ZatReportInhalt(
+    uiState: ZatReportUiState,
+    onClose: () -> Unit,
+    onSpielerClick: (Long) -> Unit,
+    onSaisonWaehlen: (Int) -> Unit,
+    onZatWaehlen: (Int) -> Unit,
+) {
+    val report = requireNotNull(uiState.report)
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -91,21 +111,29 @@ private fun ZatReportInhalt(report: ZatReport, onClose: () -> Unit, onSpielerCli
                     Text("ZAT-Report", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     report.saison?.let {
                         Text(
-                            "Saison $it",
+                            "Saison $it · ZAT ${report.zat ?: "–"}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    }
-                }
-                if (report.zat != null || report.saison != null) {
-                    Text(
+                    } ?: Text(
                         "ZAT ${report.zat ?: "–"}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
+        }
+
+        item {
+            ZatReportFilter(
+                saisons = uiState.saisons,
+                zats = uiState.zats,
+                saison = uiState.ausgewaehlteSaison,
+                zat = uiState.ausgewaehlterZat,
+                ladend = uiState.ladend,
+                onSaisonWaehlen = onSaisonWaehlen,
+                onZatWaehlen = onZatWaehlen,
+            )
         }
 
         item { BerichtsAbschnittTitel("1. Einnahmen / Ausgaben") }
@@ -142,6 +170,64 @@ private fun ZatReportInhalt(report: ZatReport, onClose: () -> Unit, onSpielerCli
 @Composable
 private fun BerichtsAbschnittTitel(titel: String) {
     Text(titel, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+}
+
+@Composable
+private fun ZatReportFilter(
+    saisons: List<Int>,
+    zats: List<Int>,
+    saison: Int?,
+    zat: Int?,
+    ladend: Boolean,
+    onSaisonWaehlen: (Int) -> Unit,
+    onZatWaehlen: (Int) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterDropdown("Saison", saisons, saison, ladend, onSaisonWaehlen)
+            FilterDropdown("ZAT", zats, zat, ladend, onZatWaehlen)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterDropdown(
+    label: String,
+    optionen: List<Int>,
+    aktiverWert: Int?,
+    deaktiviert: Boolean,
+    onWaehlen: (Int) -> Unit,
+) {
+    var offen by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = offen,
+        onExpandedChange = { if (!deaktiviert) offen = it },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        OutlinedTextField(
+            value = aktiverWert?.toString() ?: "–",
+            onValueChange = {},
+            readOnly = true,
+            enabled = !deaktiviert,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = offen) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(),
+        )
+        ExposedDropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+            optionen.reversed().forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.toString()) },
+                    onClick = {
+                        offen = false
+                        onWaehlen(option)
+                    },
+                )
+            }
+        }
+    }
 }
 
 @Composable

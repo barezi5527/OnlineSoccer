@@ -9,6 +9,10 @@ data class ZatReport(
     val saison: Int?,
     val einnahmen: List<ZatReportEinnahme>,
     val trainingserfolge: List<ZatReportTraining>,
+    /** Im Formular der Seite wählbare ZATs (für die gewählte Saison). */
+    val zats: List<Int> = emptyList(),
+    /** Im Formular der Seite wählbare Saisons. */
+    val saisons: List<Int> = emptyList(),
 )
 
 /** Eine Zeile im Abschnitt „1. Einnahmen / Ausgaben“ (inkl. Gesamtsumme). */

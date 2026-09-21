@@ -46,6 +46,14 @@ class ZatRepositoryParseTest {
     }
 
     @Test
+    fun zatReport_liestWaehlbareZatsUndSaisonsAusFormular() {
+        val report = repo.parseZatReport(dump("zatreport_zat5"))
+        assertTrue("ZAT-Optionen vorhanden", report.zats.containsAll(listOf(1, 5, 6)))
+        assertTrue("Saison-Optionen vorhanden", report.saisons.containsAll(listOf(23, 24)))
+        assertEquals("aktuelle Saison ist markiert", 24, report.saisons.lastOrNull())
+    }
+
+    @Test
     fun zatReport_liestEinnahmenUndGesamtsumme() {
         val report = repo.parseZatReport(dump("zatreport_zat5"))
         val labels = report.einnahmen.map { it.label }
