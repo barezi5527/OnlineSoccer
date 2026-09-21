@@ -23,6 +23,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +46,7 @@ fun SpielervergleichScreen(
     viewModel: SpielervergleichViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var auswahlOffen by remember { mutableStateOf(true) }
 
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -50,16 +54,24 @@ fun SpielervergleichScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            StatistikHeader(
-                titel = "Spielervergleich",
-                untertitel = "Zwei Spieler direkt vergleichen",
-                onClose = onClose,
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatistikHeader(
+                    titel = "Spielervergleich",
+                    untertitel = "Zwei Spieler direkt vergleichen",
+                    onClose = onClose,
+                )
+                Spacer(Modifier.weight(1f))
+                StatistikFilterToggle(auswahlOffen) { auswahlOffen = !auswahlOffen }
+            }
         }
 
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (auswahlOffen) {
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     SpielerAuswahl(
                         label = "Spieler 1",
                         name = uiState.name1,
@@ -87,7 +99,7 @@ fun SpielervergleichScreen(
                         )
                     }
                     FilledTonalButton(
-                        onClick = viewModel::vergleichen,
+                        onClick = { viewModel.vergleichen(); auswahlOffen = false },
                         enabled = uiState.id1 != null && uiState.id2 != null && !uiState.ladendVergleich,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -104,6 +116,7 @@ fun SpielervergleichScreen(
                     }
                 }
             }
+        }
         }
 
         uiState.vergleich?.let { vergleich ->

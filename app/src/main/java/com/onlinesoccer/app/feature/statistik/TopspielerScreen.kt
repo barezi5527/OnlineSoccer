@@ -22,16 +22,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.TopspielerZeile
 
 private val Spalten = listOf(
-    StatistikFixSpalte("#", 30.dp, TextAlign.End),
-    StatistikFixSpalte("Team", 150.dp),
-    StatistikFixSpalte("Alt", 40.dp, TextAlign.End),
-    StatistikFixSpalte("Pos", 44.dp),
-    StatistikFixSpalte("Nat", 46.dp),
-    StatistikFixSpalte("Wert", 90.dp, TextAlign.End),
+    StatistikFixSpalte("#", 26.dp, TextAlign.End),
+    StatistikFixSpalte("Team", 136.dp),
+    StatistikFixSpalte("Alt", 36.dp, TextAlign.End),
+    StatistikFixSpalte("Pos", 40.dp),
+    StatistikFixSpalte("Nat", 42.dp),
+    StatistikFixSpalte("Wert", 84.dp, TextAlign.End),
 )
 
 private val PinKopf = "Spieler"
-private const val PinBreiteDp = 150
+private const val PinBreiteDp = 140
 
 /** Beste Spieler nach Land/Liga/Statistik/Position wie `osneu/statspieler`. */
 @Composable
@@ -86,10 +86,10 @@ fun TopspielerScreen(
                             StatistikSpielerZelle(zeile.name, zeile.position, zeile.pid, onSpielerClick)
                         },
                         zellen = {
-                            StatistikFixZelle(Spalten[0]) { Text(zeile.nr?.toString() ?: "–") }
+                            StatistikFixZelle(Spalten[0]) { StatistikZahl(zeile.nr?.toString() ?: "–") }
                             StatistikFixZelle(Spalten[1]) { StatistikTeamZelle(zeile.team, zeile.teamId, onTeamClick) }
-                            StatistikFixZelle(Spalten[2]) { Text(zeile.alter) }
-                            StatistikFixZelle(Spalten[3]) { Text(zeile.position?.ifEmpty { "–" }?.uppercase() ?: "–") }
+                            StatistikFixZelle(Spalten[2]) { StatistikZahl(zeile.alter) }
+                            StatistikFixZelle(Spalten[3]) { StatistikZahl(zeile.position?.ifEmpty { "–" }?.uppercase() ?: "–") }
                             StatistikFixZelle(Spalten[4]) { FlaggenText(zeile.nation) }
                             StatistikFixZelle(Spalten[5]) { StatistikWert(zeile.wert) }
                         },

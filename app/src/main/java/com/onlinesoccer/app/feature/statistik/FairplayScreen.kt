@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,16 +18,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.FairplayZeile
 
 private val Spalten = listOf(
-    StatistikFixSpalte("#", 30.dp, TextAlign.End),
-    StatistikFixSpalte("Gelb", 42.dp, TextAlign.End),
-    StatistikFixSpalte("G/R", 46.dp, TextAlign.End),
-    StatistikFixSpalte("Rot", 40.dp, TextAlign.End),
-    StatistikFixSpalte("Sp.", 46.dp, TextAlign.End),
-    StatistikFixSpalte("Pkt", 52.dp, TextAlign.End),
+    StatistikFixSpalte("#", 26.dp, TextAlign.End),
+    StatistikFixSpalte("Gelb", 38.dp, TextAlign.End),
+    StatistikFixSpalte("G/R", 42.dp, TextAlign.End),
+    StatistikFixSpalte("Rot", 38.dp, TextAlign.End),
+    StatistikFixSpalte("Sp.", 42.dp, TextAlign.End),
+    StatistikFixSpalte("Pkt", 46.dp, TextAlign.End),
 )
 
 private val PinKopf = "Team"
-private const val PinBreiteDp = 170
+private const val PinBreiteDp = 160
 
 /** Fairplaytabelle der Erstligisten (`fpt.php`). */
 @Composable
@@ -61,14 +62,15 @@ fun FairplayScreen(
                             StatistikTeamZelle(zeile.team, zeile.teamId, onTeamClick)
                         },
                         zellen = {
-                            StatistikFixZelle(Spalten[0]) { Text(zeile.nr?.toString() ?: "–") }
-                            StatistikFixZelle(Spalten[1]) { Text(zeile.gelb?.toString() ?: "–") }
-                            StatistikFixZelle(Spalten[2]) { Text(zeile.gelbRot?.toString() ?: "–") }
-                            StatistikFixZelle(Spalten[3]) { Text(zeile.rot?.toString() ?: "–") }
-                            StatistikFixZelle(Spalten[4]) { Text(zeile.spiele?.toString() ?: "–") }
+                            StatistikFixZelle(Spalten[0]) { StatistikZahl(zeile.nr?.toString() ?: "–") }
+                            StatistikFixZelle(Spalten[1]) { StatistikZahl(zeile.gelb?.toString() ?: "–") }
+                            StatistikFixZelle(Spalten[2]) { StatistikZahl(zeile.gelbRot?.toString() ?: "–") }
+                            StatistikFixZelle(Spalten[3]) { StatistikZahl(zeile.rot?.toString() ?: "–") }
+                            StatistikFixZelle(Spalten[4]) { StatistikZahl(zeile.spiele?.toString() ?: "–") }
                             StatistikFixZelle(Spalten[5]) {
                                 Text(
                                     zeile.punkte?.let { it.toString().replace('.', ',') } ?: "–",
+                                    style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
                                 )
                             }

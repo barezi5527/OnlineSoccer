@@ -2,7 +2,6 @@ package com.onlinesoccer.app.feature.statistik
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
@@ -27,6 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -39,13 +40,15 @@ import com.onlinesoccer.app.data.model.SucheAttribut
 import com.onlinesoccer.app.data.model.SucheKriterium
 
 private val Spalten = listOf(
-    StatistikSpalte("#", 0.6f, TextAlign.End),
-    StatistikSpalte("Spieler", 2.2f),
-    StatistikSpalte("Alter", 0.9f, TextAlign.End),
-    StatistikSpalte("Pos", 0.8f),
-    StatistikSpalte("Nat", 0.9f),
-    StatistikSpalte("Verein", 1.8f),
+    StatistikFixSpalte("#", 26.dp, TextAlign.End),
+    StatistikFixSpalte("Alter", 46.dp, TextAlign.End),
+    StatistikFixSpalte("Pos", 44.dp),
+    StatistikFixSpalte("Nat", 46.dp),
+    StatistikFixSpalte("Verein", 132.dp),
 )
+
+private val PinKopf = "Spieler"
+private const val PinBreiteDp = 170
 
 /** Spielersuche (`osneu/spielersuche`) – Basis-Filter, Kriterien, gespeicherte Abfragen. */
 @Composable
@@ -56,73 +59,90 @@ fun SpielersucheScreen(
     viewModel: SpielersucheViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var filterOffen by remember { mutableStateOf(false) }
 
     when {
         uiState.ladend -> StatistikLaden()
         uiState.fehler != null -> StatistikFehler(uiState.fehler!!, viewModel::ladeOptionen)
-        else -> LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        else -> Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 StatistikHeader(
                     titel = "Spielersuche",
                     untertitel = "Nachname, Attribute und Transferdetails filtern",
                     onClose = onClose,
                 )
+                Spacer(Modifier.weight(1f))
+                StatistikFilterToggle(filterOffen) { filterOffen = !filterOffen }
             }
 
-            item { AbfragenKarte(uiState, viewModel) }
+            if (filterOffen) {
+                AbfragenKarte(uiState, viewModel, onFilterGesetzt = { filterOffen = false })
+                BasisFilterKarte(uiState, viewModel, onFilterGesetzt = { filterOffen = false })
+                KriterienKarte(uiState, viewModel)
+            }
 
-            item { BasisFilterKarte(uiState, viewModel) }
-
-            item { KriterienKarte(uiState, viewModel) }
-
-            item {
-                FilledTonalButton(
-                    onClick = viewModel::suchen,
-                    enabled = !uiState.sucht,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (uiState.sucht) {
-                        CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Suche läuft …")
-                    } else {
-                        Text("Suchen")
-                    }
+            FilledTonalButton(
+                onClick = { viewModel.suchen(); filterOffen = false },
+                enabled = !uiState.sucht,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (uiState.sucht) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Suche läuft …")
+                } else {
+                    Text("Suchen")
                 }
             }
 
             uiState.ergebnis?.let { ergebnis ->
-                item {
-                    Text(
-                        "Anzahl der gefundenen Spieler: ${ergebnis.anzahl}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                item {
-                    StatistikTabelle(spalten = Spalten, zeilen = ergebnis.zeilen.map { zeile ->
-                        {
-                            StatistikSpalte(Spalten[0]) { Text(zeile.nr?.toString() ?: "–") }
-                            StatistikSpalte(Spalten[1]) { StatistikSpielerZelle(zeile.name, zeile.position, zeile.pid, onSpielerClick) }
-                            StatistikSpalte(Spalten[2]) { Text(zeile.alter) }
-                            StatistikSpalte(Spalten[3]) { Text(zeile.position?.uppercase() ?: "–") }
-                            StatistikSpalte(Spalten[4]) { FlaggenText(zeile.nation) }
-                            StatistikSpalte(Spalten[5]) { StatistikTeamZelle(zeile.team, zeile.teamId, onTeamClick) }
-                        }
-                    })
-                }
+                Text(
+                    "Anzahl der gefundenen Spieler: ${ergebnis.anzahl}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                StatistikScrollTabelle(
+                    pinKopf = PinKopf,
+                    pinBreite = PinBreiteDp.dp,
+                    spalten = Spalten,
+                    zeilen = ergebnis.zeilen.map { zeile ->
+                        StatistikScrollZeile(
+                            pin = {
+                                StatistikSpielerZelle(zeile.name, zeile.position, zeile.pid, onSpielerClick)
+                            },
+                            zellen = {
+                                StatistikFixZelle(Spalten[0]) { StatistikZahl(zeile.nr?.toString() ?: "–") }
+                                StatistikFixZelle(Spalten[1]) { StatistikZahl(zeile.alter) }
+                                StatistikFixZelle(Spalten[2]) { StatistikZahl(zeile.position?.uppercase() ?: "–") }
+                                StatistikFixZelle(Spalten[3]) { FlaggenText(zeile.nation) }
+                                StatistikFixZelle(Spalten[4]) { StatistikTeamZelle(zeile.team, zeile.teamId, onTeamClick) }
+                            },
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun AbfragenKarte(uiState: SpielersucheUiState, viewModel: SpielersucheViewModel) {
+private fun AbfragenKarte(
+    uiState: SpielersucheUiState,
+    viewModel: SpielersucheViewModel,
+    onFilterGesetzt: () -> Unit,
+) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             StatistikDropdown(
@@ -131,7 +151,7 @@ private fun AbfragenKarte(uiState: SpielersucheUiState, viewModel: SpielersucheV
                     uiState.abfragen.map { LaenderOption(it.id.toString(), it.name) },
                 wert = uiState.ausgewaehlteAbfrageId.toString(),
                 ladend = false,
-                onWaehlen = { id -> viewModel.abfrageLaden(id.toIntOrNull() ?: 0) },
+                onWaehlen = { id -> viewModel.abfrageLaden(id.toIntOrNull() ?: 0); onFilterGesetzt() },
             )
             OutlinedTextField(
                 value = uiState.abfrageName,
@@ -162,12 +182,16 @@ private fun AbfragenKarte(uiState: SpielersucheUiState, viewModel: SpielersucheV
 }
 
 @Composable
-private fun BasisFilterKarte(uiState: SpielersucheUiState, viewModel: SpielersucheViewModel) {
+private fun BasisFilterKarte(
+    uiState: SpielersucheUiState,
+    viewModel: SpielersucheViewModel,
+    onFilterGesetzt: () -> Unit,
+) {
     StatistikFilterCard {
-        StatistikDropdown("Land", uiState.optionen.laender, uiState.basis.landId.toString(), false, viewModel::landWaehlen)
-        StatistikDropdown("Liga", uiState.optionen.ligas, uiState.basis.ligaId.toString(), false, viewModel::ligaWaehlen)
-        StatistikDropdown("Nation", uiState.optionen.nationen, uiState.basis.nationId.toString(), false, viewModel::nationWaehlen)
-        StatistikDropdown("Anzeige", uiState.optionen.anzeigen, uiState.basis.anzeigeId.toString(), false, viewModel::anzeigeWaehlen)
+        StatistikDropdown("Land", uiState.optionen.laender, uiState.basis.landId.toString(), false) { viewModel.landWaehlen(it); onFilterGesetzt() }
+        StatistikDropdown("Liga", uiState.optionen.ligas, uiState.basis.ligaId.toString(), false) { viewModel.ligaWaehlen(it); onFilterGesetzt() }
+        StatistikDropdown("Nation", uiState.optionen.nationen, uiState.basis.nationId.toString(), false) { viewModel.nationWaehlen(it); onFilterGesetzt() }
+        StatistikDropdown("Anzeige", uiState.optionen.anzeigen, uiState.basis.anzeigeId.toString(), false) { viewModel.anzeigeWaehlen(it); onFilterGesetzt() }
     }
 }
 

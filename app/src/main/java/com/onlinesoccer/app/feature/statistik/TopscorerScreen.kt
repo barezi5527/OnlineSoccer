@@ -22,18 +22,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.TopscorerZeile
 
 private val Spalten = listOf(
-    StatistikFixSpalte("#", 30.dp, TextAlign.End),
-    StatistikFixSpalte("Alt", 40.dp, TextAlign.End),
-    StatistikFixSpalte("Sk", 48.dp, TextAlign.End),
-    StatistikFixSpalte("Opt", 48.dp, TextAlign.End),
-    StatistikFixSpalte("Nat", 46.dp),
-    StatistikFixSpalte("Verein", 140.dp),
-    StatistikFixSpalte("Liga", 96.dp),
-    StatistikFixSpalte("Wert", 84.dp, TextAlign.End),
+    StatistikFixSpalte("#", 26.dp, TextAlign.End),
+    StatistikFixSpalte("Alt", 36.dp, TextAlign.End),
+    StatistikFixSpalte("Sk", 40.dp, TextAlign.End),
+    StatistikFixSpalte("Opt", 40.dp, TextAlign.End),
+    StatistikFixSpalte("Nat", 42.dp),
+    StatistikFixSpalte("Verein", 124.dp),
+    StatistikFixSpalte("Liga", 84.dp),
+    StatistikFixSpalte("Wert", 78.dp, TextAlign.End),
 )
 
 private val PinKopf = "Spieler"
-private const val PinBreiteDp = 150
+private const val PinBreiteDp = 140
 
 /** Topscorer-Liste (`topscorer.php`) – immer nur die Top 100. */
 @Composable
@@ -91,13 +91,13 @@ fun TopscorerScreen(
                             StatistikSpielerZelle(zeile.name, zeile.position, zeile.pid, onSpielerClick)
                         },
                         zellen = {
-                            StatistikFixZelle(Spalten[0]) { Text(zeile.nr?.toString() ?: "–") }
-                            StatistikFixZelle(Spalten[1]) { Text(zeile.alter) }
-                            StatistikFixZelle(Spalten[2]) { Text(zeile.skill) }
-                            StatistikFixZelle(Spalten[3]) { Text(zeile.opti) }
+                            StatistikFixZelle(Spalten[0]) { StatistikZahl(zeile.nr?.toString() ?: "–") }
+                            StatistikFixZelle(Spalten[1]) { StatistikZahl(zeile.alter) }
+                            StatistikFixZelle(Spalten[2]) { StatistikZahl(zeile.skill) }
+                            StatistikFixZelle(Spalten[3]) { StatistikZahl(zeile.opti) }
                             StatistikFixZelle(Spalten[4]) { FlaggenText(zeile.land) }
                             StatistikFixZelle(Spalten[5]) { StatistikTeamZelle(zeile.team, zeile.teamId, onTeamClick) }
-                            StatistikFixZelle(Spalten[6]) { Text(zeile.liga) }
+                            StatistikFixZelle(Spalten[6]) { StatistikZahl(zeile.liga) }
                             StatistikFixZelle(Spalten[7]) { StatistikWert(zeile.wert) }
                         },
                     )

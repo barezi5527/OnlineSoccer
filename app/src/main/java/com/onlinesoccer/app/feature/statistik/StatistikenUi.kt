@@ -3,6 +3,8 @@ package com.onlinesoccer.app.feature.statistik
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
@@ -38,15 +39,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -327,8 +332,20 @@ fun StatistikTeamZelle(
 fun StatistikWert(wert: String) {
     Text(
         wert,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Medium,
         textAlign = TextAlign.End,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
+
+/** Kompakte Zahl innerhalb einer Tabellenzelle. */
+@Composable
+fun StatistikZahl(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
@@ -375,6 +392,9 @@ private val StatistikScrollZeilenHoehe = 40.dp
  * Statistik-Tabelle mit fixierter Kopfzeile (bleibt beim Vertikal-Scroll stehen)
  * und fixierter erster Spalte (bleibt beim Horizontal-Scroll stehen).
  * Die restlichen Spalten scrollen horizontal, die Zeilen vertikal.
+ *
+ * Fixierung über separate Zustände ([mutableFloatStateOf]) statt direkter
+ * ScrollState-Lesarten – so bleibt der Sync auch bei vielen Zeilen korrekt.
  */
 @Composable
 fun StatistikScrollTabelle(
@@ -384,10 +404,24 @@ fun StatistikScrollTabelle(
     zeilen: List<StatistikScrollZeile>,
     modifier: Modifier = Modifier,
 ) {
-    val vertikal = rememberScrollState()
-    val horizontal = rememberScrollState()
+    val hScroll = rememberScrollState()
+    val listState = rememberLazyListState()
     val flaeche = MaterialTheme.colorScheme.surfaceContainerLow
     val zellenBreite = spalten.fold(0.dp) { summe, spalte -> summe + spalte.breite }
+    val zeilenHoehe = StatistikScrollZeilenHoehe
+    val density = LocalDensity.current
+    val zeilenHoehePx = with(density) { zeilenHoehe.toPx() }
+
+    var pinX by remember { mutableFloatStateOf(0f) }
+    var pinY by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (index, offset) -> pinY = -(index * zeilenHoehePx + offset) }
+    }
+    LaunchedEffect(hScroll) {
+        snapshotFlow { hScroll.value }.collect { wert -> pinX = -wert.toFloat() }
+    }
 
     Card(
         modifier,
@@ -410,7 +444,7 @@ fun StatistikScrollTabelle(
                     Row(
                         Modifier
                             .width(zellenBreite)
-                            .graphicsLayer { translationX = -horizontal.value.toFloat() },
+                            .graphicsLayer { translationX = pinX },
                     ) {
                         spalten.forEach { spalte -> StatistikScrollSpaltenKopf(spalte) }
                     }
@@ -423,43 +457,60 @@ fun StatistikScrollTabelle(
                     .fillMaxWidth()
                     .clipToBounds(),
             ) {
-                Row(Modifier.fillMaxSize()) {
-                    Box(
-                        Modifier
-                            .width(pinBreite)
-                            .fillMaxHeight()
-                            .background(flaeche)
-                            .clipToBounds()
-                            .graphicsLayer { translationY = -vertikal.value.toFloat() },
-                    ) {
-                        Column(Modifier.fillMaxWidth()) {
-                            zeilen.forEach { z ->
-                                Box(
-                                    Modifier
-                                        .width(pinBreite)
-                                        .height(StatistikScrollZeilenHoehe),
-                                    contentAlignment = Alignment.CenterStart,
-                                ) { z.pin() }
+                if (zeilen.isEmpty()) {
+                    Text(
+                        "Keine Treffer.",
+                        Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    Row(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier
+                                .width(pinBreite)
+                                .fillMaxHeight()
+                                .background(flaeche)
+                                .clipToBounds(),
+                        ) {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .graphicsLayer { translationY = pinY },
+                            ) {
+                                zeilen.forEach { z ->
+                                    Box(
+                                        Modifier
+                                            .width(pinBreite)
+                                            .height(zeilenHoehe),
+                                        contentAlignment = Alignment.CenterStart,
+                                    ) { z.pin() }
+                                }
                             }
                         }
-                    }
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                    ) {
-                        Column(
+                        Box(
                             Modifier
-                                .fillMaxSize()
-                                .verticalScroll(vertikal)
-                                .horizontalScroll(horizontal),
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clipToBounds(),
                         ) {
-                            zeilen.forEach { z ->
-                                Row(
-                                    Modifier
+                            Row(Modifier.horizontalScroll(hScroll)) {
+                                LazyColumn(
+                                    state = listState,
+                                    modifier = Modifier
                                         .width(zellenBreite)
-                                        .height(StatistikScrollZeilenHoehe),
-                                ) { z.zellen() }
+                                        .fillMaxHeight(),
+                                ) {
+                                    items(count = zeilen.size) { index ->
+                                        Row(
+                                            Modifier
+                                                .width(zellenBreite)
+                                                .height(zeilenHoehe),
+                                        ) {
+                                            zeilen[index].zellen()
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
