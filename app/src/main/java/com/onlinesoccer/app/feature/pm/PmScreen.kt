@@ -133,13 +133,26 @@ fun PmScreen(
                 Text("Keine Nachrichten.")
             }
 
-            else -> LazyColumn(
-                Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(uiState.liste, key = { it.id }) { nachricht ->
-                    PmZeile(nachricht = nachricht, onOpen = { viewModel.oeffne(nachricht.id) })
+            else -> {
+                val posteingang = uiState.liste.filter { it.ausgehend.not() }
+                val gesendete = uiState.liste.filter { it.ausgehend }
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (posteingang.isNotEmpty()) {
+                        item(key = "header-eingang") { AbschnittHeader("Posteingang") }
+                        items(posteingang, key = { it.id }) { nachricht ->
+                            PmZeile(nachricht = nachricht, onOpen = { viewModel.oeffne(nachricht.id) })
+                        }
+                    }
+                    if (gesendete.isNotEmpty()) {
+                        item(key = "header-ausgang") { AbschnittHeader("Gesendete Nachrichten") }
+                        items(gesendete, key = { it.id }) { nachricht ->
+                            PmZeile(nachricht = nachricht, onOpen = { viewModel.oeffne(nachricht.id) })
+                        }
+                    }
                 }
             }
         }
@@ -155,6 +168,17 @@ fun PmScreen(
             dismissButton = { TextButton(onClick = { loeschenBestaetigen = false }) { Text("Abbrechen") } },
         )
     }
+}
+
+@Composable
+private fun AbschnittHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
+    )
 }
 
 @Composable

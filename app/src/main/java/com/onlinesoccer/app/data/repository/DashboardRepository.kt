@@ -106,6 +106,11 @@ class DashboardRepository @Inject constructor(
         val zat = Regex("ZAT\\s+(\\d+)").find(zatText.orEmpty())?.groupValues?.get(1)
         val zatDatum = zatText?.substringAfter("liegt auf ")?.trim()
 
+        val jugendHinweis = doc.selectFirst("a[href*=ju.php]")
+            ?.text()
+            ?.takeIf { it.contains("Jugendspieler", ignoreCase = true) && it.contains("verlassen", ignoreCase = true) }
+            ?.trim()
+
         fun stat(label: String): String? {
             val statsRow = doc.selectFirst("td:matchesOwn(^Logins\\s*$)")?.parent() ?: return null
             val labels = statsRow.children().map { it.ownText().trim() }
@@ -180,6 +185,7 @@ class DashboardRepository @Inject constructor(
             rows = rows,
             teamLogoUrl = teamLogoUrl,
             forumUrl = forumUrl,
+            jugendHinweis = jugendHinweis,
         )
     }
 

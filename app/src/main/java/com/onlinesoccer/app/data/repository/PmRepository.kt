@@ -35,6 +35,12 @@ class PmRepository @Inject constructor(
         parseListe(html)
     }
 
+    /** Anzahl ungelesener Nachrichten im Posteingang (für den Briefumschlag-Badge). */
+    suspend fun ungeleseneAnzahl(): Int = withContext(Dispatchers.IO) {
+        val html = get("osneu/pm") ?: return@withContext 0
+        parseListe(html).count { it.ausgehend.not() && it.gelesen.not() }
+    }
+
     suspend fun lesen(pmId: Long): PmDetail = withContext(Dispatchers.IO) {
         val html = get("osneu/pm/read/$pmId")
             ?: throw IOException("Nachricht konnte nicht geladen werden.")
@@ -118,7 +124,7 @@ class PmRepository @Inject constructor(
             if (postausgang) {
                 result.putIfAbsent(
                     id,
-                    PmNachricht(id, sender = null, empfänger = partner, betreff = betreff, datum = datum, gelesen = true),
+                    PmNachricht(id, sender = null, empfänger = partner, betreff = betreff, datum = datum, gelesen = true, ausgehend = true),
                 )
             } else {
                 result.putIfAbsent(

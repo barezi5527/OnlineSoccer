@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -159,6 +161,7 @@ fun AppRoot(
             AuthUiState.Restoring -> Box(Modifier.fillMaxSize())
             AuthUiState.SignedOut -> LoginScreen(viewModel = viewModel)
             AuthUiState.SignedIn -> MainScaffold(
+                appViewModel = viewModel,
                 onLogout = viewModel::logout,
                 themeDark = themeDark,
                 themeFollowsSystem = themeFollowsSystem,
@@ -166,6 +169,7 @@ fun AppRoot(
             )
             AuthUiState.SignedInDemo -> MainScaffold(
                 demo = true,
+                appViewModel = viewModel,
                 onLogout = viewModel::logout,
                 themeDark = themeDark,
                 themeFollowsSystem = themeFollowsSystem,
@@ -242,7 +246,7 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.LEIH_UEBERSICHT -> "Leihspieler Übersicht"
         Routes.TRANSFER_STATUS -> "Transferstatus"
         Routes.LETZTE_AKTIONEN -> LetzteAktionenArt.vonRouteId(art.orEmpty())?.titel ?: "Letzte Transfers"
-        Routes.STATISTIKEN -> "Statistiken"
+        Routes.STATISTIKEN -> "Statistiken · Beta"
         Routes.STATISTIK_TOPSCORER -> "Topscorer"
         Routes.STATISTIK_TOP_SPIELER -> "Top-Spieler"
         Routes.STATISTIK_TOP_TEAMS -> "Top-Teams"
@@ -261,6 +265,7 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
 @Composable
 private fun MainScaffold(
     demo: Boolean = false,
+    appViewModel: AppViewModel,
     onLogout: () -> Unit,
     themeDark: Boolean,
     themeFollowsSystem: Boolean,
@@ -270,6 +275,16 @@ private fun MainScaffold(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     var dashboardRefreshTrigger by remember { mutableStateOf(0) }
+    val ungeleseneNachrichten by appViewModel.ungeleseneNachrichten.collectAsStateWithLifecycle()
+    var letzteRoute by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(currentRoute) {
+        val vorher = letzteRoute
+        letzteRoute = currentRoute
+        if (vorher == Routes.NACHRICHTEN && currentRoute != Routes.NACHRICHTEN) {
+            appViewModel.aktualisiereUngelesene()
+        }
+    }
 
     fun parseSid(sid: String?): String? = sid?.takeIf { it.isNotBlank() }
 
@@ -328,11 +343,22 @@ private fun MainScaffold(
                             navController.navigate(Routes.NACHRICHTEN) {
                                 launchSingleTop = true
                             }
+                            appViewModel.aktualisiereUngelesene()
                         }) {
-                            Icon(
-                                imageVector = Icons.Filled.MailOutline,
-                                contentDescription = "Nachrichten",
-                            )
+                            BadgedBox(
+                                badge = {
+                                    if (ungeleseneNachrichten > 0) {
+                                        Badge {
+                                            Text(ungeleseneNachrichten.toString())
+                                        }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.MailOutline,
+                                    contentDescription = "Nachrichten",
+                                )
+                            }
                         }
                     }
                     IconButton(onClick = onLogout) {

@@ -17,6 +17,11 @@ data class DashboardData(
     val rows: List<LabeledValue>,
     val teamLogoUrl: String? = null,
     val forumUrl: String? = null,
+    /**
+     * Warnhinweis des Managerbüros, wenn ein Jugendspieler bei der nächsten
+     * Abrechnung den Verein verlässt (Text des `ju.php`-Links auf haupt.php).
+     */
+    val jugendHinweis: String? = null,
 ) {
     data class LabeledValue(val label: String, val value: String)
 

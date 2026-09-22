@@ -49,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.core.ui.theme.trikotFarbe
 import com.onlinesoccer.app.data.model.SpielerKarte
+import com.onlinesoccer.app.data.model.TeamTrainer
 
 /** Spielerkarte (wie das Spielerprofil auf der Website, `sp.php`). */
 @Composable
@@ -58,6 +59,8 @@ fun SpielerkarteScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val bietDialog by viewModel.bietDialog.collectAsStateWithLifecycle()
+    val trainerNachricht by viewModel.trainerNachricht.collectAsStateWithLifecycle()
+    var trainerDialog by remember { mutableStateOf<TeamTrainer.Besetzt?>(null) }
 
     when {
         uiState.ladend -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -85,6 +88,7 @@ fun SpielerkarteScreen(
                 onClose = onClose,
                 bietenMoeglich = uiState.bietenMoeglich,
                 onBietenKlick = viewModel::onBietenKlick,
+                onTrainerKlick = { trainerDialog = it },
             )
         }
     }
@@ -94,6 +98,18 @@ fun SpielerkarteScreen(
         onBestatigen = viewModel::gebotAbgeben,
         onAbbrechen = viewModel::bietDialogSchliessen,
     )
+
+    trainerDialog?.let { trainer ->
+        TrainerNachrichtDialog(
+            trainer = trainer,
+            zustand = trainerNachricht,
+            onDismiss = {
+                trainerDialog = null
+                viewModel.trainerNachrichtReset()
+            },
+            onSenden = { text -> viewModel.sendeTrainerNachricht(trainer.name, trainer.id, text) },
+        )
+    }
 }
 
 @Composable
@@ -179,6 +195,7 @@ private fun KartenAnsicht(
     onClose: () -> Unit,
     bietenMoeglich: Boolean,
     onBietenKlick: () -> Unit,
+    onTrainerKlick: (TeamTrainer.Besetzt) -> Unit,
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -190,12 +207,14 @@ private fun KartenAnsicht(
                 IconButton(onClick = onClose) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
                 }
-                Text(
-                    "Spielerkarte",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(Modifier.weight(1f))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Spielerkarte",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    TrainerHeaderZeile(karte.trainer, onKlick = onTrainerKlick)
+                }
                 if (bietenMoeglich) {
                     FilledTonalButton(onClick = onBietenKlick) {
                         Text("Bieten")

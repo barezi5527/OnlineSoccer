@@ -61,7 +61,7 @@ fun StatistikenScreen(
                 }
                 Column(Modifier.padding(start = 4.dp)) {
                     Text(
-                        "Statistiken",
+                        "Statistiken · Beta",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )

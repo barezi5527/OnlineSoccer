@@ -36,6 +36,12 @@ enum class AuthUiState {
 sealed interface LoginResult {
     data object Success : LoginResult
     data class Failure(val message: String) : LoginResult
+
+    /**
+     * Die Website ist nicht erreichbar: Timeout/Verbindungsfehler oder
+     * HTTP 5xx – z. B. weil ein ZAT-Spieltag läuft oder eine Störung vorliegt.
+     */
+    data object ServerUnavailable : LoginResult
 }
 
 /**
@@ -60,7 +66,11 @@ class SessionManager @Inject constructor(
             return
         }
         _state.value = AuthUiState.Restoring
-        _state.value = if (verifySession()) AuthUiState.SignedIn else AuthUiState.SignedOut
+        _state.value = if (verifySession() == VerifyResult.Ok) {
+            AuthUiState.SignedIn
+        } else {
+            AuthUiState.SignedOut
+        }
     }
 
     suspend fun login(email: String, password: String): LoginResult {
@@ -81,23 +91,31 @@ class SessionManager @Inject constructor(
             try {
                 var httpOk = false
                 var httpError: String? = null
+                var serverDown = false
                 client.newCall(request).execute().use { response ->
-                    val bytes = response.body?.bytes()
-                    if (bytes != null && LoginErrorTexts.matches(bytes)) {
-                        httpError = "Username oder Passwort ist falsch."
-                    } else if (!response.isSuccessful) {
-                        httpError = "Serverfehler (HTTP ${response.code})"
-                    } else {
-                        httpOk = true
+                    when {
+                        response.code >= 500 -> serverDown = true
+                        LoginErrorTexts.matches(response.body?.bytes() ?: ByteArray(0)) ->
+                            httpError = "Username oder Passwort ist falsch."
+                        !response.isSuccessful -> httpError = "Serverfehler (HTTP ${response.code})"
+                        else -> httpOk = true
                     }
                 }
-                if (httpOk && verifySession()) {
-                    LoginResult.Success
-                } else {
-                    LoginResult.Failure(httpError ?: "Login fehlgeschlagen – bitte erneut versuchen.")
+                when {
+                    serverDown -> LoginResult.ServerUnavailable
+                    !httpOk ->
+                        LoginResult.Failure(
+                            httpError ?: "Login fehlgeschlagen – bitte erneut versuchen.",
+                        )
+                    else -> when (verifySession()) {
+                        VerifyResult.Ok -> LoginResult.Success
+                        VerifyResult.Network -> LoginResult.ServerUnavailable
+                        VerifyResult.None ->
+                            LoginResult.Failure("Login fehlgeschlagen – bitte erneut versuchen.")
+                    }
                 }
             } catch (e: IOException) {
-                LoginResult.Failure("Netzwerkfehler: ${e.message ?: "keine Verbindung"}")
+                LoginResult.ServerUnavailable
             }
         }
 
@@ -120,7 +138,7 @@ class SessionManager @Inject constructor(
      * (`imageField2`) erzeugt eine anonyme Demo-Session (kein `lc`-Token).
      * Danach zeigt der Server überall Demo-Daten („DemoTeam").
      */
-    suspend fun guestLogin(): Boolean {
+    suspend fun guestLogin(): LoginResult {
         _state.value = AuthUiState.Restoring
         val body = FormBody.Builder()
             .add("action", "os_login")
@@ -134,46 +152,81 @@ class SessionManager @Inject constructor(
             .post(body)
             .build()
 
-        val httpOk = withContext(Dispatchers.IO) {
+        val result: LoginResult = withContext(Dispatchers.IO) {
             try {
-                client.newCall(request).execute().use { it.isSuccessful }
+                val vorPruefung = client.newCall(request).execute().use { response ->
+                    when {
+                        response.code >= 500 -> LoginResult.ServerUnavailable
+                        !response.isSuccessful ->
+                            LoginResult.Failure("Serverfehler (HTTP ${response.code})")
+                        else -> null
+                    }
+                }
+                vorPruefung ?: when (verifyDemoSession()) {
+                    VerifyResult.Ok -> LoginResult.Success
+                    VerifyResult.Network -> LoginResult.ServerUnavailable
+                    VerifyResult.None ->
+                        LoginResult.Failure("Demo-Zugang konnte nicht hergestellt werden.")
+                }
             } catch (e: IOException) {
-                false
+                LoginResult.ServerUnavailable
             }
         }
 
-        if (httpOk && verifyDemoSession()) {
-            _state.value = AuthUiState.SignedInDemo
-            return true
+        _state.value = if (result is LoginResult.Success) {
+            AuthUiState.SignedInDemo
+        } else {
+            AuthUiState.SignedOut
         }
-        _state.value = AuthUiState.SignedOut
-        return false
+        return result
     }
 
     /** Prüft per Hauptseite, ob eine persönliche Session existiert. */
-    private suspend fun verifySession(): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun verifySession(): VerifyResult = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder().url(OsApi.MAIN).build()
             client.newCall(request).execute().use { response ->
-                val bytes = response.body?.bytes() ?: return@withContext false
-                SessionGuard.isPersonalView(bytes)
+                val bytes = response.body?.bytes() ?: return@withContext VerifyResult.None
+                if (response.code >= 500) {
+                    VerifyResult.Network
+                } else if (SessionGuard.isPersonalView(bytes)) {
+                    VerifyResult.Ok
+                } else {
+                    VerifyResult.None
+                }
             }
         } catch (e: IOException) {
-            false
+            VerifyResult.Network
         }
     }
 
     /** Prüft per Hauptseite, ob die Gast-Session die Demo-Ansicht liefert. */
-    private suspend fun verifyDemoSession(): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun verifyDemoSession(): VerifyResult = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder().url(OsApi.MAIN).build()
             client.newCall(request).execute().use { response ->
-                val bytes = response.body?.bytes() ?: return@withContext false
-                SessionGuard.isDemoView(bytes)
+                val bytes = response.body?.bytes() ?: return@withContext VerifyResult.None
+                if (response.code >= 500) {
+                    VerifyResult.Network
+                } else if (SessionGuard.isDemoView(bytes)) {
+                    VerifyResult.Ok
+                } else {
+                    VerifyResult.None
+                }
             }
         } catch (e: IOException) {
-            false
+            VerifyResult.Network
         }
+    }
+
+    /**
+     * Ergebnis einer Server-Prüfung: [Ok] = gewünschte Sitzung aktiv,
+     * [None] = nicht aktiv, [Network] = Website nicht erreichbar (5xx/Timeout).
+     */
+    private sealed interface VerifyResult {
+        data object Ok : VerifyResult
+        data object None : VerifyResult
+        data object Network : VerifyResult
     }
 
     private object LoginErrorTexts {

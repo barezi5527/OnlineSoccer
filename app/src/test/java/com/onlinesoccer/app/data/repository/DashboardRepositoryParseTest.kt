@@ -108,4 +108,23 @@ class DashboardRepositoryParseTest {
         assertTrue(labels.indexOf("Logins") in 0 until labels.indexOf("Kontostand"))
         assertEquals("2767", data.rows.first { it.label == "Logins" }.value)
     }
+
+    @Test
+    fun jugendHinweisWirdAusJuPhpLinkGelesen() {
+        val html = grundHtml + """
+            <tr>
+                <td class="STU"><b><a href="ju.php">Einer deiner Jugendspieler hat nächste Abrechnung Geburtstag und
+                    <br />wird bei der nächsten Abrechnung den Verein verlassen!</a></b></td>
+            </tr>
+        """.trimIndent()
+        val data = repo.parse(html)
+        assertTrue(data.jugendHinweis?.contains("Jugendspieler") == true)
+        assertTrue(data.jugendHinweis?.contains("verlassen") == true)
+    }
+
+    @Test
+    fun jugendHinweisIstLeerOhneWarnung() {
+        val data = repo.parse(grundHtml)
+        assertEquals(null, data.jugendHinweis)
+    }
 }

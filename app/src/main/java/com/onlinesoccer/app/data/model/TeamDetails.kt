@@ -116,12 +116,28 @@ data class Teaminfo(
     val zeilen: List<Pair<String, String>> = emptyList(),
 )
 
+/**
+ * Trainer/Manager eines Vereins. Nur ein aktiver Trainer (mit PM-Empfänger-ID)
+ * ist per Private Nachricht erreichbar; ein freies Team hat keinen Trainer.
+ */
+sealed interface TeamTrainer {
+    /** Der Verein hat einen aktiven Trainer (per PN erreichbar). */
+    data class Besetzt(val name: String, val id: Long) : TeamTrainer
+
+    /** Der Verein hat keinen aktiven Trainer („Team ist frei“). */
+    data object Frei : TeamTrainer
+
+    /** Trainer-Situation unbekannt (z. B. eigener Verein); nichts anzeigen. */
+    data object Unbekannt : TeamTrainer
+}
+
 /** Kader eines fremden Vereins (`st.php?c=<id>`). */
 data class FremdesTeam(
     val teamId: Long,
     val name: String = "",
     val liga: String = "",
     val kader: List<KaderSpieler> = emptyList(),
+    val trainer: TeamTrainer = TeamTrainer.Unbekannt,
 )
 
 /** Zusammengeführte Spielerkarte (Spielerprofil). */
@@ -137,6 +153,8 @@ data class SpielerKarte(
     val statistikSaison: Map<String, String> = emptyMap(),
     val statistikGesamt: Map<String, String> = emptyMap(),
     val profilRohtext: List<String> = emptyList(),
+    /** Trainer des zugehörigen Vereins (nur bei fremden Spielern ausgefüllt). */
+    val trainer: TeamTrainer = TeamTrainer.Unbekannt,
 ) {
     val sonderFaehigkeiten: List<SonderFaehigkeit> get() = kader?.sonderFaehigkeiten.orEmpty()
     val skill: Double get() = kader?.skill ?: (staerken["Skillschnitt"]?.toDoubleOrNull() ?: 0.0)

@@ -53,6 +53,25 @@ class PmRepositoryParseTest {
         assertEquals("Sender", liste.first { it.id == 10L }.sender)
         assertEquals("Empfänger", liste.first { it.id == 11L }.empfänger)
         assertTrue(!liste.first { it.id == 10L }.gelesen)
+        assertTrue(!liste.first { it.id == 10L }.ausgehend)
+        assertTrue(liste.first { it.id == 11L }.ausgehend)
+    }
+
+    @Test
+    fun ungeleseneAnzahlZaehltNurPosteingang() {
+        val anzahl = repo.parseListe(
+            """
+            <div id="tab_inbox">
+              <div class="pmrow pmunread"><input type="hidden" name="pmid" value="10"></div>
+              <div class="pmrow pmunread"><input type="hidden" name="pmid" value="11"></div>
+              <div class="pmrow"><input type="hidden" name="pmid" value="12"></div>
+            </div>
+            <div id="tab_outbox">
+              <div class="pmrow"><input type="hidden" name="pmid" value="13"></div>
+            </div>
+            """.trimIndent(),
+        ).count { it.ausgehend.not() && it.gelesen.not() }
+        assertEquals(2, anzahl)
     }
 
     @Test

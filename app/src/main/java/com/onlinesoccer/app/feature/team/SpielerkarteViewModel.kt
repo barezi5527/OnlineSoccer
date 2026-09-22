@@ -4,11 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.onlinesoccer.app.data.model.GebotInformation
+import com.onlinesoccer.app.data.model.PmAntwortFormular
 import com.onlinesoccer.app.data.model.SpielerKarte
+import com.onlinesoccer.app.data.repository.PmRepository
 import com.onlinesoccer.app.data.repository.ServerRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +39,7 @@ class SpielerkarteViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: TeamRepository,
     private val serverRepository: ServerRepository,
+    private val pmRepository: PmRepository,
 ) : ViewModel() {
 
     private val pid: Long = (savedStateHandle["pid"] as? Long) ?: (savedStateHandle["pid"] as? String)?.toLongOrNull() ?: 0L
@@ -53,8 +58,40 @@ class SpielerkarteViewModel @Inject constructor(
     private val _bietDialog = MutableStateFlow<BietDialogState>(BietDialogState.Verborgen)
     val bietDialog: StateFlow<BietDialogState> = _bietDialog.asStateFlow()
 
+    private val _trainerNachricht = MutableStateFlow(TrainerNachrichtState())
+    val trainerNachricht: StateFlow<TrainerNachrichtState> = _trainerNachricht.asStateFlow()
+    private var sendeJob: Job? = null
+
     init {
         lade()
+    }
+
+    /** Sendet eine Private Nachricht an den Trainer des Vereins. */
+    fun sendeTrainerNachricht(name: String, id: Long, text: String) {
+        sendeJob?.cancel()
+        sendeJob = viewModelScope.launch {
+            _trainerNachricht.value = TrainerNachrichtState(sendend = true)
+            _trainerNachricht.value = try {
+                pmRepository.antworten(
+                    PmAntwortFormular(
+                        empfaenger = name,
+                        empfaengerId = id.toString(),
+                        betreff = "Nachricht",
+                        text = text,
+                    ),
+                )
+                TrainerNachrichtState(meldung = "Nachricht gesendet.")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                TrainerNachrichtState(fehler = e.message ?: "Nachricht konnte nicht gesendet werden.")
+            }
+        }
+    }
+
+    fun trainerNachrichtReset() {
+        sendeJob?.cancel()
+        _trainerNachricht.value = TrainerNachrichtState()
     }
 
     fun lade() {

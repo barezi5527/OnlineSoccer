@@ -25,6 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.FremdesTeam
+import com.onlinesoccer.app.data.model.TeamTrainer
 
 /** Neues Fenster für einen fremden Verein (`st.php?c=<id>`): Kader mit klickbaren Spielern. */
 @Composable
@@ -41,6 +45,8 @@ fun VereinScreen(
     viewModel: VereinViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val trainerNachricht by viewModel.trainerNachricht.collectAsStateWithLifecycle()
+    var trainerDialog by remember { mutableStateOf<TeamTrainer.Besetzt?>(null) }
 
     when {
         uiState.ladend -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -61,7 +67,24 @@ fun VereinScreen(
             }
         }
 
-        uiState.team != null -> VereinAnsicht(uiState.team!!, onSpielerClick, onClose)
+        uiState.team != null -> VereinAnsicht(
+            team = uiState.team!!,
+            onSpielerClick = onSpielerClick,
+            onClose = onClose,
+            onTrainerKlick = { trainerDialog = it },
+        )
+    }
+
+    trainerDialog?.let { trainer ->
+        TrainerNachrichtDialog(
+            trainer = trainer,
+            zustand = trainerNachricht,
+            onDismiss = {
+                trainerDialog = null
+                viewModel.trainerNachrichtReset()
+            },
+            onSenden = { text -> viewModel.sendeTrainerNachricht(trainer.name, trainer.id, text) },
+        )
     }
 }
 
@@ -70,6 +93,7 @@ private fun VereinAnsicht(
     team: FremdesTeam,
     onSpielerClick: (Long) -> Unit,
     onClose: () -> Unit,
+    onTrainerKlick: (TeamTrainer.Besetzt) -> Unit,
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -97,6 +121,8 @@ private fun VereinAnsicht(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    Spacer(Modifier.height(2.dp))
+                    TrainerHeaderZeile(team.trainer, onKlick = onTrainerKlick)
                 }
             }
         }

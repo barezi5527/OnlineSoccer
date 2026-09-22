@@ -1,9 +1,11 @@
 package com.onlinesoccer.app.feature.auth.login
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,16 +14,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -47,6 +56,7 @@ fun LoginScreen(
     val password by viewModel.password.collectAsStateWithLifecycle()
     val loggingIn by viewModel.loggingIn.collectAsStateWithLifecycle()
     val loginError by viewModel.loginError.collectAsStateWithLifecycle()
+    val serverUnavailable by viewModel.serverUnavailable.collectAsStateWithLifecycle()
     val keyboard = LocalSoftwareKeyboardController.current
     val labelColor = MaterialTheme.colorScheme.onSurface
 
@@ -124,13 +134,18 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        loginError?.let { error ->
+        if (serverUnavailable) {
             Spacer(Modifier.height(12.dp))
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            ServerNichtErreichbarHinweis()
+        } else {
+            loginError?.let { error ->
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -169,5 +184,50 @@ fun LoginScreen(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/**
+ * Hinweis, wenn die Anmeldung nicht möglich ist, weil die Website gerade nicht
+ * erreichbar ist (z. B. laufender ZAT-Spieltag oder Störung). Farben stammen aus
+ * dem Material-Theme und passen sich damit automatisch dem Darkmode an.
+ */
+@Composable
+private fun ServerNichtErreichbarHinweis() {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = colors.surfaceVariant,
+        contentColor = colors.onSurfaceVariant,
+        border = BorderStroke(1.dp, colors.error.copy(alpha = 0.5f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.WifiOff,
+                contentDescription = null,
+                tint = colors.error,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "Website derzeit nicht erreichbar",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "os.ongapo.com ist gerade nicht erreichbar. Das kann an einem " +
+                        "laufenden ZAT-Spieltag, an einer Störung oder an deiner " +
+                        "Internetverbindung liegen. Bitte versuche es später erneut.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
     }
 }

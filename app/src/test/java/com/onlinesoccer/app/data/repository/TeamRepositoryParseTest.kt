@@ -130,6 +130,75 @@ class TeamRepositoryParseTest {
     }
 
     @Test
+    fun fremderKader_trainerAusKopfzeile_geliefert() {
+        val fremd = repo.parseFremdesTeam(dump("st902"), 902L)
+        assertEquals(
+            "Trainer aus writePM-Link (Name ohne „Mein Zweitteam“)",
+            com.onlinesoccer.app.data.model.TeamTrainer.Besetzt("Oliver Schitthelm", 4160L),
+            fremd.trainer,
+        )
+    }
+
+    @Test
+    fun trainer_writePM_mittweiteLiefertBesetzt() {
+        val html = """
+            <table border="0"><tr><td><b>Testclub - 2. Liga</b></td><td>
+                <a href="javascript:writePM(12)">Max Trainer <br /></a>
+            </td></tr></table>
+        """.trimIndent()
+        assertEquals(
+            com.onlinesoccer.app.data.model.TeamTrainer.Besetzt("Max Trainer", 12L),
+            repo.parseTrainer(org.jsoup.Jsoup.parse(html)),
+        )
+    }
+
+    @Test
+    fun trainer_receiverIdLinkLiefertBesetzt() {
+        val html = """
+            <table border="0"><tr><td><b>Testclub - 3. Liga</b></td><td>
+                <a href="/osneu/pm?action=writeNew&amp;receiver_id=42">Anna Bochum</a>
+            </td></tr></table>
+        """.trimIndent()
+        assertEquals(
+            com.onlinesoccer.app.data.model.TeamTrainer.Besetzt("Anna Bochum", 42L),
+            repo.parseTrainer(org.jsoup.Jsoup.parse(html)),
+        )
+    }
+
+    @Test
+    fun trainer_ohneLinkLiefetTeamIstFrei() {
+        val html = """
+            <table border="0"><tr><td><b>Testclub - 3. Liga</b></td><td>Team ist frei</td></tr></table>
+        """.trimIndent()
+        assertEquals(
+            com.onlinesoccer.app.data.model.TeamTrainer.Frei,
+            repo.parseTrainer(org.jsoup.Jsoup.parse(html)),
+        )
+    }
+
+    @Test
+    fun trainer_receiverIdMinusEinsIstFrei() {
+        val html = """
+            <table border="0"><tr><td><b>Testclub - 3. Liga</b></td><td>
+                <a href="/osneu/pm?action=writeNew&amp;receiver_id=-1">Team ist frei</a>
+            </td></tr></table>
+        """.trimIndent()
+        assertEquals(
+            com.onlinesoccer.app.data.model.TeamTrainer.Frei,
+            repo.parseTrainer(org.jsoup.Jsoup.parse(html)),
+        )
+    }
+
+    @Test
+    fun trainer_ohneKopfzeileIstUnbekannt() {
+        val html = "<table border='0'><tr><td><b>Testclub</b></td><td>Nur Text</td></tr></table>"
+        assertEquals(
+            com.onlinesoccer.app.data.model.TeamTrainer.Unbekannt,
+            repo.parseTrainer(org.jsoup.Jsoup.parse(html)),
+        )
+    }
+
+    @Test
     fun fremderSpieler_sp86001_liefertProfil() {
         val profil = repo.parseSpielerProfil(dump("sp86001"))
         assertEquals("Tom Ullrich", profil.name)

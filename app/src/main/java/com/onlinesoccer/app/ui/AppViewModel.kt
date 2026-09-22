@@ -7,16 +7,22 @@ import com.onlinesoccer.app.core.auth.LoginResult
 import com.onlinesoccer.app.core.auth.SessionManager
 import com.onlinesoccer.app.core.storage.TokenStorage
 import com.onlinesoccer.app.data.model.VertragZeile
+import com.onlinesoccer.app.data.repository.PmRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /** Höchste Restlaufzeit (in ZAT), ab der beim Login gewarnt wird. */
 internal const val VERTRAGS_WARNUNG_ZAT = 2
+
+/** Abstand, in dem der Briefumschlag-Badge nach ungelesenen PMs fragt. */
+internal const val UNGELESENE_POLL_INTERVALL_MS = 60_000L
 
 /**
  * Spieler, deren Vertrag höchstens [schwelle] ZAT Restlaufzeit hat.
@@ -34,6 +40,7 @@ class AppViewModel @Inject constructor(
     private val sessionManager: SessionManager,
     private val tokenStorage: TokenStorage,
     private val teamRepository: TeamRepository,
+    private val pmRepository: PmRepository,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthUiState> = sessionManager.state
@@ -50,14 +57,41 @@ class AppViewModel @Inject constructor(
     private val _loginError = MutableStateFlow<String?>(null)
     val loginError: StateFlow<String?> = _loginError.asStateFlow()
 
+    /** True, wenn die Website nicht erreichbar war (ZAT-Spieltag/Störung). */
+    private val _serverUnavailable = MutableStateFlow(false)
+    val serverUnavailable: StateFlow<Boolean> = _serverUnavailable.asStateFlow()
+
     /** Spieler mit höchstens [VERTRAGS_WARNUNG_ZAT] ZAT Restlaufzeit (Popup beim Login). */
     private val _vertragsWarnung = MutableStateFlow<List<VertragZeile>>(emptyList())
     val vertragsWarnung: StateFlow<List<VertragZeile>> = _vertragsWarnung.asStateFlow()
+
+    private val _ungeleseneNachrichten = MutableStateFlow(0)
+    val ungeleseneNachrichten: StateFlow<Int> = _ungeleseneNachrichten.asStateFlow()
 
     init {
         viewModelScope.launch {
             sessionManager.restore()
             if (sessionManager.state.value == AuthUiState.SignedIn) pruefeVertragslaufzeiten()
+            starteUngelesenePolling()
+        }
+    }
+
+    /** Pollt periodisch die Anzahl ungelesener PMs für den Briefumschlag-Badge. */
+    private fun starteUngelesenePolling() {
+        viewModelScope.launch {
+            while (isActive) {
+                if (sessionManager.state.value == AuthUiState.SignedIn) {
+                    aktualisiereUngelesene()
+                }
+                delay(UNGELESENE_POLL_INTERVALL_MS)
+            }
+        }
+    }
+
+    fun aktualisiereUngelesene() {
+        viewModelScope.launch {
+            val anzahl = runCatching { pmRepository.ungeleseneAnzahl() }.getOrDefault(_ungeleseneNachrichten.value)
+            _ungeleseneNachrichten.value = anzahl
         }
     }
 
@@ -89,15 +123,21 @@ class AppViewModel @Inject constructor(
         val password = _password.value
         if (email.isEmpty() || password.isEmpty()) {
             _loginError.value = "Bitte Mail und Passwort eingeben."
+            _serverUnavailable.value = false
             return
         }
         viewModelScope.launch {
             _loggingIn.value = true
             _loginError.value = null
+            _serverUnavailable.value = false
             tokenStorage.lastEmail = email
             when (val result = sessionManager.login(email, password)) {
-                is LoginResult.Success -> pruefeVertragslaufzeiten()
+                is LoginResult.Success -> {
+                    pruefeVertragslaufzeiten()
+                    aktualisiereUngelesene()
+                }
                 is LoginResult.Failure -> _loginError.value = result.message
+                LoginResult.ServerUnavailable -> _serverUnavailable.value = true
             }
             _loggingIn.value = false
         }
@@ -108,14 +148,19 @@ class AppViewModel @Inject constructor(
         viewModelScope.launch {
             _loggingIn.value = true
             _loginError.value = null
-            val ok = sessionManager.guestLogin()
-            if (!ok) _loginError.value = "Demo-Zugang konnte nicht hergestellt werden."
+            _serverUnavailable.value = false
+            when (val result = sessionManager.guestLogin()) {
+                LoginResult.Success -> Unit
+                is LoginResult.Failure -> _loginError.value = result.message
+                LoginResult.ServerUnavailable -> _serverUnavailable.value = true
+            }
             _loggingIn.value = false
         }
     }
 
     fun logout() {
         _vertragsWarnung.value = emptyList()
+        _ungeleseneNachrichten.value = 0
         viewModelScope.launch { sessionManager.logout() }
     }
 }

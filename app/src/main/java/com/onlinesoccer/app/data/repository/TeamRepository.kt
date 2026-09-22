@@ -25,6 +25,7 @@ import com.onlinesoccer.app.data.model.StaerkeZeile
 import com.onlinesoccer.app.data.model.StatistikZeile
 import com.onlinesoccer.app.data.model.Teaminfo
 import com.onlinesoccer.app.data.model.TeamInfoMenuEintrag
+import com.onlinesoccer.app.data.model.TeamTrainer
 import com.onlinesoccer.app.data.model.TransferhistorieBlock
 import com.onlinesoccer.app.data.model.UebersichtAbschnitt
 import com.onlinesoccer.app.data.model.UebersichtZeile
@@ -960,12 +961,14 @@ class TeamRepository @Inject constructor(
             staerken = sprofil.staerken,
             statistikSaison = sprofil.statistikSaison,
             statistikGesamt = sprofil.statistikGesamt,
+            trainer = team.await()?.trainer ?: TeamTrainer.Unbekannt,
         )
     }
 
     /** Parsiert `st.php?c=<id>`: Vereinsname + Kader (Tabellenstruktur wie `showteam.php?s=0`). */
     internal fun parseFremdesTeam(html: String, teamId: Long): FremdesTeam {
-        val kopf = Jsoup.parse(html).select("b").firstOrNull()?.ownText()?.trim().orEmpty()
+        val kopfDoc = Jsoup.parse(html)
+        val kopf = kopfDoc.select("b").firstOrNull()?.ownText()?.trim().orEmpty()
         val name = kopf.substringBefore(" - ").trim()
         val liga = kopf.substringAfter(" - ").trim()
         return FremdesTeam(
@@ -973,7 +976,36 @@ class TeamRepository @Inject constructor(
             name = name,
             liga = liga,
             kader = if (name.isBlank()) emptyList() else parseKader(html),
+            trainer = if (name.isBlank()) TeamTrainer.Unbekannt else parseTrainer(kopfDoc),
         )
+    }
+
+    /**
+     * Trainer/Manager aus der Kopfzeile von `st.php?c=<id>`: ein
+     * `javascript:writePM(<id>)`-Link liefert Name und PM-Empfänger-ID;
+     * „Team ist frei" (bzw. `receiver_id=-1`) bedeutet: kein aktiver Trainer.
+     */
+    internal fun parseTrainer(doc: org.jsoup.nodes.Document): TeamTrainer {
+        val zelle = doc.select("td").firstOrNull { td ->
+            td.selectFirst("a[href*='writePM']") != null
+                || td.selectFirst("a[href*='receiver_id']") != null
+                || td.text().contains("Team ist frei", ignoreCase = true)
+        } ?: return TeamTrainer.Unbekannt
+
+        val link = zelle.selectFirst("a[href*='writePM']") ?: zelle.selectFirst("a[href*='receiver_id']")
+        if (link != null) {
+            val href = link.attr("href")
+            val id = when {
+                href.contains("writePM") -> Regex("writePM\\((\\d+)\\)").find(href)?.groupValues?.get(1)?.toLongOrNull()
+                else -> Regex("[?&]receiver_id=(-?\\d+)").find(href)?.groupValues?.get(1)?.toLongOrNull()
+            } ?: return TeamTrainer.Unbekannt
+            if (id == -1L) return TeamTrainer.Frei
+            if (id > 0) {
+                val name = link.ownText().trim().ifBlank { link.text().trim() }
+                if (name.isNotBlank()) return TeamTrainer.Besetzt(name, id)
+            }
+        }
+        return if (zelle.text().contains("Team ist frei", ignoreCase = true)) TeamTrainer.Frei else TeamTrainer.Unbekannt
     }
 
     internal fun parseVertraege(html: String): List<VertragZeile> {

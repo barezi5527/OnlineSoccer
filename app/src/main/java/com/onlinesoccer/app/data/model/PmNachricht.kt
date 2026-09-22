@@ -8,6 +8,8 @@ data class PmNachricht(
     val betreff: String?,
     val datum: String?,
     val gelesen: Boolean = false,
+    /** True für gesendete Nachrichten aus dem Postausgang. */
+    val ausgehend: Boolean = false,
 )
 
 data class PmDetail(

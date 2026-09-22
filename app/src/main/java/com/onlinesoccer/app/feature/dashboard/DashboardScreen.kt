@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -31,10 +32,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -63,9 +68,22 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var jugendHinweisGesehen by remember { mutableStateOf(false) }
+    val hinweis = (uiState as? DashboardUiState.Ready)?.data?.jugendHinweis
 
     LaunchedEffect(refreshTrigger) {
         if (refreshTrigger > 0) viewModel.refresh()
+    }
+
+    if (hinweis != null && !jugendHinweisGesehen) {
+        AlertDialog(
+            onDismissRequest = { jugendHinweisGesehen = true },
+            title = { Text("Jugendspieler", fontWeight = FontWeight.Bold) },
+            text = { Text(hinweis) },
+            confirmButton = {
+                TextButton(onClick = { jugendHinweisGesehen = true }) { Text("Verstanden") }
+            },
+        )
     }
 
     when (val state = uiState) {
