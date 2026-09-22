@@ -9,7 +9,9 @@ import com.onlinesoccer.app.data.model.GespeicherteAbfrage
 import com.onlinesoccer.app.data.model.LaenderOption
 import com.onlinesoccer.app.data.model.RekordAbschnitt
 import com.onlinesoccer.app.data.model.RekordZeile
+import com.onlinesoccer.app.data.model.ScoutSpieler
 import com.onlinesoccer.app.data.model.SpielerVorschlag
+import com.onlinesoccer.app.data.model.SpielerscoutDaten
 import com.onlinesoccer.app.data.model.SpielersucheErgebnis
 import com.onlinesoccer.app.data.model.SpielersucheOptionen
 import com.onlinesoccer.app.data.model.Spielervergleich
@@ -32,6 +34,8 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -117,7 +121,8 @@ class StatistikRepository @Inject constructor(
     internal fun parseTopspieler(html: String): TopspielerDaten {
         val doc = Jsoup.parse(html)
         val tabelle = resultTabelle(doc, listOf("Spieler", "Wert"))
-        val zeilen = tabelle?.select("tr")?.mapNotNull { tr ->
+        // Erste Zeile ist die Kopfzeile (Nr|Spieler|Team|Alter|Position|Nation|Wert).
+        val zeilen = tabelle?.select("tr")?.drop(1)?.mapNotNull { tr ->
             val zellen = tr.select("td")
             if (zellen.size < 7) return@mapNotNull null
             val nameZelle = zellen[1]
@@ -127,10 +132,14 @@ class StatistikRepository @Inject constructor(
             if (name.isBlank()) return@mapNotNull null
             TopspielerZeile(
                 nr = zellen[0].text().trim().toIntOrNull(),
-                pid = spielerLink?.attr("href")?.let { Regex("s=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                pid = spielerLink?.attr("href")
+                    ?.let { Regex("s=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                    ?: jsId(spielerLink, "spielerinfo"),
                 name = name,
-                position = nameZelle.selectFirst("a")?.parent()?.className()?.trim()?.ifEmpty { null },
-                teamId = teamLink?.attr("href")?.let { Regex("c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                position = zellen[4].text().trim().ifEmpty { null },
+                teamId = teamLink?.attr("href")
+                    ?.let { Regex("c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                    ?: jsId(teamLink, "teaminfo"),
                 team = teamLink?.text()?.trim().orEmpty(),
                 alter = zellen[3].text().trim(),
                 nation = flagCode(zellen[5]),
@@ -163,8 +172,7 @@ class StatistikRepository @Inject constructor(
             if (team.isBlank()) return@mapNotNull null
             FairplayZeile(
                 nr = zellen[0].text().trim().toIntOrNull(),
-                teamId = zellen[1].selectFirst("a")?.attr("onClick")
-                    ?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                teamId = jsId(zellen[1].selectFirst("a"), "teaminfo"),
                 team = team,
                 gelb = zellen[2].text().trim().toIntOrNull(),
                 gelbRot = zellen[3].text().trim().toIntOrNull(),
@@ -194,7 +202,8 @@ class StatistikRepository @Inject constructor(
     internal fun parseTopscorer(html: String): TopscorerDaten {
         val doc = Jsoup.parse(html)
         val tabelle = resultTabelle(doc, listOf("Verein", "Wert"))
-        val zeilen = tabelle?.select("tr")?.mapNotNull { tr ->
+        // Erste Zeile ist die Kopfzeile (auf dieser Seite mit <td>, nicht <th>).
+        val zeilen = tabelle?.select("tr")?.drop(1)?.mapNotNull { tr ->
             val zellen = tr.select("td")
             if (zellen.size < 9) return@mapNotNull null
             val nameZelle = zellen[1]
@@ -205,8 +214,7 @@ class StatistikRepository @Inject constructor(
             val teamLink = teamZelle.selectFirst("a")
             TopscorerZeile(
                 nr = zellen[0].text().trim().toIntOrNull(),
-                pid = spielerLink?.attr("onClick")
-                    ?.let { Regex("spielerinfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                pid = jsId(spielerLink, "spielerinfo"),
                 name = name,
                 position = spielerLink?.parent()?.className()?.trim()?.ifEmpty { null },
                 alter = zellen[2].text().trim(),
@@ -214,8 +222,7 @@ class StatistikRepository @Inject constructor(
                 opti = zellen[4].text().trim(),
                 land = zellen[5].selectFirst("img[src*='flaggen/']")?.attr("src")
                     ?.let { Regex("flaggen/(\\w+)\\.").find(it)?.groupValues?.get(1) }.orEmpty(),
-                teamId = teamLink?.attr("onClick")
-                    ?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                teamId = jsId(teamLink, "teaminfo"),
                 team = teamLink?.text()?.trim() ?: teamZelle.text().trim(),
                 liga = zellen[7].text().trim(),
                 wert = zellen[8].text().trim(),
@@ -228,7 +235,8 @@ class StatistikRepository @Inject constructor(
             positionen = optionen(doc, "pos"),
             saisons = optionen(doc, "saison"),
             arten = optionen(doc, "art"),
-            zeilen = zeilen,
+            // Die Website listet Spieler teils doppelt – pro Spieler nur der erste Eintrag.
+            zeilen = zeilen.distinctBy { it.pid ?: it.name },
         )
     }
 
@@ -300,15 +308,139 @@ class StatistikRepository @Inject constructor(
             if (name.isBlank()) return@mapNotNull null
             SucheSpielerZeile(
                 nr = zellen[0].text().trim().toIntOrNull(),
-                pid = spielerLink?.attr("href")?.let { Regex("s=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                pid = spielerLink?.attr("href")
+                    ?.let { Regex("s=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                    ?: jsId(spielerLink, "spielerinfo"),
                 name = name,
-                position = nameZelle.selectFirst("a")?.parent()?.className()?.trim()?.ifEmpty { null },
+                position = zellen[3].text().trim().ifEmpty { null },
                 alter = zellen[2].text().trim(),
                 nation = flagCode(zellen[4]),
-                teamId = teamLink?.attr("href")?.let { Regex("c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() },
+                teamId = teamLink?.attr("href")
+                    ?.let { Regex("c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                    ?: jsId(teamLink, "teaminfo"),
                 team = teamLink?.text()?.trim().orEmpty(),
             )
         }
+    }
+
+    // -------------------------------------------------------------- Spielerscout
+
+    /**
+     * Spielerscout: die interessantesten Spieler je Kategorie. Nutzt die
+     * Spielersuche (`action=suchen`) mit festen Kriterien und sortiert absteigend
+     * nach der jeweiligen Kennzahl; jede Kategorie gibt bis zu 30 Spieler aus.
+     */
+    suspend fun spielerscout(): SpielerscoutDaten = coroutineScope {
+        val altersKriterium = { op: String, wert: String ->
+            SucheKriterium(attributId = 1, opVon = op, valVon = wert)
+        }
+        val kennzahl = { id: Int, min: String ->
+            SucheKriterium(attributId = id, opVon = ">=", valVon = min, sort = "desc")
+        }
+        val talente = async { scoutListe(listOf(altersKriterium("<=", "23"), kennzahl(5, "70"))) }
+        val allrounder = async { scoutListe(listOf(kennzahl(4, "70"))) }
+        val topSpieler = async { scoutListe(listOf(kennzahl(5, "92"))) }
+        val superstars = async { scoutListe(listOf(kennzahl(5, "100"))) }
+        val veteranen = async { scoutListe(listOf(altersKriterium(">=", "30"), kennzahl(5, "90"))) }
+        val wertanlagen = async {
+            // Starke Spieler (Opti ≥ 85), die günstig zu haben sind – sortiert nach Marktwert aufsteigend.
+            scoutListe(
+                listOf(
+                    SucheKriterium(attributId = 5, opVon = ">=", valVon = "85"),
+                    SucheKriterium(attributId = 3, opVon = ">=", valVon = "0", sort = "asc"),
+                ),
+            )
+        }
+        kategorisiereSpielerscout(
+            talente = talente.await(),
+            allrounder = allrounder.await(),
+            topSpieler = topSpieler.await(),
+            superstars = superstars.await(),
+            veteranen = veteranen.await(),
+            wertanlagen = wertanlagen.await(),
+        )
+    }
+
+    private suspend fun scoutListe(kriterien: List<SucheKriterium>): List<ScoutSpieler> =
+        withContext(Dispatchers.IO) {
+            val json = JSONObject()
+                .put("landId", 0)
+                .put("ligaId", 0)
+                .put("anzeigeId", 4)
+                .put("nationId", 0)
+                .put("kriterien", kriterienJson(kriterien))
+            val antwort = postJson("${OsApi.BASE_URL}/osneu/spielersuche?action=suchen", json.toString())
+                ?: return@withContext emptyList()
+            runCatching { parseScoutTreffer(JSONObject(antwort).optString("html", "")) }
+                .getOrElse { emptyList() }
+        }
+
+    internal fun parseScoutTreffer(html: String): List<ScoutSpieler> {
+        val doc = Jsoup.parse(html)
+        return doc.select("tr").mapNotNull { tr ->
+            val zellen = tr.select("td")
+            // Die Suche liefert pro aktivem Kriterium eine zusätzliche Spalte; die letzte
+            // Spalte ist stets die (nach der die Liste sortierte) Kennzahl.
+            if (zellen.size < 7) return@mapNotNull null
+            val nameZelle = zellen[1]
+            val spielerLink = nameZelle.selectFirst("a[href*='sp.php']")
+            val teamLink = zellen[5].selectFirst("a[href*='st.php']")
+            val name = spielerLink?.text()?.trim() ?: nameZelle.text().trim()
+            if (name.isBlank()) return@mapNotNull null
+            ScoutSpieler(
+                nr = zellen[0].text().trim().toIntOrNull(),
+                pid = spielerLink?.attr("href")
+                    ?.let { Regex("s=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                    ?: jsId(spielerLink, "spielerinfo"),
+                name = name,
+                position = zellen[3].text().trim().ifEmpty { null },
+                alter = zellen[2].text().trim(),
+                nation = flagCode(zellen[4]),
+                teamId = teamLink?.attr("href")
+                    ?.let { Regex("c=(\\d+)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                    ?: jsId(teamLink, "teaminfo"),
+                team = teamLink?.text()?.trim().orEmpty(),
+                wert = zellen.last()?.text()?.trim().orEmpty(),
+            )
+        }
+    }
+
+    /**
+     * Verteilt die (teils überlappenden) Kategorie-Treffer auf disjunkte Listen.
+     * Priorität: Superstars → Veteranen → Talente → Top-Spieler → Wertanlagen → Allrounder.
+     * Ein Spieler erscheint nur in der höchsten seiner Kategorien (max. 30 je Kategorie).
+     */
+    internal fun kategorisiereSpielerscout(
+        talente: List<ScoutSpieler>,
+        allrounder: List<ScoutSpieler>,
+        topSpieler: List<ScoutSpieler>,
+        superstars: List<ScoutSpieler>,
+        veteranen: List<ScoutSpieler>,
+        wertanlagen: List<ScoutSpieler> = emptyList(),
+        maxProKategorie: Int = 30,
+    ): SpielerscoutDaten {
+        val gesehen = mutableSetOf<Long>()
+        fun liste(treffer: List<ScoutSpieler>) = buildList {
+            for (spieler in treffer) {
+                val id = spieler.pid ?: continue
+                if (!gesehen.add(id)) continue
+                if (size < maxProKategorie) add(spieler)
+            }
+        }
+        val superstarsFinal = liste(superstars)
+        val veteranenFinal = liste(veteranen)
+        val talenteFinal = liste(talente)
+        val topFinal = liste(topSpieler)
+        val wertanlagenFinal = liste(wertanlagen)
+        val allrounderFinal = liste(allrounder)
+        return SpielerscoutDaten(
+            talente = talenteFinal,
+            allrounder = allrounderFinal,
+            topSpieler = topFinal,
+            superstars = superstarsFinal,
+            veteranen = veteranenFinal,
+            wertanlagen = wertanlagenFinal,
+        )
     }
 
     /** Lädt die Liste der gespeicherten Abfragen (`action=abfragen`). */
@@ -638,6 +770,12 @@ class StatistikRepository @Inject constructor(
     private fun flagCode(zelle: Element): String =
         zelle.selectFirst("img[src*='flaggen/']")?.attr("src")
             ?.let { Regex("flaggen/(\\w+)\\.").find(it)?.groupValues?.get(1) }.orEmpty()
+
+    /** ID aus einem `javascript:fn(N)`-Link (in `href` oder `onClick`). */
+    private fun jsId(element: Element?, fn: String): Long? {
+        val attr = element?.attr("href")?.ifBlank { element.attr("onClick") }
+        return attr?.let { Regex("$fn\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+    }
 
     /** `attributMeta`-JSON der Spielersuche aus dem eingebetteten Script (Attribut-ID → Meta). */
     private fun attributMeta(html: String): Map<Int, JSONObject> {

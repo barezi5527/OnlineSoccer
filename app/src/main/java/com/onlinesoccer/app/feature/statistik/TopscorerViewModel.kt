@@ -30,6 +30,26 @@ data class TopscorerUiState(
     val zeilen: List<TopscorerZeile> = emptyList(),
 )
 
+/**
+ * Hält eine Auswahl gültig: Optionen leer (noch nicht geladen) oder der Wert
+ * ist enthalten → [wert]. Sonst greift [standard], damit kein „–"-Wert übrigbleibt.
+ */
+internal fun gueltigeAuswahl(optionen: List<LaenderOption>, wert: String, standard: String): String =
+    if (optionen.isEmpty() || optionen.any { it.id == wert }) wert else standard
+
+/**
+ * Saison-Auswahl: gültig halten, sonst auf die aktuelle (höchste) Saison
+ * zurückspringen – damit die Liste nicht an einer nicht mehr vorhandenen Saison hängt.
+ */
+internal fun gueltigeSaison(optionen: List<LaenderOption>, wert: String): String {
+    if (optionen.isEmpty() || optionen.any { it.id == wert }) return wert
+    return optionen
+        .mapNotNull { it.id.toIntOrNull() }
+        .maxOrNull()
+        ?.takeIf { it > 0 }
+        ?.toString() ?: "0"
+}
+
 /** „Topscorer" (`topscorer.php`): Tore/Vorlagen/… nach Filter. */
 @HiltViewModel
 class TopscorerViewModel @Inject constructor(
@@ -56,16 +76,33 @@ class TopscorerViewModel @Inject constructor(
                     saison = s.saison,
                     art = s.art,
                 )
-                _uiState.value.copy(
-                    ladend = false,
-                    laender = daten.laender.ifEmpty { _uiState.value.laender },
-                    ligas = daten.ligas.ifEmpty { _uiState.value.ligas },
-                    statistiken = daten.statistiken.ifEmpty { _uiState.value.statistiken },
-                    positionen = daten.positionen.ifEmpty { _uiState.value.positionen },
-                    saisons = daten.saisons.ifEmpty { _uiState.value.saisons },
-                    arten = daten.arten.ifEmpty { _uiState.value.arten },
-                    zeilen = daten.zeilen,
-                )
+                val neu = _uiState.value
+                if (daten.zeilen.isEmpty() && daten.laender.isEmpty() && daten.ligas.isEmpty() &&
+                    daten.statistiken.isEmpty() && daten.saisons.isEmpty()
+                ) {
+                    // Seite nicht erreichbar oder unlesbar – kein „Keine Treffer.".
+                    neu.copy(
+                        ladend = false,
+                        fehler = "Topscorer konnten nicht geladen werden – bitte erneut versuchen.",
+                    )
+                } else {
+                    neu.copy(
+                        ladend = false,
+                        land = gueltigeAuswahl(daten.laender, s.land, "6"),
+                        liga = gueltigeAuswahl(daten.ligas, s.liga, "1"),
+                        statistik = gueltigeAuswahl(daten.statistiken, s.statistik, "1"),
+                        position = gueltigeAuswahl(daten.positionen, s.position, "0"),
+                        saison = gueltigeSaison(daten.saisons, s.saison),
+                        art = gueltigeAuswahl(daten.arten, s.art, "0"),
+                        laender = daten.laender.ifEmpty { neu.laender },
+                        ligas = daten.ligas.ifEmpty { neu.ligas },
+                        statistiken = daten.statistiken.ifEmpty { neu.statistiken },
+                        positionen = daten.positionen.ifEmpty { neu.positionen },
+                        saisons = daten.saisons.ifEmpty { neu.saisons },
+                        arten = daten.arten.ifEmpty { neu.arten },
+                        zeilen = daten.zeilen,
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value.copy(
                     ladend = false,

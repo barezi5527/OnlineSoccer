@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Spieler-Statistik - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Spieler-Statistik</h1>
+
+		<form method="GET" action="/osneu/statspieler">
+			<table>
+				<tr>
+					<td>
+						Land:<br />
+						<select name="comboLand">
+							<option value="0">---Land---</option>
+															<option value="95">Andorra</option>
+															<option value="83">Armenien</option>
+															<option value="12">Belgien</option>
+															<option value="66">Bosnien-Herzegowina</option>
+															<option value="42">Bulgarien</option>
+															<option value="8">D&auml;nemark</option>
+															<option value="6" selected>Deutschland</option>
+															<option value="1">England</option>
+															<option value="68">Far&ouml;er</option>
+															<option value="40">Finnland</option>
+															<option value="32">Frankreich</option>
+															<option value="30">Griechenland</option>
+															<option value="5">Irland</option>
+															<option value="29">Island</option>
+															<option value="10">Italien</option>
+															<option value="24">Kroatien</option>
+															<option value="93">Luxemburg</option>
+															<option value="86">Mazedonien</option>
+															<option value="87">Moldawien</option>
+															<option value="11">Niederlande</option>
+															<option value="4">Nordirland</option>
+															<option value="9">Norwegen</option>
+															<option value="14">&Ouml;sterreich</option>
+															<option value="25">Polen</option>
+															<option value="17">Portugal</option>
+															<option value="19">Russland</option>
+															<option value="2">Schottland</option>
+															<option value="27">Schweden</option>
+															<option value="37">Schweiz</option>
+															<option value="41">Serbien und Montenegro</option>
+															<option value="21">Slowenien</option>
+															<option value="13">Spanien</option>
+															<option value="18">Tschechien</option>
+															<option value="20">Ukraine</option>
+															<option value="26">Ungarn</option>
+															<option value="3">Wales</option>
+															<option value="71">Weissrussland</option>
+													</select>
+					</td>
+					<td>
+						Liga:<br />
+						<select name="comboLiga">
+							<option value="0">---Liga---</option>
+															<option value="1" selected>1. Liga</option>
+															<option value="2">2. Liga A</option>
+															<option value="3">2. Liga B</option>
+															<option value="4">3. Liga A</option>
+															<option value="5">3. Liga B</option>
+															<option value="6">3. Liga C</option>
+															<option value="7">3. Liga D</option>
+													</select>
+					</td>
+					<td>
+						Statistik:<br />
+						<select name="comboStatistik">
+															<option value="16">Opt Skill</option>
+															<option value="26">Skill</option>
+															<option value="33" selected>Marktwert</option>
+															<option value="32">Gehalt</option>
+													</select>
+					</td>
+					<td>
+						Position:<br />
+						<select name="comboPosition">
+							<option value="0">---Position---</option>
+															<option value="1">TOR</option>
+															<option value="2">ABW</option>
+															<option value="3">DMI</option>
+															<option value="4">MIT</option>
+															<option value="5">OMI</option>
+															<option value="6">STU</option>
+													</select>
+					</td>
+					<td>
+						Anzeige:<br />
+						<select name="comboAnzeige">
+															<option value="1">Top 10</option>
+															<option value="2">Top 25</option>
+															<option value="3">Top 50</option>
+															<option value="4" selected>Top 100</option>
+															<option value="11">Low 10</option>
+															<option value="12">Low 25</option>
+															<option value="13">Low 50</option>
+															<option value="14">Low 100</option>
+													</select>
+					</td>
+					<td>
+						&nbsp;<br />
+						<input type="submit" value="Anzeigen" />
+					</td>
+				</tr>
+			</table>
+		</form>
+
+		<br />
+
+					<table>
+				<tr>
+					<th>Nr</th>
+					<th>Spieler</th>
+					<th>Team</th>
+					<th>Alter</th>
+					<th>Position</th>
+					<th>Nation</th>
+					<th>Wert</th>
+				</tr>
+															<tr>
+							<td>1</td>
+							<td class="stu"><a href="/sp.php?s=104701" onClick="spielerinfo(104701);return false;">Guido Knoche</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>31</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>45.644.834</td>
+						</tr>
+											<tr>
+							<td>2</td>
+							<td class="abw"><a href="/sp.php?s=127295" onClick="spielerinfo(127295);return false;">Philip Coghlan</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>44.986.636</td>
+						</tr>
+											<tr>
+							<td>3</td>
+							<td class="stu"><a href="/sp.php?s=126612" onClick="spielerinfo(126612);return false;">Simon Puls</a></td>
+							<td><a href="/st.php?c=1024" onClick="teaminfo(1024);return false;">VfL Fohlen Mönchengladbach 09</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>39.119.770</td>
+						</tr>
+											<tr>
+							<td>4</td>
+							<td class="abw"><a href="/sp.php?s=121650" onClick="spielerinfo(121650);return false;">Pavle Ivanisevic</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>29</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/CRO.gif" alt="Flagge" /></td>
+							<td>37.823.194</td>
+						</tr>
+											<tr>
+							<td>5</td>
+							<td class="dmi"><a href="/sp.php?s=150038" onClick="spielerinfo(150038);return false;">Alexander Arbelius</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>24</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/SWE.gif" alt="Flagge" /></td>
+							<td>37.708.613</td>
+						</tr>
+											<tr>
+							<td>6</td>
+							<td class="stu"><a href="/sp.php?s=105620" onClick="spielerinfo(105620);return false;">Billy Russell</a></td>
+							<td><a href="/st.php?c=550" onClick="teaminfo(550);return false;">FC Dynamo Riesa</a></td>
+							<td>32</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>37.654.711</td>
+						</tr>
+											<tr>
+							<td>7</td>
+							<td class="dmi"><a href="/sp.php?s=132016" onClick="spielerinfo(132016);return false;">Martin Rösler</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>27</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>36.552.687</td>
+						</tr>
+											<tr>
+							<td>8</td>
+							<td class="abw"><a href="/sp.php?s=110556" onClick="spielerinfo(110556);return false;">Jarji Begtabegov</a></td>
+							<td><a href="/st.php?c=1965" onClick="teaminfo(1965);return false;">Borussia Wolfsburg</a></td>
+							<td>30</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GEO.gif" alt="Flagge" /></td>
+							<td>36.215.082</td>
+						</tr>
+											<tr>
+							<td>9</td>
+							<td class="mit"><a href="/sp.php?s=131846" onClick="spielerinfo(131846);return false;">Shalva Bokandadze</a></td>
+							<td><a href="/st.php?c=1965" onClick="teaminfo(1965);return false;">Borussia Wolfsburg</a></td>
+							<td>28</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GEO.gif" alt="Flagge" /></td>
+							<td>34.908.368</td>
+						</tr>
+											<tr>
+							<td>10</td>
+							<td class="abw"><a href="/sp.php?s=145468" onClick="spielerinfo(145468);return false;">Philipp Lange</a></td>
+							<td><a href="/st.php?c=843" onClick="teaminfo(843);return false;">Arminia Worms</a></td>
+							<td>25</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>34.700.107</td>
+						</tr>
+											<tr>
+							<td>11</td>
+							<td class="stu"><a href="/sp.php?s=108662" onClick="spielerinfo(108662);return false;">Boris Miss</a></td>
+							<td><a href="/st.php?c=676" onClick="teaminfo(676);return false;">Mannheimer SC</a></td>
+							<td>31</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>34.171.470</td>
+						</tr>
+											<tr>
+							<td>12</td>
+							<td class="mit"><a href="/sp.php?s=121660" onClick="spielerinfo(121660);return false;">Ralph Süßmilch</a></td>
+							<td><a href="/st.php?c=1036" onClick="teaminfo(1036);return false;">Eintracht Hamburg</a></td>
+							<td>29</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>33.286.323</td>
+						</tr>
+											<tr>
+							<td>13</td>
+							<td class="dmi"><a href="/sp.php?s=131220" onClick="spielerinfo(131220);return false;">Manuel Bahl</a></td>
+							<td><a href="/st.php?c=1053" onClick="teaminfo(1053);return false;">SpVgg Saarbrücken</a></td>
+							<td>27</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>32.971.424</td>
+						</tr>
+											<tr>
+							<td>14</td>
+							<td class="abw"><a href="/sp.php?s=133768" onClick="spielerinfo(133768);return false;">Nico Bünger</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>32.484.984</td>
+						</tr>
+											<tr>
+							<td>15</td>
+							<td class="stu"><a href="/sp.php?s=131156" onClick="spielerinfo(131156);return false;">Marcus Lennartz</a></td>
+							<td><a href="/st.php?c=1053" onClick="teaminfo(1053);return false;">SpVgg Saarbrücken</a></td>
+							<td>27</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>32.463.596</td>
+						</tr>
+											<tr>
+							<td>16</td>
+							<td class="omi"><a href="/sp.php?s=115561" onClick="spielerinfo(115561);return false;">Adrian Yeates</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>30</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>32.198.386</td>
+						</tr>
+											<tr>
+							<td>17</td>
+							<td class="omi"><a href="/sp.php?s=106593" onClick="spielerinfo(106593);return false;">Pavel Andreievich Chekov</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>32</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/RUS.gif" alt="Flagge" /></td>
+							<td>31.785.713</td>
+						</tr>
+											<tr>
+							<td>18</td>
+							<td class="omi"><a href="/sp.php?s=108805" onClick="spielerinfo(108805);return false;">Bernhard Schlamann</a></td>
+							<td><a href="/st.php?c=222" onClick="teaminfo(222);return false;">Schwarz-Gelb Leipzig</a></td>
+							<td>31</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/AUT.gif" alt="Flagge" /></td>
+							<td>30.948.824</td>
+						</tr>
+											<tr>
+							<td>19</td>
+							<td class="omi"><a href="/sp.php?s=146562" onClick="spielerinfo(146562);return false;">Luciano Lucci</a></td>
+							<td><a href="/st.php?c=1063" onClick="teaminfo(1063);return false;">Bavaria Aschaffenburg</a></td>
+							<td>25</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/ITA.gif" alt="Flagge" /></td>
+							<td>30.603.497</td>
+						</tr>
+											<tr>
+							<td>20</td>
+							<td class="stu"><a href="/sp.php?s=142089" onClick="spielerinfo(142089);return false;">Christoffer Hermann</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>26</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>30.587.949</td>
+						</tr>
+											<tr>
+							<td>21</td>
+							<td class="mit"><a href="/sp.php?s=121981" onClick="spielerinfo(121981);return false;">Marius Reeder</a></td>
+							<td><a href="/st.php?c=1035" onClick="teaminfo(1035);return false;">Fortuna Velbert</a></td>
+							<td>29</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>30.492.659</td>
+						</tr>
+											<tr>
+							<td>22</td>
+							<td class="dmi"><a href="/sp.php?s=131965" onClick="spielerinfo(131965);return false;">Herchinho</a></td>
+							<td><a href="/st.php?c=1036" onClick="teaminfo(1036);return false;">Eintracht Hamburg</a></td>
+							<td>28</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/BRA.gif" alt="Flagge" /></td>
+							<td>30.220.204</td>
+						</tr>
+											<tr>
+							<td>23</td>
+							<td class="dmi"><a href="/sp.php?s=101042" onClick="spielerinfo(101042);return false;">Ingo Dümpelfeld</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>33</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>30.115.771</td>
+						</tr>
+											<tr>
+							<td>24</td>
+							<td class="mit"><a href="/sp.php?s=126749" onClick="spielerinfo(126749);return false;">Jean-Michel Diatta</a></td>
+							<td><a href="/st.php?c=1053" onClick="teaminfo(1053);return false;">SpVgg Saarbrücken</a></td>
+							<td>28</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/FRA.gif" alt="Flagge" /></td>
+							<td>29.472.978</td>
+						</tr>
+											<tr>
+							<td>25</td>
+							<td class="omi"><a href="/sp.php?s=116403" onClick="spielerinfo(116403);return false;">Pauli Varvio</a></td>
+							<td><a href="/st.php?c=222" onClick="teaminfo(222);return false;">Schwarz-Gelb Leipzig</a></td>
+							<td>30</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/FIN.gif" alt="Flagge" /></td>
+							<td>29.234.200</td>
+						</tr>
+											<tr>
+							<td>26</td>
+							<td class="omi"><a href="/sp.php?s=127111" onClick="spielerinfo(127111);return false;">Kombayn Hidayatov</a></td>
+							<td><a href="/st.php?c=1043" onClick="teaminfo(1043);return false;">Preußen Dortmund</a></td>
+							<td>28</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/AZE.gif" alt="Flagge" /></td>
+							<td>29.111.868</td>
+						</tr>
+											<tr>
+							<td>27</td>
+							<td class="omi"><a href="/sp.php?s=125502" onClick="spielerinfo(125502);return false;">Werner Gies</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>28</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>28.891.707</td>
+						</tr>
+											<tr>
+							<td>28</td>
+							<td class="stu"><a href="/sp.php?s=111508" onClick="spielerinfo(111508);return false;">Stefan Kaltenbach</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>31</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>28.845.615</td>
+						</tr>
+											<tr>
+							<td>29</td>
+							<td class="abw"><a href="/sp.php?s=127181" onClick="spielerinfo(127181);return false;">Felix Schwabenland</a></td>
+							<td><a href="/st.php?c=300" onClick="teaminfo(300);return false;">FC Stuttgart-Degerloch</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>28.701.460</td>
+						</tr>
+											<tr>
+							<td>30</td>
+							<td class="omi"><a href="/sp.php?s=110602" onClick="spielerinfo(110602);return false;">Ilian Petrov</a></td>
+							<td><a href="/st.php?c=1053" onClick="teaminfo(1053);return false;">SpVgg Saarbrücken</a></td>
+							<td>31</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/BUL.gif" alt="Flagge" /></td>
+							<td>28.572.729</td>
+						</tr>
+											<tr>
+							<td>31</td>
+							<td class="stu"><a href="/sp.php?s=131153" onClick="spielerinfo(131153);return false;">Walter Pitje</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>27</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/NED.gif" alt="Flagge" /></td>
+							<td>28.335.584</td>
+						</tr>
+											<tr>
+							<td>32</td>
+							<td class="abw"><a href="/sp.php?s=118620" onClick="spielerinfo(118620);return false;">Juan Antonio Varela</a></td>
+							<td><a href="/st.php?c=1043" onClick="teaminfo(1043);return false;">Preußen Dortmund</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/ESP.gif" alt="Flagge" /></td>
+							<td>28.145.434</td>
+						</tr>
+											<tr>
+							<td>33</td>
+							<td class="omi"><a href="/sp.php?s=127114" onClick="spielerinfo(127114);return false;">Lasse Tiainen</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>28</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/FIN.gif" alt="Flagge" /></td>
+							<td>28.122.045</td>
+						</tr>
+											<tr>
+							<td>34</td>
+							<td class="stu"><a href="/sp.php?s=104625" onClick="spielerinfo(104625);return false;">Paul Möhrle</a></td>
+							<td><a href="/st.php?c=300" onClick="teaminfo(300);return false;">FC Stuttgart-Degerloch</a></td>
+							<td>32</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>28.084.309</td>
+						</tr>
+											<tr>
+							<td>35</td>
+							<td class="stu"><a href="/sp.php?s=121933" onClick="spielerinfo(121933);return false;">Sebastian Thurmann</a></td>
+							<td><a href="/st.php?c=1066" onClick="teaminfo(1066);return false;">Kickers Freiburg</a></td>
+							<td>29</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>28.043.518</td>
+						</tr>
+											<tr>
+							<td>36</td>
+							<td class="omi"><a href="/sp.php?s=150548" onClick="spielerinfo(150548);return false;">Juri Schlünz</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>24</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>27.634.229</td>
+						</tr>
+											<tr>
+							<td>37</td>
+							<td class="stu"><a href="/sp.php?s=121918" onClick="spielerinfo(121918);return false;">Charlo Calascione</a></td>
+							<td><a href="/st.php?c=1053" onClick="teaminfo(1053);return false;">SpVgg Saarbrücken</a></td>
+							<td>29</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/MLT.gif" alt="Flagge" /></td>
+							<td>26.696.921</td>
+						</tr>
+											<tr>
+							<td>38</td>
+							<td class="tor"><a href="/sp.php?s=115395" onClick="spielerinfo(115395);return false;">Roni Uriel</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>30</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/ISR.gif" alt="Flagge" /></td>
+							<td>26.488.596</td>
+						</tr>
+											<tr>
+							<td>39</td>
+							<td class="dmi"><a href="/sp.php?s=112917" onClick="spielerinfo(112917);return false;">Volker Kurrat</a></td>
+							<td><a href="/st.php?c=843" onClick="teaminfo(843);return false;">Arminia Worms</a></td>
+							<td>29</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>26.469.959</td>
+						</tr>
+											<tr>
+							<td>40</td>
+							<td class="dmi"><a href="/sp.php?s=116883" onClick="spielerinfo(116883);return false;">Nikiforos Kolabaris</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>30</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GRE.gif" alt="Flagge" /></td>
+							<td>26.356.147</td>
+						</tr>
+											<tr>
+							<td>41</td>
+							<td class="abw"><a href="/sp.php?s=122147" onClick="spielerinfo(122147);return false;">Gedeon Donkov</a></td>
+							<td><a href="/st.php?c=526" onClick="teaminfo(526);return false;">FC Greuther Fürth</a></td>
+							<td>29</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/BUL.gif" alt="Flagge" /></td>
+							<td>26.333.709</td>
+						</tr>
+											<tr>
+							<td>42</td>
+							<td class="stu"><a href="/sp.php?s=111854" onClick="spielerinfo(111854);return false;">Ingo Berg</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>31</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>26.330.310</td>
+						</tr>
+											<tr>
+							<td>43</td>
+							<td class="omi"><a href="/sp.php?s=121180" onClick="spielerinfo(121180);return false;">Benni Dierks</a></td>
+							<td><a href="/st.php?c=1063" onClick="teaminfo(1063);return false;">Bavaria Aschaffenburg</a></td>
+							<td>29</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>26.231.900</td>
+						</tr>
+											<tr>
+							<td>44</td>
+							<td class="omi"><a href="/sp.php?s=111523" onClick="spielerinfo(111523);return false;">Rory Stapleton</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>31</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>25.953.763</td>
+						</tr>
+											<tr>
+							<td>45</td>
+							<td class="stu"><a href="/sp.php?s=126129" onClick="spielerinfo(126129);return false;">Bastian Klinzmann</a></td>
+							<td><a href="/st.php?c=1066" onClick="teaminfo(1066);return false;">Kickers Freiburg</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>25.917.142</td>
+						</tr>
+											<tr>
+							<td>46</td>
+							<td class="mit"><a href="/sp.php?s=127431" onClick="spielerinfo(127431);return false;">Osias Frenkel</a></td>
+							<td><a href="/st.php?c=1043" onClick="teaminfo(1043);return false;">Preußen Dortmund</a></td>
+							<td>28</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/ISR.gif" alt="Flagge" /></td>
+							<td>25.826.586</td>
+						</tr>
+											<tr>
+							<td>47</td>
+							<td class="stu"><a href="/sp.php?s=118673" onClick="spielerinfo(118673);return false;">Petre Velcea</a></td>
+							<td><a href="/st.php?c=526" onClick="teaminfo(526);return false;">FC Greuther Fürth</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/ROM.gif" alt="Flagge" /></td>
+							<td>25.778.226</td>
+						</tr>
+											<tr>
+							<td>48</td>
+							<td class="dmi"><a href="/sp.php?s=127051" onClick="spielerinfo(127051);return false;">Joe Graham</a></td>
+							<td><a href="/st.php?c=1043" onClick="teaminfo(1043);return false;">Preußen Dortmund</a></td>
+							<td>28</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>25.600.119</td>
+						</tr>
+											<tr>
+							<td>49</td>
+							<td class="stu"><a href="/sp.php?s=177329" onClick="spielerinfo(177329);return false;">Diego Strehl</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>19</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>25.399.573</td>
+						</tr>
+											<tr>
+							<td>50</td>
+							<td class="mit"><a href="/sp.php?s=115504" onClick="spielerinfo(115504);return false;">Rolf Bittner</a></td>
+							<td><a href="/st.php?c=1024" onClick="teaminfo(1024);return false;">VfL Fohlen Mönchengladbach 09</a></td>
+							<td>29</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>25.313.213</td>
+						</tr>
+											<tr>
+							<td>51</td>
+							<td class="mit"><a href="/sp.php?s=111507" onClick="spielerinfo(111507);return false;">Sebastian Deutschbein</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>31</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>25.304.491</td>
+						</tr>
+											<tr>
+							<td>52</td>
+							<td class="mit"><a href="/sp.php?s=116400" onClick="spielerinfo(116400);return false;">Ray Nab</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>31</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/SCO.gif" alt="Flagge" /></td>
+							<td>25.260.185</td>
+						</tr>
+											<tr>
+							<td>53</td>
+							<td class="omi"><a href="/sp.php?s=110767" onClick="spielerinfo(110767);return false;">Tilo Jantschke</a></td>
+							<td><a href="/st.php?c=1024" onClick="teaminfo(1024);return false;">VfL Fohlen Mönchengladbach 09</a></td>
+							<td>32</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>25.139.848</td>
+						</tr>
+											<tr>
+							<td>54</td>
+							<td class="stu"><a href="/sp.php?s=129107" onClick="spielerinfo(129107);return false;">Sima Ostojic</a></td>
+							<td><a href="/st.php?c=526" onClick="teaminfo(526);return false;">FC Greuther Fürth</a></td>
+							<td>27</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/BIH.gif" alt="Flagge" /></td>
+							<td>25.136.244</td>
+						</tr>
+											<tr>
+							<td>55</td>
+							<td class="tor"><a href="/sp.php?s=116002" onClick="spielerinfo(116002);return false;">Nemanja Cajkovski</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>30</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/BIH.gif" alt="Flagge" /></td>
+							<td>25.113.904</td>
+						</tr>
+											<tr>
+							<td>56</td>
+							<td class="stu"><a href="/sp.php?s=145975" onClick="spielerinfo(145975);return false;">Mike Bessmann</a></td>
+							<td><a href="/st.php?c=1035" onClick="teaminfo(1035);return false;">Fortuna Velbert</a></td>
+							<td>25</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>25.092.871</td>
+						</tr>
+											<tr>
+							<td>57</td>
+							<td class="omi"><a href="/sp.php?s=121931" onClick="spielerinfo(121931);return false;">Werner Reinecke</a></td>
+							<td><a href="/st.php?c=1066" onClick="teaminfo(1066);return false;">Kickers Freiburg</a></td>
+							<td>30</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>25.021.085</td>
+						</tr>
+											<tr>
+							<td>58</td>
+							<td class="tor"><a href="/sp.php?s=132396" onClick="spielerinfo(132396);return false;">Fedik Ter-Mikayelian</a></td>
+							<td><a href="/st.php?c=1066" onClick="teaminfo(1066);return false;">Kickers Freiburg</a></td>
+							<td>27</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/ARM.gif" alt="Flagge" /></td>
+							<td>24.945.437</td>
+						</tr>
+											<tr>
+							<td>59</td>
+							<td class="tor"><a href="/sp.php?s=121179" onClick="spielerinfo(121179);return false;">Christopher Mink</a></td>
+							<td><a href="/st.php?c=1063" onClick="teaminfo(1063);return false;">Bavaria Aschaffenburg</a></td>
+							<td>29</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>24.917.332</td>
+						</tr>
+											<tr>
+							<td>60</td>
+							<td class="stu"><a href="/sp.php?s=127174" onClick="spielerinfo(127174);return false;">René Marie-Rose</a></td>
+							<td><a href="/st.php?c=526" onClick="teaminfo(526);return false;">FC Greuther Fürth</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/FRA.gif" alt="Flagge" /></td>
+							<td>24.904.567</td>
+						</tr>
+											<tr>
+							<td>61</td>
+							<td class="dmi"><a href="/sp.php?s=126592" onClick="spielerinfo(126592);return false;">Daniel Heck</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>29</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>24.654.663</td>
+						</tr>
+											<tr>
+							<td>62</td>
+							<td class="abw"><a href="/sp.php?s=145620" onClick="spielerinfo(145620);return false;">Timo Lange</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>25</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>24.546.938</td>
+						</tr>
+											<tr>
+							<td>63</td>
+							<td class="mit"><a href="/sp.php?s=149872" onClick="spielerinfo(149872);return false;">Stephan Ragnvaldsson</a></td>
+							<td><a href="/st.php?c=1965" onClick="teaminfo(1965);return false;">Borussia Wolfsburg</a></td>
+							<td>24</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/SWE.gif" alt="Flagge" /></td>
+							<td>24.529.659</td>
+						</tr>
+											<tr>
+							<td>64</td>
+							<td class="dmi"><a href="/sp.php?s=102293" onClick="spielerinfo(102293);return false;">Guttormur Bleken</a></td>
+							<td><a href="/st.php?c=1043" onClick="teaminfo(1043);return false;">Preußen Dortmund</a></td>
+							<td>32</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/FRO.gif" alt="Flagge" /></td>
+							<td>24.499.379</td>
+						</tr>
+											<tr>
+							<td>65</td>
+							<td class="dmi"><a href="/sp.php?s=136107" onClick="spielerinfo(136107);return false;">Jens Wahl</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>26</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>24.448.043</td>
+						</tr>
+											<tr>
+							<td>66</td>
+							<td class="abw"><a href="/sp.php?s=115036" onClick="spielerinfo(115036);return false;">Batcha Amirajibi</a></td>
+							<td><a href="/st.php?c=1043" onClick="teaminfo(1043);return false;">Preußen Dortmund</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GEO.gif" alt="Flagge" /></td>
+							<td>24.425.286</td>
+						</tr>
+											<tr>
+							<td>67</td>
+							<td class="abw"><a href="/sp.php?s=107410" onClick="spielerinfo(107410);return false;">Ingo Reisinger</a></td>
+							<td><a href="/st.php?c=843" onClick="teaminfo(843);return false;">Arminia Worms</a></td>
+							<td>31</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>24.361.317</td>
+						</tr>
+											<tr>
+							<td>68</td>
+							<td class="tor"><a href="/sp.php?s=106379" onClick="spielerinfo(106379);return false;">Karsten Rühmland</a></td>
+							<td><a href="/st.php?c=1035" onClick="teaminfo(1035);return false;">Fortuna Velbert</a></td>
+							<td>32</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>24.359.352</td>
+						</tr>
+											<tr>
+							<td>69</td>
+							<td class="omi"><a href="/sp.php?s=132360" onClick="spielerinfo(132360);return false;">Echevarria Silva de Cardenas</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>27</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/CUB.gif" alt="Flagge" /></td>
+							<td>24.355.527</td>
+						</tr>
+											<tr>
+							<td>70</td>
+							<td class="stu"><a href="/sp.php?s=129118" onClick="spielerinfo(129118);return false;">Egils Seilis</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>27</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/LVA.gif" alt="Flagge" /></td>
+							<td>24.257.089</td>
+						</tr>
+											<tr>
+							<td>71</td>
+							<td class="stu"><a href="/sp.php?s=139952" onClick="spielerinfo(139952);return false;">Dietmar Rau</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>26</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>24.255.113</td>
+						</tr>
+											<tr>
+							<td>72</td>
+							<td class="abw"><a href="/sp.php?s=120766" onClick="spielerinfo(120766);return false;">Ionel Orbu</a></td>
+							<td><a href="/st.php?c=1053" onClick="teaminfo(1053);return false;">SpVgg Saarbrücken</a></td>
+							<td>29</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/MDA.gif" alt="Flagge" /></td>
+							<td>24.245.469</td>
+						</tr>
+											<tr>
+							<td>73</td>
+							<td class="stu"><a href="/sp.php?s=131252" onClick="spielerinfo(131252);return false;">Liubomir Stambolov</a></td>
+							<td><a href="/st.php?c=222" onClick="teaminfo(222);return false;">Schwarz-Gelb Leipzig</a></td>
+							<td>26</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/BUL.gif" alt="Flagge" /></td>
+							<td>24.188.705</td>
+						</tr>
+											<tr>
+							<td>74</td>
+							<td class="stu"><a href="/sp.php?s=126498" onClick="spielerinfo(126498);return false;">Davy Van Roy</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/BEL.gif" alt="Flagge" /></td>
+							<td>24.176.975</td>
+						</tr>
+											<tr>
+							<td>75</td>
+							<td class="mit"><a href="/sp.php?s=121984" onClick="spielerinfo(121984);return false;">Richard Wiesner</a></td>
+							<td><a href="/st.php?c=1035" onClick="teaminfo(1035);return false;">Fortuna Velbert</a></td>
+							<td>29</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/AUT.gif" alt="Flagge" /></td>
+							<td>24.161.469</td>
+						</tr>
+											<tr>
+							<td>76</td>
+							<td class="abw"><a href="/sp.php?s=164691" onClick="spielerinfo(164691);return false;">Talgat Nikolayevich</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>21</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/KIR.gif" alt="Flagge" /></td>
+							<td>24.117.939</td>
+						</tr>
+											<tr>
+							<td>77</td>
+							<td class="tor"><a href="/sp.php?s=110271" onClick="spielerinfo(110271);return false;">Anti Viduka</a></td>
+							<td><a href="/st.php?c=222" onClick="teaminfo(222);return false;">Schwarz-Gelb Leipzig</a></td>
+							<td>29</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/CRO.gif" alt="Flagge" /></td>
+							<td>24.018.988</td>
+						</tr>
+											<tr>
+							<td>78</td>
+							<td class="mit"><a href="/sp.php?s=111310" onClick="spielerinfo(111310);return false;">Malchisua Sheinfeld</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>31</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/ISR.gif" alt="Flagge" /></td>
+							<td>23.901.977</td>
+						</tr>
+											<tr>
+							<td>79</td>
+							<td class="omi"><a href="/sp.php?s=132460" onClick="spielerinfo(132460);return false;">Elmar Liese</a></td>
+							<td><a href="/st.php?c=1035" onClick="teaminfo(1035);return false;">Fortuna Velbert</a></td>
+							<td>27</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>23.840.081</td>
+						</tr>
+											<tr>
+							<td>80</td>
+							<td class="mit"><a href="/sp.php?s=125263" onClick="spielerinfo(125263);return false;">John Trowbrydge</a></td>
+							<td><a href="/st.php?c=222" onClick="teaminfo(222);return false;">Schwarz-Gelb Leipzig</a></td>
+							<td>28</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/ENG.gif" alt="Flagge" /></td>
+							<td>23.832.356</td>
+						</tr>
+											<tr>
+							<td>81</td>
+							<td class="stu"><a href="/sp.php?s=145955" onClick="spielerinfo(145955);return false;">Henri Fuchs</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>25</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>23.472.517</td>
+						</tr>
+											<tr>
+							<td>82</td>
+							<td class="abw"><a href="/sp.php?s=127810" onClick="spielerinfo(127810);return false;">Klaus Kolbe</a></td>
+							<td><a href="/st.php?c=222" onClick="teaminfo(222);return false;">Schwarz-Gelb Leipzig</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>23.410.524</td>
+						</tr>
+											<tr>
+							<td>83</td>
+							<td class="stu"><a href="/sp.php?s=113271" onClick="spielerinfo(113271);return false;">Godofredo Musco</a></td>
+							<td><a href="/st.php?c=550" onClick="teaminfo(550);return false;">FC Dynamo Riesa</a></td>
+							<td>30</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/ITA.gif" alt="Flagge" /></td>
+							<td>23.405.833</td>
+						</tr>
+											<tr>
+							<td>84</td>
+							<td class="abw"><a href="/sp.php?s=126499" onClick="spielerinfo(126499);return false;">Palion Paloka</a></td>
+							<td><a href="/st.php?c=63" onClick="teaminfo(63);return false;">OSV Rostock</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/ALB.gif" alt="Flagge" /></td>
+							<td>23.349.308</td>
+						</tr>
+											<tr>
+							<td>85</td>
+							<td class="stu"><a href="/sp.php?s=125167" onClick="spielerinfo(125167);return false;">Emanuel Akanji</a></td>
+							<td><a href="/st.php?c=1024" onClick="teaminfo(1024);return false;">VfL Fohlen Mönchengladbach 09</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/NGA.gif" alt="Flagge" /></td>
+							<td>22.996.530</td>
+						</tr>
+											<tr>
+							<td>86</td>
+							<td class="abw"><a href="/sp.php?s=99711" onClick="spielerinfo(99711);return false;">Cafer Öztoprak</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>33</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/TUR.gif" alt="Flagge" /></td>
+							<td>22.930.527</td>
+						</tr>
+											<tr>
+							<td>87</td>
+							<td class="abw"><a href="/sp.php?s=127364" onClick="spielerinfo(127364);return false;">Michel Meier</a></td>
+							<td><a href="/st.php?c=300" onClick="teaminfo(300);return false;">FC Stuttgart-Degerloch</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>22.927.278</td>
+						</tr>
+											<tr>
+							<td>88</td>
+							<td class="abw"><a href="/sp.php?s=115247" onClick="spielerinfo(115247);return false;">Leszek Gorniak</a></td>
+							<td><a href="/st.php?c=1066" onClick="teaminfo(1066);return false;">Kickers Freiburg</a></td>
+							<td>30</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/POL.gif" alt="Flagge" /></td>
+							<td>22.864.334</td>
+						</tr>
+											<tr>
+							<td>89</td>
+							<td class="abw"><a href="/sp.php?s=127112" onClick="spielerinfo(127112);return false;">Xareba Barateli</a></td>
+							<td><a href="/st.php?c=1965" onClick="teaminfo(1965);return false;">Borussia Wolfsburg</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GEO.gif" alt="Flagge" /></td>
+							<td>22.827.271</td>
+						</tr>
+											<tr>
+							<td>90</td>
+							<td class="dmi"><a href="/sp.php?s=120289" onClick="spielerinfo(120289);return false;">Holger Hübke</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>28</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>22.783.160</td>
+						</tr>
+											<tr>
+							<td>91</td>
+							<td class="stu"><a href="/sp.php?s=139680" onClick="spielerinfo(139680);return false;">Edwin Lekote</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>26</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/BOT.gif" alt="Flagge" /></td>
+							<td>22.765.304</td>
+						</tr>
+											<tr>
+							<td>92</td>
+							<td class="abw"><a href="/sp.php?s=121377" onClick="spielerinfo(121377);return false;">Maik Büngen</a></td>
+							<td><a href="/st.php?c=1024" onClick="teaminfo(1024);return false;">VfL Fohlen Mönchengladbach 09</a></td>
+							<td>30</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>22.723.372</td>
+						</tr>
+											<tr>
+							<td>93</td>
+							<td class="mit"><a href="/sp.php?s=106247" onClick="spielerinfo(106247);return false;">Sönke Eifler</a></td>
+							<td><a href="/st.php?c=676" onClick="teaminfo(676);return false;">Mannheimer SC</a></td>
+							<td>32</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>22.394.762</td>
+						</tr>
+											<tr>
+							<td>94</td>
+							<td class="omi"><a href="/sp.php?s=155499" onClick="spielerinfo(155499);return false;">Alois Metz</a></td>
+							<td><a href="/st.php?c=1036" onClick="teaminfo(1036);return false;">Eintracht Hamburg</a></td>
+							<td>23</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>22.378.681</td>
+						</tr>
+											<tr>
+							<td>95</td>
+							<td class="tor"><a href="/sp.php?s=115483" onClick="spielerinfo(115483);return false;">Leino Austa</a></td>
+							<td><a href="/st.php?c=550" onClick="teaminfo(550);return false;">FC Dynamo Riesa</a></td>
+							<td>31</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/EST.gif" alt="Flagge" /></td>
+							<td>22.137.804</td>
+						</tr>
+											<tr>
+							<td>96</td>
+							<td class="dmi"><a href="/sp.php?s=111561" onClick="spielerinfo(111561);return false;">Akylas Nikefeha</a></td>
+							<td><a href="/st.php?c=526" onClick="teaminfo(526);return false;">FC Greuther Fürth</a></td>
+							<td>31</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GRE.gif" alt="Flagge" /></td>
+							<td>22.081.633</td>
+						</tr>
+											<tr>
+							<td>97</td>
+							<td class="tor"><a href="/sp.php?s=114313" onClick="spielerinfo(114313);return false;">Maik Schulz</a></td>
+							<td><a href="/st.php?c=1043" onClick="teaminfo(1043);return false;">Preußen Dortmund</a></td>
+							<td>29</td>
+							<td>TOR</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>21.945.256</td>
+						</tr>
+											<tr>
+							<td>98</td>
+							<td class="mit"><a href="/sp.php?s=131008" onClick="spielerinfo(131008);return false;">Dragi Zoran</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>27</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/BIH.gif" alt="Flagge" /></td>
+							<td>21.924.958</td>
+						</tr>
+											<tr>
+							<td>99</td>
+							<td class="mit"><a href="/sp.php?s=114771" onClick="spielerinfo(114771);return false;">Emmanuel Dorau</a></td>
+							<td><a href="/st.php?c=676" onClick="teaminfo(676);return false;">Mannheimer SC</a></td>
+							<td>30</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>21.803.938</td>
+						</tr>
+											<tr>
+							<td>100</td>
+							<td class="omi"><a href="/sp.php?s=160320" onClick="spielerinfo(160320);return false;">Paul Rohde</a></td>
+							<td><a href="/st.php?c=1066" onClick="teaminfo(1066);return false;">Kickers Freiburg</a></td>
+							<td>22</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>21.773.801</td>
+						</tr>
+												</table>
+			</div>
+    </body>
+</html>

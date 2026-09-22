@@ -403,10 +403,12 @@ fun StatistikScrollTabelle(
     spalten: List<StatistikFixSpalte>,
     zeilen: List<StatistikScrollZeile>,
     modifier: Modifier = Modifier,
+    auswaehlbar: Boolean = false,
 ) {
     val hScroll = rememberScrollState()
     val listState = rememberLazyListState()
     val flaeche = MaterialTheme.colorScheme.surfaceContainerLow
+    val markierung = MaterialTheme.colorScheme.secondaryContainer
     val zellenBreite = spalten.fold(0.dp) { summe, spalte -> summe + spalte.breite }
     val zeilenHoehe = StatistikScrollZeilenHoehe
     val density = LocalDensity.current
@@ -414,6 +416,7 @@ fun StatistikScrollTabelle(
 
     var pinX by remember { mutableFloatStateOf(0f) }
     var pinY by remember { mutableFloatStateOf(0f) }
+    var ausgewaehlteZeile by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
@@ -478,11 +481,21 @@ fun StatistikScrollTabelle(
                                     .fillMaxWidth()
                                     .graphicsLayer { translationY = pinY },
                             ) {
-                                zeilen.forEach { z ->
+                                zeilen.forEachIndexed { index, z ->
+                                    val markiert = auswaehlbar && index == ausgewaehlteZeile
                                     Box(
                                         Modifier
                                             .width(pinBreite)
-                                            .height(zeilenHoehe),
+                                            .height(zeilenHoehe)
+                                            .then(
+                                                if (markiert) Modifier.background(markierung)
+                                                else Modifier,
+                                            )
+                                            .then(
+                                                if (auswaehlbar) Modifier.clickable(onClick = {
+                                                    ausgewaehlteZeile = if (markiert) null else index
+                                                }) else Modifier,
+                                            ),
                                         contentAlignment = Alignment.CenterStart,
                                     ) { z.pin() }
                                 }
@@ -502,10 +515,20 @@ fun StatistikScrollTabelle(
                                         .fillMaxHeight(),
                                 ) {
                                     items(count = zeilen.size) { index ->
+                                        val markiert = index == ausgewaehlteZeile
                                         Row(
                                             Modifier
                                                 .width(zellenBreite)
-                                                .height(zeilenHoehe),
+                                                .height(zeilenHoehe)
+                                                .then(
+                                                    if (markiert) Modifier.background(markierung)
+                                                    else Modifier,
+                                                )
+                                                .then(
+                                                    if (auswaehlbar) Modifier.clickable(onClick = {
+                                                        ausgewaehlteZeile = if (markiert) null else index
+                                                    }) else Modifier,
+                                                ),
                                         ) {
                                             zeilen[index].zellen()
                                         }

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="de">
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="/osneu/js/global.js?v=1784292381"></script>
+        <title>Spieler-Statistik - Online-Soccer</title>
+        <link rel="stylesheet" href="/osneu/css/style.css?v=1783707865">
+    </head>
+    <body>
+			<div class="content">
+		<h1>Spieler-Statistik</h1>
+
+		<form method="GET" action="/osneu/statspieler">
+			<table>
+				<tr>
+					<td>
+						Land:<br />
+						<select name="comboLand">
+							<option value="0">---Land---</option>
+															<option value="95">Andorra</option>
+															<option value="83">Armenien</option>
+															<option value="12">Belgien</option>
+															<option value="66">Bosnien-Herzegowina</option>
+															<option value="42">Bulgarien</option>
+															<option value="8">D&auml;nemark</option>
+															<option value="6" selected>Deutschland</option>
+															<option value="1">England</option>
+															<option value="68">Far&ouml;er</option>
+															<option value="40">Finnland</option>
+															<option value="32">Frankreich</option>
+															<option value="30">Griechenland</option>
+															<option value="5">Irland</option>
+															<option value="29">Island</option>
+															<option value="10">Italien</option>
+															<option value="24">Kroatien</option>
+															<option value="93">Luxemburg</option>
+															<option value="86">Mazedonien</option>
+															<option value="87">Moldawien</option>
+															<option value="11">Niederlande</option>
+															<option value="4">Nordirland</option>
+															<option value="9">Norwegen</option>
+															<option value="14">&Ouml;sterreich</option>
+															<option value="25">Polen</option>
+															<option value="17">Portugal</option>
+															<option value="19">Russland</option>
+															<option value="2">Schottland</option>
+															<option value="27">Schweden</option>
+															<option value="37">Schweiz</option>
+															<option value="41">Serbien und Montenegro</option>
+															<option value="21">Slowenien</option>
+															<option value="13">Spanien</option>
+															<option value="18">Tschechien</option>
+															<option value="20">Ukraine</option>
+															<option value="26">Ungarn</option>
+															<option value="3">Wales</option>
+															<option value="71">Weissrussland</option>
+													</select>
+					</td>
+					<td>
+						Liga:<br />
+						<select name="comboLiga">
+							<option value="0">---Liga---</option>
+															<option value="1" selected>1. Liga</option>
+															<option value="2">2. Liga A</option>
+															<option value="3">2. Liga B</option>
+															<option value="4">3. Liga A</option>
+															<option value="5">3. Liga B</option>
+															<option value="6">3. Liga C</option>
+															<option value="7">3. Liga D</option>
+													</select>
+					</td>
+					<td>
+						Statistik:<br />
+						<select name="comboStatistik">
+															<option value="16" selected>Opt Skill</option>
+															<option value="26">Skill</option>
+															<option value="33">Marktwert</option>
+															<option value="32">Gehalt</option>
+													</select>
+					</td>
+					<td>
+						Position:<br />
+						<select name="comboPosition">
+							<option value="0">---Position---</option>
+															<option value="1">TOR</option>
+															<option value="2">ABW</option>
+															<option value="3">DMI</option>
+															<option value="4">MIT</option>
+															<option value="5">OMI</option>
+															<option value="6">STU</option>
+													</select>
+					</td>
+					<td>
+						Anzeige:<br />
+						<select name="comboAnzeige">
+															<option value="1" selected>Top 10</option>
+															<option value="2">Top 25</option>
+															<option value="3">Top 50</option>
+															<option value="4">Top 100</option>
+															<option value="11">Low 10</option>
+															<option value="12">Low 25</option>
+															<option value="13">Low 50</option>
+															<option value="14">Low 100</option>
+													</select>
+					</td>
+					<td>
+						&nbsp;<br />
+						<input type="submit" value="Anzeigen" />
+					</td>
+				</tr>
+			</table>
+		</form>
+
+		<br />
+
+					<table>
+				<tr>
+					<th>Nr</th>
+					<th>Spieler</th>
+					<th>Team</th>
+					<th>Alter</th>
+					<th>Position</th>
+					<th>Nation</th>
+					<th>Wert</th>
+				</tr>
+															<tr>
+							<td>1</td>
+							<td class="stu"><a href="/sp.php?s=104701" onClick="spielerinfo(104701);return false;">Guido Knoche</a></td>
+							<td><a href="/st.php?c=613" onClick="teaminfo(613);return false;">SGE Frankfurt</a></td>
+							<td>31</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>99,67</td>
+						</tr>
+											<tr>
+							<td>2</td>
+							<td class="abw"><a href="/sp.php?s=127295" onClick="spielerinfo(127295);return false;">Philip Coghlan</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>28</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>98,85</td>
+						</tr>
+											<tr>
+							<td>3</td>
+							<td class="dmi"><a href="/sp.php?s=101042" onClick="spielerinfo(101042);return false;">Ingo Dümpelfeld</a></td>
+							<td><a href="/st.php?c=992" onClick="teaminfo(992);return false;">SC St.Pauli</a></td>
+							<td>33</td>
+							<td>DMI</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>97,93</td>
+						</tr>
+											<tr>
+							<td>4</td>
+							<td class="stu"><a href="/sp.php?s=105620" onClick="spielerinfo(105620);return false;">Billy Russell</a></td>
+							<td><a href="/st.php?c=550" onClick="teaminfo(550);return false;">FC Dynamo Riesa</a></td>
+							<td>32</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>97,78</td>
+						</tr>
+											<tr>
+							<td>5</td>
+							<td class="abw"><a href="/sp.php?s=110556" onClick="spielerinfo(110556);return false;">Jarji Begtabegov</a></td>
+							<td><a href="/st.php?c=1965" onClick="teaminfo(1965);return false;">Borussia Wolfsburg</a></td>
+							<td>30</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/GEO.gif" alt="Flagge" /></td>
+							<td>97,74</td>
+						</tr>
+											<tr>
+							<td>6</td>
+							<td class="omi"><a href="/sp.php?s=106593" onClick="spielerinfo(106593);return false;">Pavel Andreievich Chekov</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>32</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/RUS.gif" alt="Flagge" /></td>
+							<td>97,67</td>
+						</tr>
+											<tr>
+							<td>7</td>
+							<td class="abw"><a href="/sp.php?s=121650" onClick="spielerinfo(121650);return false;">Pavle Ivanisevic</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>29</td>
+							<td>ABW</td>
+							<td><img src="/images/flaggen/CRO.gif" alt="Flagge" /></td>
+							<td>97,59</td>
+						</tr>
+											<tr>
+							<td>8</td>
+							<td class="mit"><a href="/sp.php?s=121660" onClick="spielerinfo(121660);return false;">Ralph Süßmilch</a></td>
+							<td><a href="/st.php?c=1036" onClick="teaminfo(1036);return false;">Eintracht Hamburg</a></td>
+							<td>29</td>
+							<td>MIT</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>96,44</td>
+						</tr>
+											<tr>
+							<td>9</td>
+							<td class="stu"><a href="/sp.php?s=126612" onClick="spielerinfo(126612);return false;">Simon Puls</a></td>
+							<td><a href="/st.php?c=1024" onClick="teaminfo(1024);return false;">VfL Fohlen Mönchengladbach 09</a></td>
+							<td>28</td>
+							<td>STU</td>
+							<td><img src="/images/flaggen/GER.gif" alt="Flagge" /></td>
+							<td>95,93</td>
+						</tr>
+											<tr>
+							<td>10</td>
+							<td class="omi"><a href="/sp.php?s=115561" onClick="spielerinfo(115561);return false;">Adrian Yeates</a></td>
+							<td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td>
+							<td>30</td>
+							<td>OMI</td>
+							<td><img src="/images/flaggen/IRL.gif" alt="Flagge" /></td>
+							<td>95,70</td>
+						</tr>
+												</table>
+			</div>
+    </body>
+</html>

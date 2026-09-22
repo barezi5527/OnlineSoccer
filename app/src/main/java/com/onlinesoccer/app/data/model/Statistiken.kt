@@ -120,6 +120,29 @@ data class SpielersucheErgebnis(
     val zeilen: List<SucheSpielerZeile> = emptyList(),
 )
 
+/** Spieler einer Spielerscout-Kategorie (aus `spielersuche`-Treffern, inkl. Wert-Kennzahl). */
+data class ScoutSpieler(
+    val nr: Int?,
+    val pid: Long?,
+    val name: String,
+    val position: String? = null,
+    val alter: String = "",
+    val nation: String = "",
+    val teamId: Long?,
+    val team: String = "",
+    val wert: String = "",
+)
+
+/** Spielerscout: die sechs Kategorien – max. 30 Spieler je Kategorie, ohne Dopplungen. */
+data class SpielerscoutDaten(
+    val talente: List<ScoutSpieler> = emptyList(),
+    val allrounder: List<ScoutSpieler> = emptyList(),
+    val topSpieler: List<ScoutSpieler> = emptyList(),
+    val superstars: List<ScoutSpieler> = emptyList(),
+    val veteranen: List<ScoutSpieler> = emptyList(),
+    val wertanlagen: List<ScoutSpieler> = emptyList(),
+)
+
 /** Attribute der Spielersuche (Attribut-ID → Name), inkl. Meta für die Kriteriumszeilen. */
 data class SucheAttribut(
     val id: Int,

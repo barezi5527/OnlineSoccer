@@ -36,6 +36,7 @@ enum class StatistikBereich(
     TOP_SPIELER("Top-Spieler", "Die wertvollsten Spieler"),
     TOP_TEAMS("Top-Teams", "Die erfolgreichsten Teams"),
     FAIRPLAY("Fairplay", "Fairplay-Wertung der Ligen"),
+    SPIELERSCOUT("Spielerscout", "Die interessantesten Spieler je Kategorie"),
     SPIELERSUCHE("Spielersuche", "Suche mit beliebigen Kriterien"),
     SPIELERVERGLEICH("Spielervergleich", "Zwei Spieler direkt vergleichen"),
     SPIELSTATISTIKEN("Spielstatistiken", "Kennzahlen der gesamten Spielwelt"),

@@ -65,6 +65,7 @@ import com.onlinesoccer.app.feature.server.ManagerlisteScreen
 import com.onlinesoccer.app.feature.server.ServerBereicheScreen
 import com.onlinesoccer.app.feature.server.ZweitteamsScreen
 import com.onlinesoccer.app.feature.statistik.FairplayScreen
+import com.onlinesoccer.app.feature.statistik.SpielerscoutScreen
 import com.onlinesoccer.app.feature.statistik.SpielersucheScreen
 import com.onlinesoccer.app.feature.statistik.SpielstatistikenScreen
 import com.onlinesoccer.app.feature.statistik.SpielervergleichScreen
@@ -137,6 +138,7 @@ object Routes {
     const val STATISTIK_TOP_SPIELER = "statistik/top-spieler"
     const val STATISTIK_TOP_TEAMS = "statistik/top-teams"
     const val STATISTIK_FAIRPLAY = "statistik/fairplay"
+    const val STATISTIK_SPIELERSCOUT = "statistik/spielerscout"
     const val STATISTIK_SPIELERSUCHE = "statistik/spielersuche"
     const val STATISTIK_SPIELERVERGLEICH = "statistik/spielervergleich"
     const val STATISTIK_SPIELSTATISTIKEN = "statistik/spielstatistiken"
@@ -201,6 +203,7 @@ private fun statistikRoute(bereich: StatistikBereich): String? = when (bereich) 
     StatistikBereich.TOP_SPIELER -> Routes.STATISTIK_TOP_SPIELER
     StatistikBereich.TOP_TEAMS -> Routes.STATISTIK_TOP_TEAMS
     StatistikBereich.FAIRPLAY -> Routes.STATISTIK_FAIRPLAY
+    StatistikBereich.SPIELERSCOUT -> Routes.STATISTIK_SPIELERSCOUT
     StatistikBereich.SPIELERSUCHE -> Routes.STATISTIK_SPIELERSUCHE
     StatistikBereich.SPIELERVERGLEICH -> Routes.STATISTIK_SPIELERVERGLEICH
     StatistikBereich.SPIELSTATISTIKEN -> Routes.STATISTIK_SPIELSTATISTIKEN
@@ -244,6 +247,7 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.STATISTIK_TOP_SPIELER -> "Top-Spieler"
         Routes.STATISTIK_TOP_TEAMS -> "Top-Teams"
         Routes.STATISTIK_FAIRPLAY -> "Fairplay"
+        Routes.STATISTIK_SPIELERSCOUT -> "Spielerscout"
         Routes.STATISTIK_SPIELERSUCHE -> "Spielersuche"
         Routes.STATISTIK_SPIELERVERGLEICH -> "Spielervergleich"
         Routes.STATISTIK_SPIELSTATISTIKEN -> "Spielstatistiken"
@@ -781,6 +785,21 @@ private fun MainScaffold(
             composable(Routes.STATISTIK_FAIRPLAY) {
                 FairplayScreen(
                     onClose = { navController.popBackStack() },
+                    onTeamClick = { teamId ->
+                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
+            composable(Routes.STATISTIK_SPIELERSCOUT) {
+                SpielerscoutScreen(
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
                     onTeamClick = { teamId ->
                         navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
                             launchSingleTop = true
