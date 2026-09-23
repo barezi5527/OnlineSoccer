@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -66,17 +65,6 @@ import com.onlinesoccer.app.feature.server.ManagerSucheScreen
 import com.onlinesoccer.app.feature.server.ManagerlisteScreen
 import com.onlinesoccer.app.feature.server.ServerBereicheScreen
 import com.onlinesoccer.app.feature.server.ZweitteamsScreen
-import com.onlinesoccer.app.feature.statistik.FairplayScreen
-import com.onlinesoccer.app.feature.statistik.SpielerscoutScreen
-import com.onlinesoccer.app.feature.statistik.SpielersucheScreen
-import com.onlinesoccer.app.feature.statistik.SpielstatistikenScreen
-import com.onlinesoccer.app.feature.statistik.SpielervergleichScreen
-import com.onlinesoccer.app.feature.statistik.StatistikBereich
-import com.onlinesoccer.app.feature.statistik.StatistikenScreen
-import com.onlinesoccer.app.feature.statistik.TabellenstatistikenScreen
-import com.onlinesoccer.app.feature.statistik.TopscorerScreen
-import com.onlinesoccer.app.feature.statistik.TopspielerScreen
-import com.onlinesoccer.app.feature.statistik.TopteamsScreen
 import com.onlinesoccer.app.feature.spiele.SpieleScreen
 import com.onlinesoccer.app.feature.team.SeiteScreen
 import com.onlinesoccer.app.feature.team.SpielerkarteScreen
@@ -135,16 +123,6 @@ object Routes {
     const val TRANSFER_STATUS = "transfer-status"
     const val LETZTE_AKTIONEN = "letzte-aktionen/{art}"
     const val SPIELE = "matchcenter"
-    const val STATISTIKEN = "statistik"
-    const val STATISTIK_TOPSCORER = "statistik/topscorer"
-    const val STATISTIK_TOP_SPIELER = "statistik/top-spieler"
-    const val STATISTIK_TOP_TEAMS = "statistik/top-teams"
-    const val STATISTIK_FAIRPLAY = "statistik/fairplay"
-    const val STATISTIK_SPIELERSCOUT = "statistik/spielerscout"
-    const val STATISTIK_SPIELERSUCHE = "statistik/spielersuche"
-    const val STATISTIK_SPIELERVERGLEICH = "statistik/spielervergleich"
-    const val STATISTIK_SPIELSTATISTIKEN = "statistik/spielstatistiken"
-    const val STATISTIK_TABELLENSTATISTIKEN = "statistik/tabellenstatistiken"
 }
 
 @Composable
@@ -201,19 +179,6 @@ private fun routeFuerBereich(bereich: TransferBereich): String = when (bereich) 
     TransferBereich.LETZTE_BLITZ -> Routes.LETZTE_AKTIONEN.replace("{art}", LetzteAktionenArt.BLITZ.routeId)
 }
 
-/** Ziel-Route eines Statistiken-Eintrags. */
-private fun statistikRoute(bereich: StatistikBereich): String? = when (bereich) {
-    StatistikBereich.TOPTSCORER -> Routes.STATISTIK_TOPSCORER
-    StatistikBereich.TOP_SPIELER -> Routes.STATISTIK_TOP_SPIELER
-    StatistikBereich.TOP_TEAMS -> Routes.STATISTIK_TOP_TEAMS
-    StatistikBereich.FAIRPLAY -> Routes.STATISTIK_FAIRPLAY
-    StatistikBereich.SPIELERSCOUT -> Routes.STATISTIK_SPIELERSCOUT
-    StatistikBereich.SPIELERSUCHE -> Routes.STATISTIK_SPIELERSUCHE
-    StatistikBereich.SPIELERVERGLEICH -> Routes.STATISTIK_SPIELERVERGLEICH
-    StatistikBereich.SPIELSTATISTIKEN -> Routes.STATISTIK_SPIELSTATISTIKEN
-    StatistikBereich.TABELLENSTATISTIKEN -> Routes.STATISTIK_TABELLENSTATISTIKEN
-}
-
 private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null, label: String? = null): String {
     val basis = when (route) {
         Routes.DASHBOARD -> "Dashboard"
@@ -246,16 +211,6 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.LEIH_UEBERSICHT -> "Leihspieler Übersicht"
         Routes.TRANSFER_STATUS -> "Transferstatus"
         Routes.LETZTE_AKTIONEN -> LetzteAktionenArt.vonRouteId(art.orEmpty())?.titel ?: "Letzte Transfers"
-        Routes.STATISTIKEN -> "Statistiken · Beta"
-        Routes.STATISTIK_TOPSCORER -> "Topscorer"
-        Routes.STATISTIK_TOP_SPIELER -> "Top-Spieler"
-        Routes.STATISTIK_TOP_TEAMS -> "Top-Teams"
-        Routes.STATISTIK_FAIRPLAY -> "Fairplay"
-        Routes.STATISTIK_SPIELERSCOUT -> "Spielerscout"
-        Routes.STATISTIK_SPIELERSUCHE -> "Spielersuche"
-        Routes.STATISTIK_SPIELERVERGLEICH -> "Spielervergleich"
-        Routes.STATISTIK_SPIELSTATISTIKEN -> "Spielstatistiken"
-        Routes.STATISTIK_TABELLENSTATISTIKEN -> "Tabellenstatistiken"
         else -> "Online Soccer"
     }
     return if (demo) "$basis · Demo" else basis
@@ -757,127 +712,6 @@ private fun MainScaffold(
                     },
                 )
             }
-            composable(Routes.STATISTIKEN) {
-                StatistikenScreen(
-                    onClose = { navController.popBackStack() },
-                    onEintrag = { bereich ->
-                        val route = statistikRoute(bereich)
-                        if (route != null) {
-                            navController.navigate(route) { launchSingleTop = true }
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_TOPSCORER) {
-                TopscorerScreen(
-                    onClose = { navController.popBackStack() },
-                    onSpielerClick = { pid ->
-                        navController.navigate(buildSpielerRoute(pid, null)) {
-                            launchSingleTop = true
-                        }
-                    },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_TOP_SPIELER) {
-                TopspielerScreen(
-                    onClose = { navController.popBackStack() },
-                    onSpielerClick = { pid ->
-                        navController.navigate(buildSpielerRoute(pid, null)) {
-                            launchSingleTop = true
-                        }
-                    },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_TOP_TEAMS) {
-                TopteamsScreen(
-                    onClose = { navController.popBackStack() },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_FAIRPLAY) {
-                FairplayScreen(
-                    onClose = { navController.popBackStack() },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_SPIELERSCOUT) {
-                SpielerscoutScreen(
-                    onClose = { navController.popBackStack() },
-                    onSpielerClick = { pid ->
-                        navController.navigate(buildSpielerRoute(pid, null)) {
-                            launchSingleTop = true
-                        }
-                    },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_SPIELERSUCHE) {
-                SpielersucheScreen(
-                    onClose = { navController.popBackStack() },
-                    onSpielerClick = { pid ->
-                        navController.navigate(buildSpielerRoute(pid, null)) {
-                            launchSingleTop = true
-                        }
-                    },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_SPIELERVERGLEICH) {
-                SpielervergleichScreen(
-                    onClose = { navController.popBackStack() },
-                    onSpielerClick = { pid ->
-                        navController.navigate(buildSpielerRoute(pid, null)) {
-                            launchSingleTop = true
-                        }
-                    },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            composable(Routes.STATISTIK_SPIELSTATISTIKEN) {
-                SpielstatistikenScreen(
-                    onClose = { navController.popBackStack() },
-                )
-            }
-            composable(Routes.STATISTIK_TABELLENSTATISTIKEN) {
-                TabellenstatistikenScreen(
-                    onClose = { navController.popBackStack() },
-                    onTeamClick = { teamId ->
-                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
             composable(Routes.SEITE) {
                 SeiteScreen(onClose = { navController.popBackStack() })
             }
@@ -901,7 +735,6 @@ private val bottomTabs = listOf(
     BottomTab(Routes.BEWERBE, "Nationale\nBewerbe", Icons.Filled.EmojiEvents),
     BottomTab(Routes.INTERNATIONALE_BEWERBE, "Intern.\nBewerbe", Icons.Filled.Public),
     BottomTab(Routes.TRANSFERS, "Transfers", Icons.Filled.SwapHoriz),
-    BottomTab(Routes.STATISTIKEN, "Statistiken", Icons.Filled.BarChart),
     BottomTab(Routes.VEREIN_BEREICH, "Verein", Icons.Filled.AccountBalance),
 )
 
