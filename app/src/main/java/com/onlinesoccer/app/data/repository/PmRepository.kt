@@ -134,8 +134,8 @@ class PmRepository @Inject constructor(
             }
         }
 
-        doc.select("#tab_inbox div.pmrow").forEach { rowParse(it, postausgang = false) }
-        doc.select("#tab_outbox div.pmrow").forEach { rowParse(it, postausgang = true) }
+        doc.select("#tab_inbox div.pmrow, #inbox div.pmrow").forEach { rowParse(it, postausgang = false) }
+        doc.select("#tab_outbox div.pmrow, #outbox div.pmrow").forEach { rowParse(it, postausgang = true) }
 
         return result.values.toList()
     }

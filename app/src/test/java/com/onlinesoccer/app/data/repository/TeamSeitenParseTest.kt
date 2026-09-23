@@ -143,6 +143,14 @@ class TeamSeitenParseTest {
         assertEquals("installiert", zustand["Rasenheizung"])
         assertEquals("10.982.835", zustand["Kontostand"])
 
+        val plan = ansicht.abschnitte.first { it.titel == "Aktueller Stadion-Zustand" }.stadionPlan
+        assertTrue("Stadionplan-Daten vorhanden", plan != null)
+        assertEquals(90_500, plan?.sitzplaetze)
+        assertEquals(0, plan?.stehplaetze)
+        assertEquals(90_500, plan?.sitzUeberdacht)
+        assertEquals(0, plan?.stehUeberdacht)
+        assertEquals(90_500, plan?.kapazitaet)
+
         val optionen = ansicht.abschnitte.first { it.titel == "Ausbaumöglichkeiten" }.zeilen
         assertEquals("8 Ausbauoptionen", 8, optionen.size)
         val steh = optionen.first()
@@ -331,6 +339,36 @@ class TeamSeitenParseTest {
         )
         assertEquals("vertragsauswahl", form.buttons.single().name)
         assertTrue("Nicht verlängerbare Spieler haben kein Formular", form.zeilen.none { it.schluessel == "104203" })
+    }
+
+    @Test
+    fun stadion_mitBereichen_liestTribuenen() {
+        val ansicht = repo.parseStadion(dump("stadion_mit_bereichen"))
+
+        val plan = ansicht.abschnitte.first { it.titel == "Aktueller Stadion-Zustand" }.stadionPlan
+        assertTrue("Stadionplan-Daten vorhanden", plan != null)
+        assertEquals("Fassungsvermögen vom Server übernommen", 45_000, plan?.fassungsvermoegen)
+        assertEquals(37_000, plan?.sitzplaetze)
+        assertEquals(8_000, plan?.stehplaetze)
+
+        val bereiche = plan?.bereiche.orEmpty()
+        assertEquals("4 Tribünen erkannt", 4, bereiche.size)
+        val nord = bereiche.first { it.name == "Nordtribüne" }
+        assertEquals(15_000, nord.sitzplaetze)
+        val sued = bereiche.first { it.name == "Südtribüne" }
+        assertEquals(10_000, sued.sitzplaetze)
+        val ost = bereiche.first { it.name == "Osttribüne" }
+        assertEquals(8_000, ost.sitzplaetze)
+        val west = bereiche.first { it.name == "Westtribüne" }
+        assertEquals(12_000, west.sitzplaetze)
+    }
+
+    @Test
+    fun stadion_ohneBereiche_liefertLeereBereichsliste() {
+        val ansicht = repo.parseStadion(dump("stadion"))
+
+        assertEquals(0, ansicht.abschnitte.first { it.titel == "Aktueller Stadion-Zustand" }.stadionPlan?.bereiche?.size)
+        assertEquals(90_500, ansicht.abschnitte.first { it.titel == "Aktueller Stadion-Zustand" }.stadionPlan?.fassungsvermoegen)
     }
 
     @Test

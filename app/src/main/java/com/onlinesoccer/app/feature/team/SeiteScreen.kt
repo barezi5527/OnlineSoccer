@@ -218,7 +218,12 @@ private fun AbschnittView(
             )
         }
 
-        if (abschnitt.infoZeilen.isNotEmpty()) {
+        abschnitt.stadionPlan?.let { plan -> StadionPlanView(plan) }
+
+        if (abschnitt.stadionPlan != null) {
+            // Stadionseite: Gesamtdaten werden übersichtlich in Gruppen dargestellt.
+            StadionDatenKarte(abschnitt.infoZeilen)
+        } else if (abschnitt.infoZeilen.isNotEmpty()) {
             Card(
                 Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -298,6 +303,81 @@ private fun AbschnittView(
                         )
                     }
                     AktionFormView(form, onSende, onFormularOeffnen)
+                }
+            }
+        }
+    }
+}
+
+/** Gruppiert die Stadion-Gesamtdaten in die Bereiche STADION / AUSSTATTUNG / FINANZEN. */
+private val stadionGruppenBestellung = listOf(
+    "STADION",
+    "AUSSTATTUNG",
+    "FINANZEN",
+)
+
+private fun stadionZeilenGruppen(infoZeilen: List<Pair<String, String>>): List<Pair<String, List<Pair<String, String>>>> {
+    val gruppen = linkedMapOf<String, MutableList<Pair<String, String>>>(
+        "STADION" to mutableListOf(),
+        "AUSSTATTUNG" to mutableListOf(),
+        "FINANZEN" to mutableListOf(),
+    )
+    val zuordnung = mapOf(
+        "Fassungsvermögen" to "STADION",
+        "Sitzplätze" to "STADION",
+        "Stehplätze" to "STADION",
+        "davon überdacht (Sitz)" to "STADION",
+        "davon überdacht (Steh)" to "STADION",
+        "Anzeigetafel" to "AUSSTATTUNG",
+        "Rasenheizung" to "AUSSTATTUNG",
+        "Kontostand" to "FINANZEN",
+    )
+    infoZeilen.forEach { (label, wert) ->
+        // Unbekannte Labels gehen in die Stadion-Gruppe, damit nichts verloren geht.
+        gruppen[zuordnung[label] ?: "STADION"]?.add(label to wert)
+    }
+    return stadionGruppenBestellung.mapNotNull { name ->
+        val zeilen = gruppen[name].orEmpty()
+        if (zeilen.isEmpty()) null else name to zeilen
+    }
+}
+
+/** Übersichtliche Gruppierung der Stadion-Gesamtdaten unterhalb des Stadionplans. */
+@Composable
+private fun StadionDatenKarte(infoZeilen: List<Pair<String, String>>) {
+    if (infoZeilen.isEmpty()) return
+    val gruppen = remember(infoZeilen) { stadionZeilenGruppen(infoZeilen) }
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            gruppen.forEach { (gruppenTitel, zeilen) ->
+                Text(
+                    gruppenTitel,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                zeilen.forEach { (label, wert) ->
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(0.5f),
+                        )
+                        Text(
+                            wert,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(0.5f),
+                            textAlign = TextAlign.End,
+                        )
+                    }
                 }
             }
         }

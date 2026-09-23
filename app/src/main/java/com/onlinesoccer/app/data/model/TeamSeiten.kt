@@ -18,6 +18,8 @@ data class UebersichtAbschnitt(
     val punkte: List<String> = emptyList(),
     val zeilen: List<UebersichtZeile> = emptyList(),
     val aktionen: List<AktionForm> = emptyList(),
+    /** Optionaler Stadionplan (wird in der Anzeige „Stadionausbau“ gezeichnet). */
+    val stadionPlan: StadionPlanDaten? = null,
 )
 
 /**

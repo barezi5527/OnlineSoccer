@@ -21,6 +21,9 @@ import com.onlinesoccer.app.data.model.SeitenAnsicht
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
 import com.onlinesoccer.app.data.model.SpielerKarte
 import com.onlinesoccer.app.data.model.SpielerPosition
+import com.onlinesoccer.app.data.model.StadionBereich
+import com.onlinesoccer.app.data.model.StadionLage
+import com.onlinesoccer.app.data.model.StadionPlanDaten
 import com.onlinesoccer.app.data.model.StaerkeZeile
 import com.onlinesoccer.app.data.model.StatistikZeile
 import com.onlinesoccer.app.data.model.Teaminfo
@@ -730,7 +733,18 @@ class TeamRepository @Inject constructor(
             }
         }
         if (aufbereitet.isNotEmpty()) {
-            abschnitte += UebersichtAbschnitt(titel = "Aktueller Stadion-Zustand", infoZeilen = aufbereitet)
+            abschnitte += UebersichtAbschnitt(
+                titel = "Aktueller Stadion-Zustand",
+                infoZeilen = aufbereitet,
+                stadionPlan = StadionPlanDaten(
+                    stehplaetze = zustand.zahl("Stehplätze"),
+                    sitzplaetze = zustand.zahl("Sitzplätze"),
+                    stehUeberdacht = aufbereitet.zahl("davon überdacht (Steh)"),
+                    sitzUeberdacht = aufbereitet.zahl("davon überdacht (Sitz)"),
+                    fassungsvermoegen = zustand.zahl("Fassungsvermögen").takeIf { it > 0 },
+                    bereiche = parseStadionBereiche(doc),
+                ),
+            )
         }
 
         val tabellen = doc.select("table")
@@ -792,6 +806,63 @@ class TeamRepository @Inject constructor(
         }
         return SeitenAnsicht(titel = TITEL_STADION, abschnitte = abschnitte)
     }
+
+    /** Liest einen Zahlenwert (z. B. „90.500“) eines Zustands-Labels; 0 wenn fehlend. */
+    private fun List<Pair<String, String>>.zahl(label: String): Int {
+        val roh = firstOrNull { it.first.equals(label, ignoreCase = true) }?.second ?: return 0
+        return roh.filter { it.isDigit() }.toIntOrNull() ?: 0
+    }
+
+    /**
+     * Liest echte Tribünen aus der Stadionausbau-Seite. Die aktuelle Serverversion
+     * liefert nur Gesamtwerte, deshalb bleibt hier die Aufteilung im Normalfall leer.
+     * Tritt später eine Tabelle mit Tribünen (z. B. „Nordtribüne“, „Osttribüne unter
+     * Dach“) auf, werden pro Zeile Sitz- und Stehplätze samt überdachten Anteilen
+     * übernommen. Unklare Zeilen werden ignoriert, statt Werte zu erraten.
+     */
+    private fun parseStadionBereiche(doc: org.jsoup.nodes.Document): List<StadionBereich> {
+        val kandidaten = doc.select("tr").mapNotNull { tr ->
+            val zellen = tr.select("td").map { it.text().replace('\u00a0', ' ').trim() }
+            if (zellen.size < 2) return@mapNotNull null
+            val text = zellen.joinToString(" ").lowercase()
+            if (!text.contains("tribüne") && !text.contains("tribuenen")) return@mapNotNull null
+            val lage = lageAusName(text)
+            if (lage == null) return@mapNotNull null
+            tr to (zellen to lage)
+        }
+        if (kandidaten.isEmpty()) return emptyList()
+
+        val bereiche = mutableListOf<StadionBereich>()
+        kandidaten.forEach { (tr, zellenUndLage) ->
+            val (zellen, lage) = zellenUndLage
+            // Die erste Ganzzahl der Zeile ist die Platzanzahl der Tribüne.
+            val plaatze = ersteZahl(zellen.joinToString(" ")) ?: return@forEach
+            if (plaatze <= 0) return@forEach
+
+            bereiche += StadionBereich(
+                name = zellen[0].removeSuffix(":").trim().ifBlank { tr.text().trim() },
+                lage = lage,
+                sitzplaetze = plaatze,
+            )
+        }
+        return bereiche
+    }
+
+    /** Bestimmt die [StadionLage] aus einem Tribünennamen („Nordtribüne“ → NORD). */
+    private fun lageAusName(text: String): StadionLage? {
+        val n = text.lowercase()
+        return when {
+            n.contains("nord") -> StadionLage.NORD
+            n.contains("süd") || n.contains("sued") -> StadionLage.SUED
+            n.contains("ost") -> StadionLage.OST
+            n.contains("west") -> StadionLage.WEST
+            else -> null
+        }
+    }
+
+    /** Erste Ganzzahl in einem Text („Nordtribüne 15.000 Sitzplätze“ → 15000). */
+    private fun ersteZahl(text: String): Int? =
+        Regex("\\d[\\d.]*").find(text)?.value?.filter { it.isDigit() }?.toIntOrNull()
 
     /** Scouting-Gebot (`juscout.php?g=<id>`): Formular mit Ersatzspieler + Geldbetrag. */
     internal fun parseGebotFormular(html: String): AktionForm {

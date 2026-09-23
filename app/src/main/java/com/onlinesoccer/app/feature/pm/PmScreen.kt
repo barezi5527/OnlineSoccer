@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.PmNachricht
 import com.onlinesoccer.app.data.model.PmEmpfaengerVorschlag
 
+enum class PmOrdner { EINGANG, AUSGANG }
+
 @Composable
 fun PmScreen(
     onClose: () -> Unit,
@@ -46,6 +49,7 @@ fun PmScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var loeschenBestaetigen by remember { mutableStateOf(false) }
+    var ordner by remember { mutableStateOf(PmOrdner.EINGANG) }
 
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -136,21 +140,58 @@ fun PmScreen(
             else -> {
                 val posteingang = uiState.liste.filter { it.ausgehend.not() }
                 val gesendete = uiState.liste.filter { it.ausgehend }
-                LazyColumn(
-                    Modifier.fillMaxSize(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (posteingang.isNotEmpty()) {
-                        item(key = "header-eingang") { AbschnittHeader("Posteingang") }
-                        items(posteingang, key = { it.id }) { nachricht ->
-                            PmZeile(nachricht = nachricht, onOpen = { viewModel.oeffne(nachricht.id) })
-                        }
+                Column(Modifier.fillMaxSize()) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilterChip(
+                            selected = ordner == PmOrdner.EINGANG,
+                            onClick = { ordner = PmOrdner.EINGANG },
+                            label = { Text("Posteingang") },
+                        )
+                        FilterChip(
+                            selected = ordner == PmOrdner.AUSGANG,
+                            onClick = { ordner = PmOrdner.AUSGANG },
+                            label = { Text("Postausgang") },
+                        )
                     }
-                    if (gesendete.isNotEmpty()) {
-                        item(key = "header-ausgang") { AbschnittHeader("Gesendete Nachrichten") }
-                        items(gesendete, key = { it.id }) { nachricht ->
-                            PmZeile(nachricht = nachricht, onOpen = { viewModel.oeffne(nachricht.id) })
+                    when (ordner) {
+                        PmOrdner.EINGANG -> {
+                            if (posteingang.isEmpty()) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("Keine Nachrichten im Posteingang.")
+                                }
+                            } else {
+                                LazyColumn(
+                                    Modifier.fillMaxSize(),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(posteingang, key = { it.id }) { nachricht ->
+                                        PmZeile(nachricht = nachricht, onOpen = { viewModel.oeffne(nachricht.id) })
+                                    }
+                                }
+                            }
+                        }
+                        PmOrdner.AUSGANG -> {
+                            if (gesendete.isEmpty()) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("Keine Nachrichten im Postausgang.")
+                                }
+                            } else {
+                                LazyColumn(
+                                    Modifier.fillMaxSize(),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(gesendete, key = { it.id }) { nachricht ->
+                                        PmZeile(nachricht = nachricht, onOpen = { viewModel.oeffne(nachricht.id) })
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -168,17 +209,6 @@ fun PmScreen(
             dismissButton = { TextButton(onClick = { loeschenBestaetigen = false }) { Text("Abbrechen") } },
         )
     }
-}
-
-@Composable
-private fun AbschnittHeader(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
-    )
 }
 
 @Composable

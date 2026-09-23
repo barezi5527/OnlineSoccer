@@ -33,6 +33,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -283,6 +284,15 @@ private fun MainScaffold(
                     )
                 },
                 actions = {
+                    if (currentRoute == Routes.SEITE) {
+                        TextButton(
+                            onClick = {
+                                navController.navigate(Routes.TEAMINFO) { launchSingleTop = true }
+                            },
+                        ) {
+                            Text("Teaminformationen")
+                        }
+                    }
                     IconButton(onClick = onThemeCycle) {
                         Icon(
                             imageVector = when {

@@ -4,6 +4,8 @@ package com.onlinesoccer.app.data.model
 data class LaenderOption(
     val id: String,
     val label: String,
+    /** true, wenn die Website diese Option als Vorauswahl (`selected`) liefert. */
+    val selected: Boolean = false,
 )
 
 /** Zeile der Liste „Freie Teams" (`osneu/freieteams`). */
