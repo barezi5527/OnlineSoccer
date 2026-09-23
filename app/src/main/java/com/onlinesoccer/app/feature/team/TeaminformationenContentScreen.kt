@@ -72,17 +72,17 @@ fun TeaminformationenContentScreen(
 
     LaunchedEffect(eintragId, teamId) {
         when (eintragId) {
-            "s0" -> if (uiState.kader.isEmpty()) viewModel.ladeKader()
-            "s1" -> if (uiState.vertraege == null) viewModel.ladeVertraege()
-            "s2" -> if (uiState.staerken == null) viewModel.ladeStaerken()
-            "s3" -> viewModel.ladeStatistik(gesamt = false)
-            "s4" -> viewModel.ladeStatistik(gesamt = true)
-            "s5" -> if (uiState.teaminfo == null) viewModel.ladeTeaminfo()
-            "s6" -> viewModel.ladeSaisonplan(uiState.saisonplan?.gewaehlteSaison)
-            "s7" -> if (uiState.vereinshistorie == null) viewModel.ladeVereinshistorie()
-            "s8" -> if (uiState.transferhistorie == null) viewModel.ladeTransferhistorie()
-            "s9" -> if (uiState.leihhistorie == null) viewModel.ladeLeihhistorie()
-            "s10" -> if (uiState.saisonhistorie == null) viewModel.ladeSaisonhistorie()
+            "s0" -> if (uiState.kader.isEmpty()) viewModel.ladeKader(teamId)
+            "s1" -> if (uiState.vertraege == null) viewModel.ladeVertraege(teamId)
+            "s2" -> if (uiState.staerken == null) viewModel.ladeStaerken(teamId)
+            "s3" -> viewModel.ladeStatistik(gesamt = false, teamId = teamId)
+            "s4" -> viewModel.ladeStatistik(gesamt = true, teamId = teamId)
+            "s5" -> if (uiState.teaminfo == null) viewModel.ladeTeaminfo(teamId)
+            "s6" -> viewModel.ladeSaisonplan(uiState.saisonplan?.gewaehlteSaison, teamId)
+            "s7" -> if (uiState.vereinshistorie == null) viewModel.ladeVereinshistorie(teamId)
+            "s8" -> if (uiState.transferhistorie == null) viewModel.ladeTransferhistorie(teamId)
+            "s9" -> if (uiState.leihhistorie == null) viewModel.ladeLeihhistorie(teamId)
+            "s10" -> if (uiState.saisonhistorie == null) viewModel.ladeSaisonhistorie(teamId)
             "tp" -> if (teamId != null) viewModel.ladeTabellenplatzBild(teamId)
         }
     }
@@ -115,10 +115,22 @@ fun TeaminformationenContentScreen(
                 "s0" -> KaderAnsicht(uiState, viewModel, onSpielerClick)
                 "s1" -> VertraegeAnsicht(uiState.vertraege.orEmpty(), onSpielerClick)
                 "s2" -> StaerkenAnsicht(uiState.staerken.orEmpty())
-                "s3" -> StatistikAnsicht(uiState.statistik.orEmpty(), gesamt = false, viewModel::ladeStatistik)
-                "s4" -> StatistikAnsicht(uiState.statistik.orEmpty(), gesamt = true, viewModel::ladeStatistik)
+                "s3" -> StatistikAnsicht(
+                    uiState.statistik.orEmpty(),
+                    gesamt = false,
+                    onGesamt = { gesamt -> viewModel.ladeStatistik(gesamt, teamId) },
+                )
+                "s4" -> StatistikAnsicht(
+                    uiState.statistik.orEmpty(),
+                    gesamt = true,
+                    onGesamt = { gesamt -> viewModel.ladeStatistik(gesamt, teamId) },
+                )
                 "s5" -> TeaminfoAnsicht(uiState.teaminfo)
-                "s6" -> SaisonplanAnsicht(uiState.saisonplan, viewModel::ladeSaisonplan, onBerichtClick)
+                "s6" -> SaisonplanAnsicht(
+                    uiState.saisonplan,
+                    onSaison = { saison -> viewModel.ladeSaisonplan(saison, teamId) },
+                    onBerichtClick,
+                )
                 "s7" -> VereinshistorieAnsicht(uiState.vereinshistorie)
                 "s8" -> TransferhistorieAnsicht(uiState.transferhistorie, onTeamClick)
                 "s9" -> LeihhistorieAnsicht(uiState.leihhistorie, onSpielerClick, onTeamClick)
@@ -146,17 +158,17 @@ private fun hatInhalt(eintragId: String?, uiState: TeamUiState): Boolean = when 
 }
 
 private fun neuLaden(eintragId: String?, teamId: Long?, viewModel: TeamViewModel) = when (eintragId) {
-    "s0" -> viewModel.ladeKader()
-    "s1" -> viewModel.ladeVertraege()
-    "s2" -> viewModel.ladeStaerken()
-    "s3" -> viewModel.ladeStatistik(gesamt = false)
-    "s4" -> viewModel.ladeStatistik(gesamt = true)
-    "s5" -> viewModel.ladeTeaminfo()
-    "s6" -> viewModel.ladeSaisonplan(viewModel.uiState.value.saisonplan?.gewaehlteSaison)
-    "s7" -> viewModel.ladeVereinshistorie()
-    "s8" -> viewModel.ladeTransferhistorie()
-    "s9" -> viewModel.ladeLeihhistorie()
-    "s10" -> viewModel.ladeSaisonhistorie()
+    "s0" -> viewModel.ladeKader(teamId)
+    "s1" -> viewModel.ladeVertraege(teamId)
+    "s2" -> viewModel.ladeStaerken(teamId)
+    "s3" -> viewModel.ladeStatistik(gesamt = false, teamId = teamId)
+    "s4" -> viewModel.ladeStatistik(gesamt = true, teamId = teamId)
+    "s5" -> viewModel.ladeTeaminfo(teamId)
+    "s6" -> viewModel.ladeSaisonplan(viewModel.uiState.value.saisonplan?.gewaehlteSaison, teamId)
+    "s7" -> viewModel.ladeVereinshistorie(teamId)
+    "s8" -> viewModel.ladeTransferhistorie(teamId)
+    "s9" -> viewModel.ladeLeihhistorie(teamId)
+    "s10" -> viewModel.ladeSaisonhistorie(teamId)
     "tp" -> if (teamId != null) viewModel.ladeTabellenplatzBild(teamId) else Unit
     else -> Unit
 }

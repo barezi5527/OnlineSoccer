@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,7 @@ import com.onlinesoccer.app.data.model.TeamTrainer
 fun VereinScreen(
     onSpielerClick: (Long) -> Unit,
     onClose: () -> Unit,
+    onTeaminformationenClick: () -> Unit,
     viewModel: VereinViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -71,6 +73,7 @@ fun VereinScreen(
             team = uiState.team!!,
             onSpielerClick = onSpielerClick,
             onClose = onClose,
+            onTeaminformationenClick = onTeaminformationenClick,
             onTrainerKlick = { trainerDialog = it },
         )
     }
@@ -93,6 +96,7 @@ private fun VereinAnsicht(
     team: FremdesTeam,
     onSpielerClick: (Long) -> Unit,
     onClose: () -> Unit,
+    onTeaminformationenClick: () -> Unit,
     onTrainerKlick: (TeamTrainer.Besetzt) -> Unit,
 ) {
     LazyColumn(
@@ -133,12 +137,20 @@ private fun VereinAnsicht(
                     .padding(horizontal = 12.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             ) {
-                Text(
-                    "Kader · ${team.kader.size} Spieler",
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium,
-                )
+                Row(
+                    Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Kader · ${team.kader.size} Spieler",
+                        modifier = Modifier.weight(1f).padding(start = 4.dp),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    TextButton(onClick = onTeaminformationenClick) {
+                        Text("Teaminformationen")
+                    }
+                }
             }
         }
         items(team.kader, key = { it.pid }) { spieler ->

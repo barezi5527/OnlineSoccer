@@ -70,12 +70,12 @@ class TeamViewModel @Inject constructor(
     val uiState: StateFlow<TeamUiState> = _uiState.asStateFlow()
     private var ladeJob: Job? = null
 
-    fun ladeKader() {
+    fun ladeKader(teamId: Long? = null) {
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, kader = repository.ladeKader())
+                _uiState.value.copy(ladend = false, kader = repository.ladeKader(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -95,13 +95,13 @@ class TeamViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(sortierung = sortierung)
     }
 
-    fun ladeVertraege() {
+    fun ladeVertraege(teamId: Long? = null) {
         if (_uiState.value.vertraege != null) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, vertraege = repository.ladeVertraege())
+                _uiState.value.copy(ladend = false, vertraege = repository.ladeVertraege(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -110,13 +110,13 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeStaerken() {
+    fun ladeStaerken(teamId: Long? = null) {
         if (_uiState.value.staerken != null) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, staerken = repository.ladeStaerken())
+                _uiState.value.copy(ladend = false, staerken = repository.ladeStaerken(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -125,13 +125,13 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeStatistik(gesamt: Boolean) {
+    fun ladeStatistik(gesamt: Boolean, teamId: Long? = null) {
         if (_uiState.value.statistik != null && _uiState.value.statistikGesamt == gesamt) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null, statistikGesamt = gesamt)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, statistik = repository.ladeStatistik(gesamt))
+                _uiState.value.copy(ladend = false, statistik = repository.ladeStatistik(gesamt, teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -140,13 +140,13 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeTeaminfo() {
+    fun ladeTeaminfo(teamId: Long? = null) {
         if (_uiState.value.teaminfo != null) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, teaminfo = repository.ladeTeaminfo())
+                _uiState.value.copy(ladend = false, teaminfo = repository.ladeTeaminfo(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -155,12 +155,12 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeSaisonplan(saison: Int? = null) {
+    fun ladeSaisonplan(saison: Int? = null, teamId: Long? = null) {
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, saisonplan = repository.ladeSaisonplan(saison))
+                _uiState.value.copy(ladend = false, saisonplan = repository.ladeSaisonplan(saison, teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -169,13 +169,13 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeVereinshistorie() {
+    fun ladeVereinshistorie(teamId: Long? = null) {
         if (_uiState.value.vereinshistorie != null) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, vereinshistorie = repository.ladeVereinshistorie())
+                _uiState.value.copy(ladend = false, vereinshistorie = repository.ladeVereinshistorie(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -184,13 +184,13 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeTransferhistorie() {
+    fun ladeTransferhistorie(teamId: Long? = null) {
         if (_uiState.value.transferhistorie != null) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, transferhistorie = repository.ladeTransferhistorie())
+                _uiState.value.copy(ladend = false, transferhistorie = repository.ladeTransferhistorie(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -199,13 +199,13 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeLeihhistorie() {
+    fun ladeLeihhistorie(teamId: Long? = null) {
         if (_uiState.value.leihhistorie != null) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, leihhistorie = repository.ladeLeihhistorie())
+                _uiState.value.copy(ladend = false, leihhistorie = repository.ladeLeihhistorie(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -214,13 +214,13 @@ class TeamViewModel @Inject constructor(
         }
     }
 
-    fun ladeSaisonhistorie() {
+    fun ladeSaisonhistorie(teamId: Long? = null) {
         if (_uiState.value.saisonhistorie != null) return
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
-                _uiState.value.copy(ladend = false, saisonhistorie = repository.ladeSaisonhistorie())
+                _uiState.value.copy(ladend = false, saisonhistorie = repository.ladeSaisonhistorie(teamId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

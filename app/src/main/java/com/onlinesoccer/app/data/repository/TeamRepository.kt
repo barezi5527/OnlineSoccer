@@ -62,8 +62,17 @@ class TeamRepository @Inject constructor(
     private val sessionManager: SessionManager? = null,
 ) {
 
-    suspend fun ladeKader(): List<KaderSpieler> = withContext(Dispatchers.IO) {
-        val squadHtml = safeGet("${OsApi.BASE_URL}/showteam.php?s=0")
+    /**
+     * Basis-URL einer Team-Seite. Für den eigenen Verein wird `showteam.php?s=`,
+     * für einen fremden Verein (z. B. aus der Ligatabelle) `st.php?s=&c=` verwendet –
+     * beide liefern die identischen Reiter (Teamübersicht, Vertragsdaten, …).
+     */
+    private fun showteamUrl(s: Int, teamId: Long? = null): String =
+        if (teamId != null && teamId > 0) "${OsApi.BASE_URL}/st.php?s=$s&c=$teamId"
+        else "${OsApi.BASE_URL}/showteam.php?s=$s"
+
+    suspend fun ladeKader(teamId: Long? = null): List<KaderSpieler> = withContext(Dispatchers.IO) {
+        val squadHtml = safeGet(showteamUrl(0, teamId))
         val ausKader = squadHtml?.let {
             runCatching { parseKader(it) }.getOrNull()
         }
@@ -168,21 +177,22 @@ class TeamRepository @Inject constructor(
         else -> SpielerPosition.AMATEUR
     }
 
-    suspend fun ladeVertraege(): List<VertragZeile> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=1")?.let { parseVertraege(it) }.orEmpty()
+    suspend fun ladeVertraege(teamId: Long? = null): List<VertragZeile> = withContext(Dispatchers.IO) {
+        safeGet(showteamUrl(1, teamId))?.let { parseVertraege(it) }.orEmpty()
     }
 
-    suspend fun ladeStaerken(): List<StaerkeZeile> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=2")?.let { parseStaerken(it) }.orEmpty()
+    suspend fun ladeStaerken(teamId: Long? = null): List<StaerkeZeile> = withContext(Dispatchers.IO) {
+        safeGet(showteamUrl(2, teamId))?.let { parseStaerken(it) }.orEmpty()
     }
 
-    suspend fun ladeStatistik(gesamt: Boolean): List<StatistikZeile> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=${if (gesamt) 4 else 3}")
-            ?.let { parseStatistik(it) }.orEmpty()
-    }
+    suspend fun ladeStatistik(gesamt: Boolean, teamId: Long? = null): List<StatistikZeile> =
+        withContext(Dispatchers.IO) {
+            safeGet(showteamUrl(if (gesamt) 4 else 3, teamId))
+                ?.let { parseStatistik(it) }.orEmpty()
+        }
 
-    suspend fun ladeTeaminfo(): Teaminfo = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=5")?.let { parseTeaminfo(it) } ?: Teaminfo()
+    suspend fun ladeTeaminfo(teamId: Long? = null): Teaminfo = withContext(Dispatchers.IO) {
+        safeGet(showteamUrl(5, teamId))?.let { parseTeaminfo(it) } ?: Teaminfo()
     }
 
     /**
@@ -1220,9 +1230,9 @@ class TeamRepository @Inject constructor(
     }
 
     /**
-     * Menüstruktur der „Teaminformationen" (`showteam.php`): die Unterpunkte im
-     * Kopfbereich werden dynamisch aus den `a[hspace=20]`-Links gelesen, sodass
-     * Änderungen der Website ohne Code-Anpassung übernommen werden.
+     * Menüstruktur der „Teaminformationen": die Unterpunkte im Kopfbereich werden
+     * dynamisch aus den `a[hspace=20]`-Links gelesen – sowohl für den eigenen
+     * Verein (`showteam.php?s=`) als auch für fremde Vereine (`st.php?s=&c=`).
      */
     internal fun parseTeaminformationenMenu(html: String): List<TeamInfoMenuEintrag> {
         val doc = Jsoup.parse(html)
@@ -1231,10 +1241,12 @@ class TeamRepository @Inject constructor(
             val href = a.attr("href").trim()
             val label = a.text().trim()
             if (href.isEmpty() || label.isEmpty()) return@mapNotNull null
-            val showteamS = if (href.startsWith("showteam.php", ignoreCase = true)) {
-                Regex("[?&]s=(\\d+)").find(href)?.groupValues?.get(1)
-            } else {
-                null
+            val showteamS = when {
+                href.startsWith("showteam.php", ignoreCase = true) ->
+                    Regex("[?&]s=(\\d+)").find(href)?.groupValues?.get(1)
+                href.startsWith("st.php", ignoreCase = true) ->
+                    Regex("[?&]s=(\\d+)").find(href)?.groupValues?.get(1)
+                else -> null
             }
             val tabellenplatzTeamId = if (href.contains("tabellenplatz", ignoreCase = true)) {
                 Regex("tabellenplatz\\((\\d+)\\)").find(href)?.groupValues?.get(1)?.toLongOrNull()
@@ -1253,19 +1265,22 @@ class TeamRepository @Inject constructor(
         .distinctBy { it.label }
     }
 
-    suspend fun ladeTeaminformationenMenu(): List<TeamInfoMenuEintrag> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=0")?.let { parseTeaminformationenMenu(it) }.orEmpty()
-    }
-
-    /** Saisonplan (`showteam.php?s=6`), optional für eine gewählte Saison. */
-    suspend fun ladeSaisonplan(saison: Int? = null): SaisonplanDaten = withContext(Dispatchers.IO) {
-        val url = if (saison != null) {
-            "${OsApi.BASE_URL}/showteam.php?s=6&saison=$saison"
-        } else {
-            "${OsApi.BASE_URL}/showteam.php?s=6"
+    suspend fun ladeTeaminformationenMenu(teamId: Long? = null): List<TeamInfoMenuEintrag> =
+        withContext(Dispatchers.IO) {
+            safeGet(if (teamId != null && teamId > 0) "${OsApi.BASE_URL}/st.php?c=$teamId" else "${OsApi.BASE_URL}/showteam.php?s=0")
+                ?.let { parseTeaminformationenMenu(it) }.orEmpty()
         }
-        safeGet(url)?.let { parseSaisonplan(it) } ?: SaisonplanDaten()
-    }
+
+    /** Saisonplan, optional für eine gewählte Saison. */
+    suspend fun ladeSaisonplan(saison: Int? = null, teamId: Long? = null): SaisonplanDaten =
+        withContext(Dispatchers.IO) {
+            val url = if (saison != null) {
+                "${showteamUrl(6, teamId)}&saison=$saison"
+            } else {
+                showteamUrl(6, teamId)
+            }
+            safeGet(url)?.let { parseSaisonplan(it) } ?: SaisonplanDaten()
+        }
 
     internal fun parseSaisonplan(html: String): SaisonplanDaten {
         val doc = Jsoup.parse(html)
@@ -1317,10 +1332,11 @@ class TeamRepository @Inject constructor(
         return SaisonplanDaten(saisons, gewaehlte, eintraege)
     }
 
-    /** Vereinshistorie (`showteam.php?s=7`): Spielerentwicklung je ZAT. */
-    suspend fun ladeVereinshistorie(): List<VereinshistorieEintrag> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=7")?.let { parseVereinshistorie(it) }.orEmpty()
-    }
+    /** Vereinshistorie: Spielerentwicklung je ZAT. */
+    suspend fun ladeVereinshistorie(teamId: Long? = null): List<VereinshistorieEintrag> =
+        withContext(Dispatchers.IO) {
+            safeGet(showteamUrl(7, teamId))?.let { parseVereinshistorie(it) }.orEmpty()
+        }
 
     internal fun parseVereinshistorie(html: String): List<VereinshistorieEintrag> {
         val doc = Jsoup.parse(html)
@@ -1374,10 +1390,11 @@ class TeamRepository @Inject constructor(
         return zeilen
     }
 
-    /** Transferhistorie (`showteam.php?s=8`): Blöcke je Transfer/VM-Kauf. */
-    suspend fun ladeTransferhistorie(): List<TransferhistorieBlock> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=8")?.let { parseTransferhistorie(it) }.orEmpty()
-    }
+    /** Transferhistorie: Blöcke je Transfer/VM-Kauf. */
+    suspend fun ladeTransferhistorie(teamId: Long? = null): List<TransferhistorieBlock> =
+        withContext(Dispatchers.IO) {
+            safeGet(showteamUrl(8, teamId))?.let { parseTransferhistorie(it) }.orEmpty()
+        }
 
     internal fun parseTransferhistorie(html: String): List<TransferhistorieBlock> {
         val doc = Jsoup.parse(html)
@@ -1410,10 +1427,11 @@ class TeamRepository @Inject constructor(
         }
     }
 
-    /** Leihhistorie (`showteam.php?s=9`): Tabelle aller Leihen. */
-    suspend fun ladeLeihhistorie(): List<LeihhistorieEintrag> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=9")?.let { parseLeihhistorie(it) }.orEmpty()
-    }
+    /** Leihhistorie: Tabelle aller Leihen. */
+    suspend fun ladeLeihhistorie(teamId: Long? = null): List<LeihhistorieEintrag> =
+        withContext(Dispatchers.IO) {
+            safeGet(showteamUrl(9, teamId))?.let { parseLeihhistorie(it) }.orEmpty()
+        }
 
     internal fun parseLeihhistorie(html: String): List<LeihhistorieEintrag> {
         val doc = Jsoup.parse(html)
@@ -1465,10 +1483,11 @@ class TeamRepository @Inject constructor(
         }
     }
 
-    /** Saisonhistorie (`showteam.php?s=10`): Liga/Tabelle/Pokal/OSE/OSC je Saison. */
-    suspend fun ladeSaisonhistorie(): List<SaisonhistorieEintrag> = withContext(Dispatchers.IO) {
-        safeGet("${OsApi.BASE_URL}/showteam.php?s=10")?.let { parseSaisonhistorie(it) }.orEmpty()
-    }
+    /** Saisonhistorie: Liga/Tabelle/Pokal/OSE/OSC je Saison. */
+    suspend fun ladeSaisonhistorie(teamId: Long? = null): List<SaisonhistorieEintrag> =
+        withContext(Dispatchers.IO) {
+            safeGet(showteamUrl(10, teamId))?.let { parseSaisonhistorie(it) }.orEmpty()
+        }
 
     internal fun parseSaisonhistorie(html: String): List<SaisonhistorieEintrag> {
         val doc = Jsoup.parse(html)

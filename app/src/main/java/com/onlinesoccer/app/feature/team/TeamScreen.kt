@@ -126,7 +126,7 @@ fun TeamScreen(
                         ) {
                             Text(uiState.fehler.orEmpty(), color = MaterialTheme.colorScheme.error)
                             Spacer(Modifier.height(12.dp))
-                            FilledTonalButton(onClick = viewModel::ladeKader) {
+                            FilledTonalButton(onClick = { viewModel.ladeKader() }) {
                                 Icon(Icons.Default.Refresh, contentDescription = null)
                                 Spacer(Modifier.padding(start = 4.dp))
                                 Text("Erneut versuchen")

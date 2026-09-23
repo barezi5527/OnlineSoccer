@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,9 +69,14 @@ internal fun teamInfoMenuIcon(label: String): ImageVector = when {
 fun TeaminformationenScreen(
     onEintragClick: (TeamInfoMenuEintrag) -> Unit,
     onClose: () -> Unit,
+    teamId: Long? = null,
     viewModel: TeaminformationenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(teamId) {
+        viewModel.lade(teamId)
+    }
 
     when {
         uiState.ladend -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -86,7 +92,7 @@ fun TeaminformationenScreen(
         ) {
             Text(uiState.fehler!!, color = MaterialTheme.colorScheme.error)
             Spacer(Modifier.height(12.dp))
-            FilledTonalButton(onClick = viewModel::lade) {
+            FilledTonalButton(onClick = { viewModel.lade(uiState.teamId) }) {
                 Icon(Icons.Default.Refresh, contentDescription = null)
                 Spacer(Modifier.padding(start = 4.dp))
                 Text("Erneut versuchen")

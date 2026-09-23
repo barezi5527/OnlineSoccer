@@ -16,6 +16,8 @@ data class TeaminformationenUiState(
     val ladend: Boolean = true,
     val fehler: String? = null,
     val menuEintraege: List<TeamInfoMenuEintrag> = emptyList(),
+    /** Verein, dessen Teaminformationen geladen werden; `null` = eigener Verein. */
+    val teamId: Long? = null,
 )
 
 /** Lädt die Unterpunkte des Bereichs „Teaminformationen" dynamisch von der Website. */
@@ -27,17 +29,14 @@ class TeaminformationenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TeaminformationenUiState())
     val uiState: StateFlow<TeaminformationenUiState> = _uiState.asStateFlow()
 
-    init {
-        lade()
-    }
-
-    fun lade() {
+    fun lade(teamId: Long? = null) {
+        if (!_uiState.value.menuEintraege.isEmpty() && _uiState.value.teamId == teamId) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null, teamId = teamId)
             _uiState.value = try {
                 _uiState.value.copy(
                     ladend = false,
-                    menuEintraege = repository.ladeTeaminformationenMenu(),
+                    menuEintraege = repository.ladeTeaminformationenMenu(teamId),
                 )
             } catch (e: CancellationException) {
                 throw e

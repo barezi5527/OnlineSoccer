@@ -39,6 +39,29 @@ class TeaminformationenRepositoryParseTest {
     }
 
     @Test
+    fun menu_parstAuchFremdenVerein_unterTeaminfo() {
+        // Fremder Verein (im Ligatabellen-Link „javascript:teaminfo(3449)") öffnet st.php?c=3449.
+        // Dessen Menü liefert st.php-Links mit c=<teamId>; s=0 und Tabellenplätze bleiben entfernt.
+        val menu = repo.parseTeaminformationenMenu(dump("st_3449"))
+
+        assertTrue("Fremdverein-Menü nicht leer", menu.isNotEmpty())
+        assertTrue(
+            "Kein Teamübersicht (s=0) im Fremdverein-Menü",
+            menu.none { it.showteamS == "0" },
+        )
+        assertTrue(
+            "Kein Tabellenplätze-Eintrag (fremd)",
+            menu.all { it.tabellenplatzTeamId == null },
+        )
+        val teambasis = menu.first { it.label.contains("Vertragsdaten", true) }
+        assertEquals("Vertragsdaten → st.php?s=1", "1", teambasis.showteamS)
+        assertTrue(
+            "link auf st.php?c=3449",
+            teambasis.path.startsWith("st.php", ignoreCase = true) && teambasis.path.contains("c=3449"),
+        )
+    }
+
+    @Test
     fun saisonplan_liestSaisonsUndSpiele() {
         val daten = repo.parseSaisonplan(dump("showteam_s6"))
         assertEquals("Saisons 1..24", (1..24).toList(), daten.saisons.sorted())

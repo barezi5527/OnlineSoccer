@@ -103,7 +103,7 @@ object Routes {
     const val SPIELER_QUELLE_TM = "tm"
     const val VEREIN = "verein/{teamId}"
     const val VEREIN_BEREICH = "verein-bereich"
-    const val TEAMINFO = "teaminfo"
+    const val TEAMINFO = "teaminfo?teamId={teamId}"
     const val TEAMINFO_CONTENT = "teaminfo-content/{eintragId}?teamId={teamId}&label={label}"
     const val BERICHT = "bericht?sid={sid}&url={url}"
     const val ZAT_REPORT = "zat-report?zat={zat}&saison={saison}"
@@ -251,15 +251,19 @@ private fun MainScaffold(
             .replace("{quelle}", quelle)
 
     /** Route zu einem Teaminformationen-Unterpunkt; `null`, wenn kein bekannter Typ vorliegt. */
-    fun buildTeaminfoContentRoute(eintrag: TeamInfoMenuEintrag): String? {
+    fun buildTeaminfoContentRoute(eintrag: TeamInfoMenuEintrag, teamId: Long? = null): String? {
         val id = eintrag.showteamS?.let { "s$it" }
             ?: eintrag.tabellenplatzTeamId?.let { "tp" }
             ?: return null
         return Routes.TEAMINFO_CONTENT
             .replace("{eintragId}", id)
-            .replace("{teamId}", eintrag.tabellenplatzTeamId?.toString() ?: "0")
+            .replace("{teamId}", (eintrag.tabellenplatzTeamId ?: teamId)?.toString() ?: "0")
             .replace("{label}", Uri.encode(eintrag.label))
     }
+
+    /** Route zur Teaminformationen-Übersicht; `teamId` = fremder Verein oder `null` (eigener). */
+    fun teaminfoRoute(teamId: Long? = null): String =
+        Routes.TEAMINFO.replace("{teamId}", teamId?.toString() ?: "0")
 
     /** Baue Bericht-Route aus Sid und/oder statischer URL; `sid` hat Vorrang. */
     fun buildBerichtRoute(sid: String?, url: String?): String? {
@@ -284,10 +288,13 @@ private fun MainScaffold(
                     )
                 },
                 actions = {
+                    // „Teaminformationen" steht auf den eigenen Team-Seiten bereit –
+                    // wie auf der Website jeder Team-Seite der Reiter „Teaminfo".
+                    // Auf Seiten fremder Vereine liegt der Button neben dem Kader-Header.
                     if (currentRoute == Routes.SEITE) {
                         TextButton(
                             onClick = {
-                                navController.navigate(Routes.TEAMINFO) { launchSingleTop = true }
+                                navController.navigate(teaminfoRoute()) { launchSingleTop = true }
                             },
                         ) {
                             Text("Teaminformationen")
@@ -459,15 +466,22 @@ private fun MainScaffold(
                         }
                     },
                     onTeaminformationenClick = {
-                        navController.navigate(Routes.TEAMINFO) { launchSingleTop = true }
+                        navController.navigate(teaminfoRoute()) { launchSingleTop = true }
                     },
                 )
             }
-            composable(Routes.TEAMINFO) {
+            composable(
+                Routes.TEAMINFO,
+                arguments = listOf(
+                    navArgument("teamId") { type = androidx.navigation.NavType.LongType; defaultValue = 0L },
+                ),
+            ) { entry ->
+                val teamId = (entry.arguments?.getLong("teamId") ?: 0L).takeIf { it > 0 }
                 TeaminformationenScreen(
+                    teamId = teamId,
                     onClose = { navController.popBackStack() },
                     onEintragClick = { eintrag ->
-                        val route = buildTeaminfoContentRoute(eintrag)
+                        val route = buildTeaminfoContentRoute(eintrag, teamId)
                         if (route != null) {
                             navController.navigate(route) { launchSingleTop = true }
                         } else {
@@ -695,6 +709,9 @@ private fun MainScaffold(
                         }
                     },
                     onClose = { navController.popBackStack() },
+                    onTeaminformationenClick = {
+                        navController.navigate(teaminfoRoute(teamId)) { launchSingleTop = true }
+                    },
                 )
             }
             composable(
