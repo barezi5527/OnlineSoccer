@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -67,6 +68,10 @@ import com.onlinesoccer.app.feature.server.ManagerlisteScreen
 import com.onlinesoccer.app.feature.server.ServerBereicheScreen
 import com.onlinesoccer.app.feature.server.ZweitteamsScreen
 import com.onlinesoccer.app.feature.spiele.SpieleScreen
+import com.onlinesoccer.app.feature.statistik.StatistikBereich
+import com.onlinesoccer.app.feature.statistik.StatistikenScreen
+import com.onlinesoccer.app.feature.statistik.TopscorerScreen
+import com.onlinesoccer.app.feature.statistik.TopTeamsScreen
 import com.onlinesoccer.app.feature.team.SeiteScreen
 import com.onlinesoccer.app.feature.team.SpielerkarteScreen
 import com.onlinesoccer.app.feature.team.VereinBereichScreen
@@ -124,6 +129,9 @@ object Routes {
     const val TRANSFER_STATUS = "transfer-status"
     const val LETZTE_AKTIONEN = "letzte-aktionen/{art}"
     const val SPIELE = "matchcenter"
+    const val STATISTIKEN = "statistik"
+    const val STATISTIK_TOP_TEAMS = "statistik/top-teams"
+    const val STATISTIK_TOPSCORER = "statistik/topscorer"
 }
 
 @Composable
@@ -180,6 +188,12 @@ private fun routeFuerBereich(bereich: TransferBereich): String = when (bereich) 
     TransferBereich.LETZTE_BLITZ -> Routes.LETZTE_AKTIONEN.replace("{art}", LetzteAktionenArt.BLITZ.routeId)
 }
 
+/** Ziel-Route eines Statistiken-Menüeintrags. */
+private fun statistikRoute(bereich: StatistikBereich): String = when (bereich) {
+    StatistikBereich.TOPSCORER -> Routes.STATISTIK_TOPSCORER
+    StatistikBereich.TOP_TEAMS -> Routes.STATISTIK_TOP_TEAMS
+}
+
 private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null, label: String? = null): String {
     val basis = when (route) {
         Routes.DASHBOARD -> "Dashboard"
@@ -189,6 +203,9 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.INTERNATIONALE_BEWERBE -> "Intern. Bewerbe"
         Routes.NACHRICHTEN -> "Nachrichten"
         Routes.SPIELE -> "Matchcenter"
+        Routes.STATISTIKEN -> "Statistiken"
+        Routes.STATISTIK_TOP_TEAMS -> "Top-Teams"
+        Routes.STATISTIK_TOPSCORER -> "Topscorer"
         Routes.SPIELER -> "Spielerkarte"
         Routes.VEREIN -> "Verein"
         Routes.VEREIN_BEREICH -> "Verein"
@@ -684,6 +701,40 @@ private fun MainScaffold(
                 )
             }
             composable(Routes.SPIELE) { SpieleScreen() }
+            composable(Routes.STATISTIKEN) {
+                StatistikenScreen(
+                    onEintrag = { bereich ->
+                        navController.navigate(statistikRoute(bereich)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
+            composable(Routes.STATISTIK_TOP_TEAMS) {
+                TopTeamsScreen(
+                    onClose = { navController.popBackStack() },
+                    onTeamClick = { teamId ->
+                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
+            composable(Routes.STATISTIK_TOPSCORER) {
+                TopscorerScreen(
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid, teamId ->
+                        navController.navigate(buildSpielerRoute(pid, teamId)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onTeamClick = { teamId ->
+                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
             composable(Routes.NACHRICHTEN) {
                 PmScreen(onClose = { navController.popBackStack() })
             }
@@ -762,6 +813,7 @@ private val bottomTabs = listOf(
     BottomTab(Routes.BEWERBE, "Nationale\nBewerbe", Icons.Filled.EmojiEvents),
     BottomTab(Routes.INTERNATIONALE_BEWERBE, "Intern.\nBewerbe", Icons.Filled.Public),
     BottomTab(Routes.TRANSFERS, "Transfers", Icons.Filled.SwapHoriz),
+    BottomTab(Routes.STATISTIKEN, "Statistiken", Icons.Filled.BarChart),
     BottomTab(Routes.VEREIN_BEREICH, "Verein", Icons.Filled.AccountBalance),
 )
 

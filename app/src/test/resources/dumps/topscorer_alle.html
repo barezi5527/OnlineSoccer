@@ -1,0 +1,2176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<table border="0">
+
+	<tr>
+
+		<td>Land:</td>
+
+		<td>Liga:</td>
+
+		<td>Statistik:</td>
+
+		<td>Position:</td>
+
+		<td>Saison:</td>
+
+	</tr>
+
+	<form method="GET">
+
+	<tr>
+
+		<td>
+
+			<select name="landauswahl">
+
+				<option value="0">--Land---</option>
+
+				<option value="45">Albanien</option><option value="95">Andorra</option><option value="83">Armenien</option><option value="104">Aserbaidschan</option><option value="12">Belgien</option><option value="66">Bosnien-Herzegowina</option><option value="42">Bulgarien</option><option value="8">D&auml;nemark</option><option value="6">Deutschland</option><option value="1">England</option><option value="57">Estland</option><option value="68">Far&ouml;er</option><option value="40">Finnland</option><option value="32">Frankreich</option><option value="49">Georgien</option><option value="30">Griechenland</option><option value="5">Irland</option><option value="29">Island</option><option value="23">Israel</option><option value="10">Italien</option><option value="105">Kasachstan</option><option value="24">Kroatien</option><option value="97">Lettland</option><option value="92">Liechtenstein</option><option value="72">Litauen</option><option value="93">Luxemburg</option><option value="69">Malta</option><option value="86">Mazedonien</option><option value="87">Moldawien</option><option value="11">Niederlande</option><option value="4">Nordirland</option><option value="9">Norwegen</option><option value="14">&Ouml;sterreich</option><option value="25">Polen</option><option value="17">Portugal</option><option value="28">Rum&auml;nien</option><option value="19">Russland</option><option value="98">San Marino</option><option value="2">Schottland</option><option value="27">Schweden</option><option value="37">Schweiz</option><option value="41">Serbien und Montenegro</option><option value="70">Slowakei</option><option value="21">Slowenien</option><option value="13">Spanien</option><option value="18">Tschechien</option><option value="39">T&uuml;rkei</option><option value="20">Ukraine</option><option value="26">Ungarn</option><option value="3">Wales</option><option value="71">Weissrussland</option><option value="38">Zypern</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="ligaauswahl">
+
+				<option value="0">--Liga---</option>
+
+				<option value="1">1. Liga</option><option value="2">2. Liga A</option><option value="3">2. Liga B</option><option value="4">3. Liga A</option><option value="5">3. Liga B</option><option value="6">3. Liga C</option><option value="7">3. Liga D</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="statistik">
+
+				<option value="1" SELECTED>Tore</option><option value="2">Vorlagen</option><option value="3">Scorerpunkte</option><option value="4">Tore pro Spiel</option><option value="5">Vorlagen pro Spiel</option><option value="6">Minuten pro Tor</option><option value="7">Minuten gespielt</option><option value="8">Treter</option><option value="9">Karten pro Spiel</option><option value="10">Karten pro Minute</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="pos">
+
+				<option value="0">--Pos---</option>
+
+				<option value="1">TOR</option><option value="2">ABW</option><option value="3">DMI</option><option value="4">MIT</option><option value="5">OMI</option><option value="6">STU</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="saison">
+
+				<option value="0">--Saison---</option>
+
+				<option value="2">Saison 2</option><option value="3">Saison 3</option><option value="4">Saison 4</option><option value="5">Saison 5</option><option value="6">Saison 6</option><option value="7">Saison 7</option><option value="8">Saison 8</option><option value="9">Saison 9</option><option value="10">Saison 10</option><option value="11">Saison 11</option><option value="12">Saison 12</option><option value="13">Saison 13</option><option value="14">Saison 14</option><option value="15">Saison 15</option><option value="16">Saison 16</option><option value="17">Saison 17</option><option value="18">Saison 18</option><option value="19">Saison 19</option><option value="20">Saison 20</option><option value="21">Saison 21</option><option value="22">Saison 22</option><option value="23">Saison 23</option><option value="24" SELECTED>Saison 24</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="art">
+
+				<option value="0">--ART---</option>
+
+				<option value="4">Friendly</option><option value="1">Liga</option><option value="2">Pokal</option><option value="3">International</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<input type="submit" value="anzeigen">
+
+		</td>
+
+	</tr>
+
+	</form>
+
+</table>
+
+Es werden immer nur die Top 100 ausgegeben!
+
+<br>
+
+<br>
+
+<table border="0">
+
+	<tr>
+
+		<td>#</td>
+
+		<td>Name</td>
+
+		<td>Alter</td>
+
+		<td>Skill</td>
+
+		<td>Opti</td>
+
+		<td>Land</td>
+
+		<td>Verein</td>
+
+		<td>Liga</td>
+
+		<td>Wert</td>
+
+	</tr>
+
+	<tr>
+
+		<td class="STU">1</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(166282)">Esben Frederiksen</a></td>
+
+		<td class="STU">21</td>
+
+		<td class="STU">46.94</td>
+
+		<td class="STU">77.56</td>
+
+		<td class="STU"><img src="images/flaggen/DEN.gif" /> DEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(992)">SC St.Pauli</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">32.00</td>
+
+	</tr><tr>
+
+		<td class="STU">2</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(177329)">Diego Strehl</a></td>
+
+		<td class="STU">19</td>
+
+		<td class="STU">50.53</td>
+
+		<td class="STU">84.26</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(992)">SC St.Pauli</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">27.00</td>
+
+	</tr><tr>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(170509)">Marius Martens</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">44.82</td>
+
+		<td class="STU">62.30</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(992)">SC St.Pauli</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">19.00</td>
+
+	</tr><tr>
+
+		<td class="STU">4</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(141875)">Jens Blaudzun</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">56.59</td>
+
+		<td class="STU">86.15</td>
+
+		<td class="STU"><img src="images/flaggen/DEN.gif" /> DEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(165)">Capital Luxemburg</a></td>
+
+		<td class="STU">1. Liga Luxemburg</td>
+
+		<td class="STU">15.00</td>
+
+	</tr><tr>
+
+		<td class="STU">4</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(144480)">Brian Storming</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">54.29</td>
+
+		<td class="STU">86.78</td>
+
+		<td class="STU"><img src="images/flaggen/IRL.gif" /> IRL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1914)">AC Northampton</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">15.00</td>
+
+	</tr><tr>
+
+		<td class="STU">4</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(146619)">Ze Ronaldo</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">53.35</td>
+
+		<td class="STU">73.00</td>
+
+		<td class="STU"><img src="images/flaggen/BRA.gif" /> BRA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(286)">Banyas Budapest</a></td>
+
+		<td class="STU">1. Liga Ungarn</td>
+
+		<td class="STU">15.00</td>
+
+	</tr><tr>
+
+		<td class="STU">7</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(150404)">Abbas Yakut</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">50.35</td>
+
+		<td class="STU">82.81</td>
+
+		<td class="STU"><img src="images/flaggen/TUR.gif" /> TUR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(165)">Capital Luxemburg</a></td>
+
+		<td class="STU">1. Liga Luxemburg</td>
+
+		<td class="STU">14.00</td>
+
+	</tr><tr>
+
+		<td class="STU">7</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(149822)">Damien Dechanet</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">48.82</td>
+
+		<td class="STU">81.11</td>
+
+		<td class="STU"><img src="images/flaggen/FRA.gif" /> FRA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(711)">Pesky Brive</a></td>
+
+		<td class="STU">1. Liga Frankreich</td>
+
+		<td class="STU">14.00</td>
+
+	</tr><tr>
+
+		<td class="STU">7</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(150396)">Victor Zaharov</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">50.29</td>
+
+		<td class="STU">78.04</td>
+
+		<td class="STU"><img src="images/flaggen/MDA.gif" /> MDA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1396)">Uni Chirsova</a></td>
+
+		<td class="STU">1. Liga Moldawien</td>
+
+		<td class="STU">14.00</td>
+
+	</tr><tr>
+
+		<td class="STU">10</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(177948)">Ian Templeman</a></td>
+
+		<td class="STU">18</td>
+
+		<td class="STU">19.12</td>
+
+		<td class="STU">24.78</td>
+
+		<td class="STU"><img src="images/flaggen/MLT.gif" /> MLT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(210)">CD Extremadura</a></td>
+
+		<td class="STU">3. Liga A Spanien</td>
+
+		<td class="STU">13.00</td>
+
+	</tr><tr>
+
+		<td class="STU">10</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(106120)">Florian Heideck</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">78.47</td>
+
+		<td class="STU">101.41</td>
+
+		<td class="STU"><img src="images/flaggen/AUT.gif" /> AUT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(694)">AK Lustenau</a></td>
+
+		<td class="STU">3. Liga B &Ouml;sterreich</td>
+
+		<td class="STU">13.00</td>
+
+	</tr><tr>
+
+		<td class="STU">10</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(154548)">Tormod Evensen</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">53.47</td>
+
+		<td class="STU">84.19</td>
+
+		<td class="STU"><img src="images/flaggen/NOR.gif" /> NOR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(314)">FC Raufoss</a></td>
+
+		<td class="STU">1. Liga Norwegen</td>
+
+		<td class="STU">13.00</td>
+
+	</tr><tr>
+
+		<td class="STU">10</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(156787)">Dániel Madach</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">54.24</td>
+
+		<td class="STU">76.22</td>
+
+		<td class="STU"><img src="images/flaggen/HUN.gif" /> HUN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1509)">VK Fehervar</a></td>
+
+		<td class="STU">1. Liga Ungarn</td>
+
+		<td class="STU">13.00</td>
+
+	</tr><tr>
+
+		<td class="STU">10</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(151127)">Philippe Gamaseb</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">50.88</td>
+
+		<td class="STU">80.48</td>
+
+		<td class="STU"><img src="images/flaggen/GAB.gif" /> GAB</td>
+
+		<td class="STU"><a href="javascript:teaminfo(278)">Real Alicante</a></td>
+
+		<td class="STU">1. Liga Spanien</td>
+
+		<td class="STU">13.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(104370)">Odysseas Esamandidis</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">64.88</td>
+
+		<td class="STU">91.81</td>
+
+		<td class="STU"><img src="images/flaggen/GRE.gif" /> GRE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(290)">Racing Hesperange</a></td>
+
+		<td class="STU">2. Liga A Luxemburg</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(175443)">Olafur Ryan</a></td>
+
+		<td class="STU">19</td>
+
+		<td class="STU">47.71</td>
+
+		<td class="STU">68.26</td>
+
+		<td class="STU"><img src="images/flaggen/FRO.gif" /> FRO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1826)">HB Fuglafjørdur</a></td>
+
+		<td class="STU">2. Liga A Far&ouml;er</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(170294)">Colin Bemelle</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">45.53</td>
+
+		<td class="STU">68.96</td>
+
+		<td class="STU"><img src="images/flaggen/NIR.gif" /> NIR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(485)">N.K. Istra Rovinj</a></td>
+
+		<td class="STU">2. Liga A Kroatien</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="OMI">15</td>
+
+		<td class="OMI"><a href="javascript:spielerinfo(172193)">Suarrez Puyalto</a></td>
+
+		<td class="OMI">20</td>
+
+		<td class="OMI">42.12</td>
+
+		<td class="OMI">64.74</td>
+
+		<td class="OMI"><img src="images/flaggen/AND.gif" /> AND</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(3378)">CE Rangers</a></td>
+
+		<td class="OMI">1. Liga Andorra</td>
+
+		<td class="OMI">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(140310)">Sharafaddin Muhtarov</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">51.76</td>
+
+		<td class="STU">80.30</td>
+
+		<td class="STU"><img src="images/flaggen/AZE.gif" /> AZE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3393)">Royal Sofia</a></td>
+
+		<td class="STU">2. Liga A Bulgarien</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(156714)">Elvis Zlatan Ibrakadabrason</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">56.82</td>
+
+		<td class="STU">86.74</td>
+
+		<td class="STU"><img src="images/flaggen/SWE.gif" /> SWE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(736)">FC Leicester</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(116072)">Radoslav Spasojevic</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">65.24</td>
+
+		<td class="STU">92.19</td>
+
+		<td class="STU"><img src="images/flaggen/SCG.gif" /> SCG</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1724)">Radniki Belgrad</a></td>
+
+		<td class="STU">2. Liga A Serbien und Montenegro</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(141192)">Krisztián Lencse</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">54.53</td>
+
+		<td class="STU">78.48</td>
+
+		<td class="STU"><img src="images/flaggen/HUN.gif" /> HUN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1509)">VK Fehervar</a></td>
+
+		<td class="STU">1. Liga Ungarn</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(113973)">Fei Zong</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">65.47</td>
+
+		<td class="STU">89.37</td>
+
+		<td class="STU"><img src="images/flaggen/CHN.gif" /> CHN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1624)">Rudar Skopje</a></td>
+
+		<td class="STU">1. Liga Mazedonien</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(90301)">Brodislav Boutsaev</a></td>
+
+		<td class="STU">34</td>
+
+		<td class="STU">40.88</td>
+
+		<td class="STU">56.56</td>
+
+		<td class="STU"><img src="images/flaggen/UKR.gif" /> UKR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(210)">CD Extremadura</a></td>
+
+		<td class="STU">3. Liga A Spanien</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(119712)">Kozak Belavousau</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">68.41</td>
+
+		<td class="STU">87.96</td>
+
+		<td class="STU"><img src="images/flaggen/BLR.gif" /> BLR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(312)">Tornado-FC Minsk</a></td>
+
+		<td class="STU">2. Liga A Weissrussland</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(154245)">Trond Holmsen</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">40.24</td>
+
+		<td class="STU">66.67</td>
+
+		<td class="STU"><img src="images/flaggen/NOR.gif" /> NOR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3481)">Lok Sumy</a></td>
+
+		<td class="STU">1. Liga Ukraine</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(135126)">Amund Weihe</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">58.71</td>
+
+		<td class="STU">87.33</td>
+
+		<td class="STU"><img src="images/flaggen/FRO.gif" /> FRO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1802)">Leirvik FC</a></td>
+
+		<td class="STU">2. Liga A Far&ouml;er</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(170472)">Mikos Radicevic</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">45.94</td>
+
+		<td class="STU">76.63</td>
+
+		<td class="STU"><img src="images/flaggen/BIH.gif" /> BIH</td>
+
+		<td class="STU"><a href="javascript:teaminfo(648)">Sava Srbac</a></td>
+
+		<td class="STU">1. Liga Bosnien-Herzegowina</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(135052)">Riccardo Guariento</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">54.76</td>
+
+		<td class="STU">85.59</td>
+
+		<td class="STU"><img src="images/flaggen/ITA.gif" /> ITA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1191)">ASC Vicenza</a></td>
+
+		<td class="STU">1. Liga Italien</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(150377)">Maurycy Walesa</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">45.71</td>
+
+		<td class="STU">77.07</td>
+
+		<td class="STU"><img src="images/flaggen/POL.gif" /> POL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(562)">Wisla Warschau</a></td>
+
+		<td class="STU">1. Liga Polen</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">15</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(148990)">Torben Höfken</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">47.47</td>
+
+		<td class="STU">78.63</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3461)">Kriens Town</a></td>
+
+		<td class="STU">1. Liga Schweiz</td>
+
+		<td class="STU">12.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(115463)">Alexey Nazarov</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">52.82</td>
+
+		<td class="STU">83.63</td>
+
+		<td class="STU"><img src="images/flaggen/ARM.gif" /> ARM</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1361)">Spartak Veliky Luky</a></td>
+
+		<td class="STU">2. Liga A Russland</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(146750)">Peteris Rogovs</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">49.41</td>
+
+		<td class="STU">82.22</td>
+
+		<td class="STU"><img src="images/flaggen/LVA.gif" /> LVA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3485)">FC Emmeloord</a></td>
+
+		<td class="STU">1. Liga Niederlande</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(90642)">Leonardo Mondello</a></td>
+
+		<td class="STU">34</td>
+
+		<td class="STU">52.59</td>
+
+		<td class="STU">72.81</td>
+
+		<td class="STU"><img src="images/flaggen/ESP.gif" /> ESP</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1430)">Dom Kranj 2000</a></td>
+
+		<td class="STU">1. Liga Slowenien</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(150862)">Raimon Nogan</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">50.35</td>
+
+		<td class="STU">80.74</td>
+
+		<td class="STU"><img src="images/flaggen/ENG.gif" /> ENG</td>
+
+		<td class="STU"><a href="javascript:teaminfo(458)">Tottenham United</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(154564)">Salev Alekseev</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">52.94</td>
+
+		<td class="STU">82.67</td>
+
+		<td class="STU"><img src="images/flaggen/BLR.gif" /> BLR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1576)">Tornado Minsk</a></td>
+
+		<td class="STU">1. Liga Weissrussland</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(146079)">Laurits Thrane</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">44.59</td>
+
+		<td class="STU">72.67</td>
+
+		<td class="STU"><img src="images/flaggen/DEN.gif" /> DEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(725)">FC Helsingoer</a></td>
+
+		<td class="STU">1. Liga D&auml;nemark</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(166565)">Carlo Boccanera</a></td>
+
+		<td class="STU">21</td>
+
+		<td class="STU">48.71</td>
+
+		<td class="STU">78.07</td>
+
+		<td class="STU"><img src="images/flaggen/SMR.gif" /> SMR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(197)">Union Schötz</a></td>
+
+		<td class="STU">1. Liga Schweiz</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(132233)">Mart Kase</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">51.29</td>
+
+		<td class="STU">82.67</td>
+
+		<td class="STU"><img src="images/flaggen/EST.gif" /> EST</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1624)">Rudar Skopje</a></td>
+
+		<td class="STU">1. Liga Mazedonien</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(111327)">Alexander Semin</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">56.94</td>
+
+		<td class="STU">86.37</td>
+
+		<td class="STU"><img src="images/flaggen/RUS.gif" /> RUS</td>
+
+		<td class="STU"><a href="javascript:teaminfo(37)">FK Metisnik Magnitogorsk</a></td>
+
+		<td class="STU">1. Liga Russland</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(142091)">Rony Walsh</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">59.71</td>
+
+		<td class="STU">86.48</td>
+
+		<td class="STU"><img src="images/flaggen/TRI.gif" /> TRI</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1204)">Hajduk Solin</a></td>
+
+		<td class="STU">1. Liga Kroatien</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(159435)">David Hickersberger</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">52.76</td>
+
+		<td class="STU">77.81</td>
+
+		<td class="STU"><img src="images/flaggen/AUT.gif" /> AUT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1270)">Ballycastle Rangers</a></td>
+
+		<td class="STU">1. Liga Nordirland</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(114031)">Bojan Aguni</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">67.35</td>
+
+		<td class="STU">93.52</td>
+
+		<td class="STU"><img src="images/flaggen/MKD.gif" /> MKD</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1608)">Makedonija Kratovo</a></td>
+
+		<td class="STU">2. Liga A Mazedonien</td>
+
+		<td class="STU">11.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(157138)">Kája Mihok</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">49.94</td>
+
+		<td class="STU">79.89</td>
+
+		<td class="STU"><img src="images/flaggen/SVK.gif" /> SVK</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1531)">FC Penrhiwceiber Rovers</a></td>
+
+		<td class="STU">1. Liga Wales</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(127713)">Joselin Garriga</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">59.12</td>
+
+		<td class="STU">89.81</td>
+
+		<td class="STU"><img src="images/flaggen/PAR.gif" /> PAR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(100)">FC Helsinki Rangers</a></td>
+
+		<td class="STU">1. Liga Finnland</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(170733)">Dénes Guttman</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">47.18</td>
+
+		<td class="STU">67.63</td>
+
+		<td class="STU"><img src="images/flaggen/HUN.gif" /> HUN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(349)">Basas Dorog</a></td>
+
+		<td class="STU">2. Liga A Ungarn</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(141442)">Charles Combe</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">56.06</td>
+
+		<td class="STU">87.15</td>
+
+		<td class="STU"><img src="images/flaggen/FRA.gif" /> FRA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3442)">Shorts United</a></td>
+
+		<td class="STU">1. Liga Nordirland</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(155365)">Kamal Zinoviev</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">44.06</td>
+
+		<td class="STU">68.19</td>
+
+		<td class="STU"><img src="images/flaggen/RUS.gif" /> RUS</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3467)">Luton City</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(131819)">Joan Vallejo</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">50.18</td>
+
+		<td class="STU">82.70</td>
+
+		<td class="STU"><img src="images/flaggen/ESP.gif" /> ESP</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1527)">Carmarthen City</a></td>
+
+		<td class="STU">1. Liga Wales</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(156998)">Volker Rund</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">47.65</td>
+
+		<td class="STU">78.59</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(422)">BS Südstadt Köln</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(159678)">Carlos Bellia</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">48.18</td>
+
+		<td class="STU">70.93</td>
+
+		<td class="STU"><img src="images/flaggen/MLT.gif" /> MLT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3376)">Atletico Benito</a></td>
+
+		<td class="STU">1. Liga Andorra</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(130472)">Zviadi Lionidze</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">42.94</td>
+
+		<td class="STU">72.37</td>
+
+		<td class="STU"><img src="images/flaggen/GEO.gif" /> GEO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(693)">SKA Donezk</a></td>
+
+		<td class="STU">1. Liga Ukraine</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(101892)">Koos Sentjens</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">54.82</td>
+
+		<td class="STU">86.37</td>
+
+		<td class="STU"><img src="images/flaggen/NED.gif" /> NED</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3441)">Zenit Samara</a></td>
+
+		<td class="STU">1. Liga Russland</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(164234)">Eldar Yelyasov-Gulumyan</a></td>
+
+		<td class="STU">21</td>
+
+		<td class="STU">39.82</td>
+
+		<td class="STU">68.33</td>
+
+		<td class="STU"><img src="images/flaggen/RUS.gif" /> RUS</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1933)">Dynamo Astrakhan</a></td>
+
+		<td class="STU">1. Liga Russland</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(105241)">Namik Uzlovati</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">69.12</td>
+
+		<td class="STU">93.44</td>
+
+		<td class="STU"><img src="images/flaggen/AZE.gif" /> AZE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1096)">Racing-Club Marseille</a></td>
+
+		<td class="STU">2. Liga A Frankreich</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(165085)">Jason Cassola</a></td>
+
+		<td class="STU">21</td>
+
+		<td class="STU">54.53</td>
+
+		<td class="STU">75.67</td>
+
+		<td class="STU"><img src="images/flaggen/MLT.gif" /> MLT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1958)">Mattersburg OSC</a></td>
+
+		<td class="STU">2. Liga A &Ouml;sterreich</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(125827)">Khemais Habacha</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">51.24</td>
+
+		<td class="STU">83.22</td>
+
+		<td class="STU"><img src="images/flaggen/TUN.gif" /> TUN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(719)">SSC Olympia Verona</a></td>
+
+		<td class="STU">2. Liga A Italien</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(155270)">Sergej Antonowitch Metallov</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">53.94</td>
+
+		<td class="STU">86.26</td>
+
+		<td class="STU"><img src="images/flaggen/RUS.gif" /> RUS</td>
+
+		<td class="STU"><a href="javascript:teaminfo(286)">Banyas Budapest</a></td>
+
+		<td class="STU">1. Liga Ungarn</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(145132)">Valada Gutierrez</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">55.12</td>
+
+		<td class="STU">77.37</td>
+
+		<td class="STU"><img src="images/flaggen/POR.gif" /> POR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(286)">Banyas Budapest</a></td>
+
+		<td class="STU">1. Liga Ungarn</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(122260)">Toli Sisovski</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">59.12</td>
+
+		<td class="STU">84.04</td>
+
+		<td class="STU"><img src="images/flaggen/MKD.gif" /> MKD</td>
+
+		<td class="STU"><a href="javascript:teaminfo(899)">FC Balti</a></td>
+
+		<td class="STU">2. Liga A Moldawien</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(114483)">Duncan Pullicino</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">65.29</td>
+
+		<td class="STU">91.63</td>
+
+		<td class="STU"><img src="images/flaggen/MLT.gif" /> MLT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3382)">Real Encamp</a></td>
+
+		<td class="STU">2. Liga A Andorra</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(106954)">Philipp Kienast</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">66.06</td>
+
+		<td class="STU">93.30</td>
+
+		<td class="STU"><img src="images/flaggen/AUT.gif" /> AUT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(699)">UFC Tadten</a></td>
+
+		<td class="STU">3. Liga A &Ouml;sterreich</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(99653)">Ferdinando Totti</a></td>
+
+		<td class="STU">33</td>
+
+		<td class="STU">72.12</td>
+
+		<td class="STU">96.67</td>
+
+		<td class="STU"><img src="images/flaggen/ITA.gif" /> ITA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(637)">BK Gnistan</a></td>
+
+		<td class="STU">1. Liga Finnland</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(111679)">Sydney Darnall</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">66.53</td>
+
+		<td class="STU">91.96</td>
+
+		<td class="STU"><img src="images/flaggen/ENG.gif" /> ENG</td>
+
+		<td class="STU"><a href="javascript:teaminfo(302)">Renards Chateauroux</a></td>
+
+		<td class="STU">2. Liga A Frankreich</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(156678)">Patrice Iguaran</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">45.82</td>
+
+		<td class="STU">78.48</td>
+
+		<td class="STU"><img src="images/flaggen/AND.gif" /> AND</td>
+
+		<td class="STU"><a href="javascript:teaminfo(948)">Deportivo Les Bons</a></td>
+
+		<td class="STU">1. Liga Andorra</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(149713)">Artur Mazur</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">55.59</td>
+
+		<td class="STU">81.67</td>
+
+		<td class="STU"><img src="images/flaggen/POL.gif" /> POL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3463)">Yeovil Rovers</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">44</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(150287)">Francois Gerard</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">52.18</td>
+
+		<td class="STU">82.04</td>
+
+		<td class="STU"><img src="images/flaggen/LUX.gif" /> LUX</td>
+
+		<td class="STU"><a href="javascript:teaminfo(810)">Lokomotive Porec</a></td>
+
+		<td class="STU">1. Liga Kroatien</td>
+
+		<td class="STU">10.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(160970)">Veijo Savolainen</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">53.65</td>
+
+		<td class="STU">78.22</td>
+
+		<td class="STU"><img src="images/flaggen/FIN.gif" /> FIN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1091)">SePP Seinäjoki</a></td>
+
+		<td class="STU">2. Liga A Finnland</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(103618)">August Nigg</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">67.00</td>
+
+		<td class="STU">93.89</td>
+
+		<td class="STU"><img src="images/flaggen/LIE.gif" /> LIE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(137)">CS Mertzig 02</a></td>
+
+		<td class="STU">1. Liga Luxemburg</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(177407)">Aristotelis Daxibio</a></td>
+
+		<td class="STU">19</td>
+
+		<td class="STU">36.94</td>
+
+		<td class="STU">64.30</td>
+
+		<td class="STU"><img src="images/flaggen/GRE.gif" /> GRE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(51)">Proodeftiki Patra</a></td>
+
+		<td class="STU">2. Liga A Griechenland</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(146924)">Luka Rebic</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">51.53</td>
+
+		<td class="STU">83.85</td>
+
+		<td class="STU"><img src="images/flaggen/CRO.gif" /> CRO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(322)">Union Gueugnon</a></td>
+
+		<td class="STU">1. Liga Frankreich</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="OMI">68</td>
+
+		<td class="OMI"><a href="javascript:spielerinfo(154754)">Otto Riske</a></td>
+
+		<td class="OMI">23</td>
+
+		<td class="OMI">53.71</td>
+
+		<td class="OMI">86.41</td>
+
+		<td class="OMI"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(286)">Banyas Budapest</a></td>
+
+		<td class="OMI">1. Liga Ungarn</td>
+
+		<td class="OMI">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(116224)">Rusi Jordanov</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">65.06</td>
+
+		<td class="STU">95.33</td>
+
+		<td class="STU"><img src="images/flaggen/BUL.gif" /> BUL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(976)">FC Dobritsch</a></td>
+
+		<td class="STU">1. Liga Bulgarien</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(160862)">Innokenty Aniukov</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">48.00</td>
+
+		<td class="STU">77.33</td>
+
+		<td class="STU"><img src="images/flaggen/RUS.gif" /> RUS</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1352)">Gasovik Chabarovsk</a></td>
+
+		<td class="STU">1. Liga Russland</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(147416)">Abel Okes</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">45.06</td>
+
+		<td class="STU">75.78</td>
+
+		<td class="STU"><img src="images/flaggen/ENG.gif" /> ENG</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1013)">Borussia Rheine</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(110064)">Johannes Aare</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">60.18</td>
+
+		<td class="STU">89.74</td>
+
+		<td class="STU"><img src="images/flaggen/SWE.gif" /> SWE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1075)">FC Moor</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(110222)">Sean Cordina</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">63.82</td>
+
+		<td class="STU">90.70</td>
+
+		<td class="STU"><img src="images/flaggen/MLT.gif" /> MLT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3474)">Dvin Yerevan</a></td>
+
+		<td class="STU">2. Liga A Armenien</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(151306)">Stig Hofmann</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">41.29</td>
+
+		<td class="STU">60.07</td>
+
+		<td class="STU"><img src="images/flaggen/DEN.gif" /> DEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(978)">BK Kopenhagen</a></td>
+
+		<td class="STU">2. Liga A D&auml;nemark</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(105832)">Gustave Hanchard</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">67.47</td>
+
+		<td class="STU">95.37</td>
+
+		<td class="STU"><img src="images/flaggen/FRA.gif" /> FRA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1075)">FC Moor</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(154403)">Branislav Gulyayev</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">44.06</td>
+
+		<td class="STU">78.11</td>
+
+		<td class="STU"><img src="images/flaggen/UKR.gif" /> UKR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1650)">Yerevan Ashtarak</a></td>
+
+		<td class="STU">2. Liga A Armenien</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(140167)">Eugenio Mauri</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">46.59</td>
+
+		<td class="STU">76.44</td>
+
+		<td class="STU"><img src="images/flaggen/ESP.gif" /> ESP</td>
+
+		<td class="STU"><a href="javascript:teaminfo(278)">Real Alicante</a></td>
+
+		<td class="STU">1. Liga Spanien</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(104550)">Niels Pedersen</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">70.76</td>
+
+		<td class="STU">96.41</td>
+
+		<td class="STU"><img src="images/flaggen/DEN.gif" /> DEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(725)">FC Helsingoer</a></td>
+
+		<td class="STU">1. Liga D&auml;nemark</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(146086)">Tim Lösle</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">52.06</td>
+
+		<td class="STU">74.85</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1904)">Viktoria Prag</a></td>
+
+		<td class="STU">2. Liga A Tschechien</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(139059)">Zenon Zabinski</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">53.65</td>
+
+		<td class="STU">77.04</td>
+
+		<td class="STU"><img src="images/flaggen/POL.gif" /> POL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1694)">Gornik Stettin</a></td>
+
+		<td class="STU">1. Liga Polen</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(136578)">César Sanchez</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">39.53</td>
+
+		<td class="STU">68.44</td>
+
+		<td class="STU"><img src="images/flaggen/POR.gif" /> POR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(88)">Benfica Guimaraes</a></td>
+
+		<td class="STU">1. Liga Portugal</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(140815)">Elvedin Mrvar</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">52.76</td>
+
+		<td class="STU">79.74</td>
+
+		<td class="STU"><img src="images/flaggen/SVN.gif" /> SVN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1443)">SSK Maribor</a></td>
+
+		<td class="STU">2. Liga A Slowenien</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(113935)">Niklas Jokinen</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">63.59</td>
+
+		<td class="STU">90.41</td>
+
+		<td class="STU"><img src="images/flaggen/FIN.gif" /> FIN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(766)">AFC Plovdiv</a></td>
+
+		<td class="STU">1. Liga Bulgarien</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">68</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(170267)">Augusto Chiamulera</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">39.65</td>
+
+		<td class="STU">67.78</td>
+
+		<td class="STU"><img src="images/flaggen/POR.gif" /> POR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1770)">Futebol Moreirense</a></td>
+
+		<td class="STU">1. Liga Portugal</td>
+
+		<td class="STU">9.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(174929)">Brynjar Björn Steinthórsson</a></td>
+
+		<td class="STU">20</td>
+
+		<td class="STU">49.12</td>
+
+		<td class="STU">77.15</td>
+
+		<td class="STU"><img src="images/flaggen/ISL.gif" /> ISL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1238)">Quick Den Bosch</a></td>
+
+		<td class="STU">1. Liga Niederlande</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(100942)">Piskun Shtanyuk</a></td>
+
+		<td class="STU">33</td>
+
+		<td class="STU">71.82</td>
+
+		<td class="STU">98.11</td>
+
+		<td class="STU"><img src="images/flaggen/BLR.gif" /> BLR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(915)">CD San Sebastian</a></td>
+
+		<td class="STU">3. Liga A Spanien</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(144935)">Federick Walubita</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">50.24</td>
+
+		<td class="STU">81.26</td>
+
+		<td class="STU"><img src="images/flaggen/ZIM.gif" /> ZIM</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1395)">Unispor Balti</a></td>
+
+		<td class="STU">1. Liga Moldawien</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(123703)">Antonio Del Piero</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">61.59</td>
+
+		<td class="STU">89.15</td>
+
+		<td class="STU"><img src="images/flaggen/ITA.gif" /> ITA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(757)">US Parma Sport</a></td>
+
+		<td class="STU">2. Liga A Italien</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(131130)">Kalle Arby</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">58.71</td>
+
+		<td class="STU">88.07</td>
+
+		<td class="STU"><img src="images/flaggen/SWE.gif" /> SWE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(70)">Vinur Akranes</a></td>
+
+		<td class="STU">1. Liga Island</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(111223)">Pieter Soete</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">67.06</td>
+
+		<td class="STU">93.93</td>
+
+		<td class="STU"><img src="images/flaggen/NED.gif" /> NED</td>
+
+		<td class="STU"><a href="javascript:teaminfo(792)">FC Enschede</a></td>
+
+		<td class="STU">2. Liga A Niederlande</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(136426)">Bivan Chakulya</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">50.35</td>
+
+		<td class="STU">82.81</td>
+
+		<td class="STU"><img src="images/flaggen/ZIM.gif" /> ZIM</td>
+
+		<td class="STU"><a href="javascript:teaminfo(129)">IFK Stockholm</a></td>
+
+		<td class="STU">1. Liga Schweden</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(92129)">Nic Gantner</a></td>
+
+		<td class="STU">34</td>
+
+		<td class="STU">40.18</td>
+
+		<td class="STU">55.22</td>
+
+		<td class="STU"><img src="images/flaggen/LUX.gif" /> LUX</td>
+
+		<td class="STU"><a href="javascript:teaminfo(210)">CD Extremadura</a></td>
+
+		<td class="STU">3. Liga A Spanien</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(126643)">Drago Stepanovic</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">59.71</td>
+
+		<td class="STU">89.44</td>
+
+		<td class="STU"><img src="images/flaggen/SCG.gif" /> SCG</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3394)">SC Sofia</a></td>
+
+		<td class="STU">2. Liga A Bulgarien</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(121317)">Greg McCombie</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">70.76</td>
+
+		<td class="STU">95.81</td>
+
+		<td class="STU"><img src="images/flaggen/SCO.gif" /> SCO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1384)">Celtic Dumbarton</a></td>
+
+		<td class="STU">1. Liga Schottland</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="OMI">89</td>
+
+		<td class="OMI"><a href="javascript:spielerinfo(115768)">Jerome Herrschaft</a></td>
+
+		<td class="OMI">30</td>
+
+		<td class="OMI">51.82</td>
+
+		<td class="OMI">84.19</td>
+
+		<td class="OMI"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(3378)">CE Rangers</a></td>
+
+		<td class="OMI">1. Liga Andorra</td>
+
+		<td class="OMI">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">89</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(164704)">Hakob Avanesyan</a></td>
+
+		<td class="STU">21</td>
+
+		<td class="STU">52.88</td>
+
+		<td class="STU">74.04</td>
+
+		<td class="STU"><img src="images/flaggen/ARM.gif" /> ARM</td>
+
+		<td class="STU"><a href="javascript:teaminfo(758)">Gravesend AFC</a></td>
+
+		<td class="STU">1. Liga England</td>
+
+		<td class="STU">8.00</td>
+
+	</tr>
+
+</table>
+</div>
+
+</body>
+
+</html>
