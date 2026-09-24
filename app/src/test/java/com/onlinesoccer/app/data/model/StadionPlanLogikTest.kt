@@ -2,35 +2,55 @@ package com.onlinesoccer.app.data.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.roundToInt
 
 /** Logiktests für den Stadionplan (reine Datenlogik, ohne UI). */
 class StadionPlanLogikTest {
 
     @Test
-    fun aggregat_ohneBereiche_bautTribuenenMitKurven() {
-        val plan = StadionPlanDaten(
+    fun aggregat_ohneBereiche_bautTribuenenNachGröße() {
+        // Kleines Stadion: nur Haupt- und Gegentribüne, noch keine Kurven.
+        val klein = StadionPlanDaten(
             stehplaetze = 3_000,
             sitzplaetze = 7_000,
         )
-        val zonen = StadionPlanLogik.zonen(plan)
+        val zonen = StadionPlanLogik.zonen(klein)
 
-        assertEquals("Kleines Stadion: 4 Tribünen (Kurven inkl. Ecken)", 4, zonen.size)
+        assertEquals("Kleines Stadion: 2 Tribünen (noch keine Kurven)", 2, zonen.size)
         assertEquals(
-            listOf("Haupttribüne", "Gegentribüne", "Südkurve", "Nordkurve"),
+            listOf("Haupttribüne", "Gegentribüne"),
             zonen.map { it.name },
         )
         assertEquals(
-            listOf(StadionLage.WEST, StadionLage.OST, StadionLage.SUED, StadionLage.NORD),
+            listOf(StadionLage.WEST, StadionLage.OST),
             zonen.map { it.lage },
         )
-        assertEquals("Kurzseiten sind Kurven", 2, zonen.count { it.istKurve })
+        assertEquals("Kurzseiten sind noch unbestückt", 0, zonen.count { it.istKurve })
         zonen.forEach { zone ->
             assertTrue("Jede Zone hat geschätzte Plätze", zone.hatAufteilung)
         }
         assertEquals("Sitz-Summe exakt", 7_000, zonen.sumOf { it.sitzplaetze!! })
         assertEquals("Steh-Summe exakt", 3_000, zonen.sumOf { it.stehplaetze!! })
+
+        // Großes Stadion ab 20.000: geschlossener Ring mit beiden Kurven.
+        val gross = StadionPlanDaten(
+            stehplaetze = 10_000,
+            sitzplaetze = 30_000,
+        )
+        val zonenGross = StadionPlanLogik.zonen(gross)
+        assertTrue("Südkurve ist Kurve", zonenGross.first { it.name == "Südkurve" }.istKurve)
+        assertTrue("Nordkurve ist Kurve", zonenGross.first { it.name == "Nordkurve" }.istKurve)
+        val sued = zonenGross.first { it.lage == StadionLage.SUED }
+        val nord = zonenGross.first { it.lage == StadionLage.NORD }
+        assertTrue("Südkurve trägt geschätzte Stehplätze", sued.hatAufteilung && (sued.stehplaetze ?: 0) > 0)
+        assertTrue("Nordkurve trägt geschätzte Stehplätze", nord.hatAufteilung && (nord.stehplaetze ?: 0) > 0)
+        assertEquals("Sitz-Summe exakt", 30_000, zonenGross.sumOf { it.sitzplaetze!! })
+        assertEquals("Steh-Summe exakt", 10_000, zonenGross.sumOf { it.stehplaetze!! })
     }
 
     @Test
@@ -46,7 +66,7 @@ class StadionPlanLogikTest {
         val gross = StadionPlanLogik.kategorien(
             StadionPlanDaten(stehplaetze = 8_000, sitzplaetze = 47_000),
         ).map { it.anzeigeName }
-        assertTrue("Groß (55k): Gästeblock vorhanden", "Gästeblock" in gross)
+        assertTrue("Groß (55k): Gästeblock vorhanden", "Gäste" in gross)
         assertTrue("Groß (55k): VIP vorhanden", "VIP- und Business-Bereich" in gross)
         assertTrue("Groß (55k): Barrierefrei vorhanden", "Barrierefreie Plätze" in gross)
 
@@ -59,15 +79,47 @@ class StadionPlanLogikTest {
     }
 
     @Test
-    fun gaesteblock_sitztAlsSektorInDerSuedkurve() {
+    fun gaesteblock_liegtInEckeOderAlsSektorInDerSuedkurve() {
         val plan = StadionPlanDaten(
             stehplaetze = 9_000,
             sitzplaetze = 36_000,
         )
-        val gaeste = StadionPlanLogik.zonen(plan).first { it.name == "Gästeblock" }
-        assertEquals("Gästeblock auf der Südseite", StadionLage.SUED, gaeste.lage)
-        assertTrue("Gästeblock ist keine eigene Kurve", !gaeste.istKurve)
+        val gaeste = StadionPlanLogik.zonen(plan).first { it.name == "Gäste" }
+        val ecke = StadionPlanLogik.variante(plan).gaesteblockEcke
+        if (ecke == null) {
+            assertEquals("Sektordarstellung auf der Südseite (ohne Ecke)", StadionLage.SUED, gaeste.lage)
+            assertTrue("Sektor ist keine Kurve", !gaeste.istKurve)
+        } else {
+            assertEquals("Eckblock liegt auf der Seite der Ecke", ecke.lage, gaeste.lage)
+            assertEquals(ecke, gaeste.ecke)
+            assertTrue("Eckblock ist Kurven-Zone", gaeste.istKurve)
+        }
     }
+
+    @Test
+    fun gaesteblockEcke_nurAbGeschlossenemRingUndDeterministisch() {
+        assertEquals("Kleines Stadion: kein Eck-Gästeblock", null, StadionPlanLogik.variante(plan(9_000, 10_000)).gaesteblockEcke)
+        assertEquals("Kleines Stadion: kein Eck-Gästeblock", null, StadionPlanLogik.variante(plan(5_000, 14_000)).gaesteblockEcke)
+        val gross = plan(9_000, 36_000)
+        val v = StadionPlanLogik.variante(gross)
+        if (v.grundform == Grundform.OFFENE_ECKEN) {
+            assertNull("Offene Ecken: kein Eck-Gästeblock", v.gaesteblockEcke)
+        } else {
+            assertNotNull("Großes Stadion: Eck-Gästeblock", v.gaesteblockEcke)
+            assertTrue(
+                "Gästeblock sitzt immer an der Nordkurve",
+                v.gaesteblockEcke!!.lage == StadionLage.NORD,
+            )
+        }
+        assertEquals(
+            "Deterministisch je Plan",
+            StadionPlanLogik.variante(gross).gaesteblockEcke,
+            StadionPlanLogik.variante(gross).gaesteblockEcke,
+        )
+    }
+
+    private fun plan(steh: Int, sitz: Int): StadionPlanDaten =
+        StadionPlanDaten(stehplaetze = steh, sitzplaetze = sitz)
 
     @Test
     fun keinGasteblockUnterDerSchwelle() {
@@ -77,7 +129,7 @@ class StadionPlanLogikTest {
         )
         assertTrue(
             "Kein Gästeblock unter 12.000",
-            StadionPlanLogik.zonen(plan).none { it.name == "Gästeblock" },
+            StadionPlanLogik.zonen(plan).none { it.name == "Gäste" },
         )
     }
 
@@ -93,7 +145,7 @@ class StadionPlanLogikTest {
 
         assertEquals(
             "Alle Zonen haben Aufteilung",
-            listOf("Haupttribüne", "Gegentribüne", "Südkurve", "Nordkurve", "Gästeblock", "VIP- und Business-Bereich", "Barrierefreie Plätze"),
+            listOf("Haupttribüne", "Gegentribüne", "Südkurve", "Nordkurve", "Gäste", "VIP- und Business-Bereich", "Barrierefreie Plätze"),
             belegt.map { it.name },
         )
         assertEquals("Sitzsumme exakt (ohne Doppelzählung)", 36_000, belegt.sumOf { it.sitzplaetze ?: 0 })
@@ -131,7 +183,7 @@ class StadionPlanLogikTest {
         val haupt = zonen.first { it.name == "Haupttribüne" }
         assertEquals("VIP liegt auf der Westseite", StadionLage.WEST, vip.lage)
         assertTrue("VIP ist reine Sitzzone", vip.stehplaetze == 0 && vip.sitzAnteil == 1f)
-        assertEquals("VIP = oberste zwei Reihen (2 %) der Sitzplätze", (plan.sitzplaetze * 0.02).toInt(), vip.kapazitaet!!)
+        assertEquals("VIP = oberste zwei Reihen (2 %) der Sitzplätze", (plan.sitzplaetze * 0.02f).roundToInt(), vip.kapazitaet!!)
         assertTrue("Haupttribüne bleibt Sitz-dominant", haupt.kapazitaet!! > vip.kapazitaet!!)
         assertEquals(
             "Sitzsumme aller Zonen exakt",
@@ -177,7 +229,7 @@ class StadionPlanLogikTest {
         val zonen = StadionPlanLogik.zonen(plan)
         val belegt = zonen.filter { it.hatAufteilung }
 
-        assertTrue("Gästeblock vorhanden (≥ 12.000)", belegt.any { it.name == "Gästeblock" })
+        assertTrue("Gästeblock vorhanden (≥ 12.000)", belegt.any { it.name == "Gäste" })
         assertEquals("Sitzsumme über alle Zonen exakt", 36_000, belegt.sumOf { it.sitzplaetze ?: 0 })
         assertEquals("Stehsumme über alle Zonen exakt", 9_000, belegt.sumOf { it.stehplaetze ?: 0 })
     }
@@ -223,8 +275,8 @@ class StadionPlanLogikTest {
         assertFalse(StadionPlanLogik.nutztEchteBereiche(plan))
         val zonen = StadionPlanLogik.zonen(plan)
 
-        assertEquals(4, zonen.size)
-        assertEquals(2, zonen.count { it.istKurve })
+        assertEquals("10k: 2 Tribünen, noch keine Kurven", 2, zonen.size)
+        assertEquals(0, zonen.count { it.istKurve })
         assertTrue(zonen.all { it.hatAufteilung })
         assertEquals(8_000, zonen.sumOf { it.sitzplaetze!! })
         assertEquals(2_000, zonen.sumOf { it.stehplaetze!! })
@@ -246,7 +298,7 @@ class StadionPlanLogikTest {
                 "Gegentribüne",
                 "Südkurve",
                 "Nordkurve",
-                "Gästeblock",
+                "Gäste",
                 "VIP- und Business-Bereich",
                 "Barrierefreie Plätze",
             ),
@@ -263,7 +315,7 @@ class StadionPlanLogikTest {
     fun kategorien_mischerIstDynamischNachGröße() {
         val klein = StadionPlanDaten(stehplaetze = 2_000, sitzplaetze = 8_000)
         assertEquals(
-            listOf("Stehplätze", "Sitzplätze", "Haupttribüne", "Gegentribüne", "Südkurve", "Nordkurve"),
+            listOf("Stehplätze", "Sitzplätze", "Haupttribüne", "Gegentribüne"),
             StadionPlanLogik.kategorien(klein).map { it.anzeigeName },
         )
 
@@ -276,7 +328,7 @@ class StadionPlanLogikTest {
                 "Gegentribüne",
                 "Südkurve",
                 "Nordkurve",
-                "Gästeblock",
+                "Gäste",
                 "VIP- und Business-Bereich",
                 "Barrierefreie Plätze",
             ),
@@ -288,13 +340,13 @@ class StadionPlanLogikTest {
     fun kategorien_keineSonderbereicheUnterhalbDerSchwellen() {
         val klein = StadionPlanDaten(stehplaetze = 3_000, sitzplaetze = 7_000)
         val namenKlein = StadionPlanLogik.kategorien(klein).map { it.anzeigeName }
-        assertTrue("Kein Gästeblock unter 12.000", "Gästeblock" !in namenKlein)
+        assertTrue("Kein Gästeblock unter 12.000", "Gäste" !in namenKlein)
         assertTrue("Kein VIP unter 35.000", "VIP- und Business-Bereich" !in namenKlein)
         assertTrue("Kein Barrierefrei unter 15.000", "Barrierefreie Plätze" !in namenKlein)
 
         val gross = StadionPlanDaten(stehplaetze = 3_000, sitzplaetze = 27_000)
         val namenGross = StadionPlanLogik.kategorien(gross).map { it.anzeigeName }
-        assertTrue("Gästeblock ab 12.000", "Gästeblock" in namenGross)
+        assertTrue("Gästeblock ab 12.000", "Gäste" in namenGross)
         assertTrue("Barrierefrei ab 15.000", "Barrierefreie Plätze" in namenGross)
         assertTrue("Noch kein VIP unter 35.000", "VIP- und Business-Bereich" !in namenGross)
     }
@@ -318,6 +370,41 @@ class StadionPlanLogikTest {
     @Test
     fun kategorien_leereListe_ohnePlaetze() {
         assertTrue(StadionPlanLogik.kategorien(StadionPlanDaten(stehplaetze = 0, sitzplaetze = 0)).isEmpty())
+    }
+
+    @Test
+    fun kategorien_nichtUeberdachteNurBeiGemischterUeberdachung() {
+        // Voller Überdachungsgrad → kein Eintrag für nicht überdachte Plätze.
+        val voll = StadionPlanDaten(
+            stehplaetze = 4_000,
+            sitzplaetze = 20_000,
+            stehUeberdacht = 4_000,
+            sitzUeberdacht = 20_000,
+        )
+        assertTrue(
+            "Voll überdacht: kein Eintrag",
+            StadionPlanLogik.kategorien(voll).none { it.nurUnueberdacht },
+        )
+
+        // Keinerlei Überdachung → ebenfalls kein Eintrag (nichts hervorzuheben).
+        val offen = StadionPlanDaten(stehplaetze = 4_000, sitzplaetze = 20_000)
+        assertTrue(
+            "Völlig offen: kein Eintrag zum Ausgrauen eines Dachs",
+            StadionPlanLogik.kategorien(offen).none { it.nurUnueberdacht },
+        )
+
+        // Gemischte Überdachung → Kategorie erscheint mit korrekter Platzanzahl.
+        val gemischt = StadionPlanDaten(
+            stehplaetze = 4_000,
+            sitzplaetze = 20_000,
+            stehUeberdacht = 0,
+            sitzUeberdacht = 14_000,
+        )
+        val nichtUeberdacht = StadionPlanLogik.kategorien(gemischt).first { it.nurUnueberdacht }
+        assertEquals("Nicht überdachte Plätze", nichtUeberdacht.anzeigeName)
+        assertEquals(10_000, nichtUeberdacht.plaetze)
+        assertEquals(0, nichtUeberdacht.davonUeberdacht)
+        assertEquals("Überdachte Flächen werden ausgegraut", true, "ü" in nichtUeberdacht.beschreibung)
     }
 
     @Test
@@ -369,9 +456,141 @@ class StadionPlanLogikTest {
     }
 
     @Test
-    fun anteil_kapptUeberdachtAmGesamtwert() {
-        assertEquals(0.5f, StadionPlanLogik.anteil(50, 100), 0.001f)
-        assertEquals(0f, StadionPlanLogik.anteil(50, 0), 0.001f)
-        assertEquals(1f, StadionPlanLogik.anteil(200, 100), 0.001f)
+    fun rasenMuster_kleinStadionImmerOhneMuster() {
+        for (seed in 0 until 64) {
+            assertEquals(
+                "Kleines Stadion hat nie ein Muster",
+                RasenMuster.KEINS,
+                StadionPlanLogik.rasenMuster(5_000, seed),
+            )
+        }
+    }
+
+    @Test
+    fun rasenMuster_mittelNurOhneOderBreiteStreifen() {
+        val erlaubt = setOf(RasenMuster.KEINS, RasenMuster.STREIFEN_BREIT)
+        for (seed in 0 until 64) {
+            assertTrue(
+                "Mittel-Stadion kennt nur einfache Muster",
+                StadionPlanLogik.rasenMuster(20_000, seed) in erlaubt,
+            )
+        }
+        // Beide Varianten sind erreichbar (Seed 0 und 1).
+        assertEquals(RasenMuster.KEINS, StadionPlanLogik.rasenMuster(20_000, 0))
+        assertEquals(RasenMuster.STREIFEN_BREIT, StadionPlanLogik.rasenMuster(20_000, 1))
+    }
+
+    @Test
+    fun rasenMuster_grossOhneKreise() {
+        val erlaubt = setOf(
+            RasenMuster.STREIFEN_BREIT,
+            RasenMuster.STREIFEN_SCHMAL,
+            RasenMuster.KARRIERT,
+        )
+        for (seed in 0 until 64) {
+            assertTrue(
+                "Groß-Stadion kennt noch keine Kreise",
+                StadionPlanLogik.rasenMuster(45_000, seed) in erlaubt,
+            )
+        }
+    }
+
+    @Test
+    fun rasenMuster_sehrGrossKenntAlleFuenfVarianten() {
+        val erreicht = (0 until 256).map { StadionPlanLogik.rasenMuster(90_000, it) }.toSet()
+        assertEquals(
+            "Mega-Stadion kann alle fünf Muster zeigen",
+            RasenMuster.values().toSet(),
+            erreicht,
+        )
+    }
+
+    @Test
+    fun variante_rasenIstDeterministischUndStufenkonform() {
+        val plan = StadionPlanDaten(stehplaetze = 10_000, sitzplaetze = 30_000)
+        assertEquals(
+            "Gleiche Werte → gleiches Rasenmuster",
+            StadionPlanLogik.variante(plan).rasen,
+            StadionPlanLogik.variante(plan).rasen,
+        )
+        val klein = StadionPlanDaten(stehplaetze = 3_000, sitzplaetze = 7_000)
+        assertEquals(
+            "Kleines Stadion bekommt KEIN Muster zugewiesen",
+            RasenMuster.KEINS,
+            StadionPlanLogik.variante(klein).rasen,
+        )
+        // Ohne Kapazität: Standard-Variante, kein Muster.
+        assertEquals(
+            RasenMuster.KEINS,
+            StadionPlanLogik.variante(StadionPlanDaten(stehplaetze = 0, sitzplaetze = 0)).rasen,
+        )
+    }
+
+    @Test
+    fun premiumAusstattung_nurMitBessererAnzeigetafelUndRasenheizung() {
+        // Einfache Anzeigetafel + Rasenheizung reicht NICHT.
+        assertFalse(
+            StadionPlanDaten(stehplaetze = 0, sitzplaetze = 1_000, anzeigetafel = "Anzeigetafel", rasenheizung = true)
+                .hatPremiumAusstattung,
+        )
+        // Videowürfel ohne Rasenheizung genügt nicht.
+        assertFalse(
+            StadionPlanDaten(stehplaetze = 0, sitzplaetze = 1_000, anzeigetafel = "Videowürfel").hatPremiumAusstattung,
+        )
+        // Multimediawürfel + Rasenheizung → Premium.
+        assertTrue(
+            StadionPlanDaten(
+                stehplaetze = 0,
+                sitzplaetze = 1_000,
+                anzeigetafel = "Multimediawürfel",
+                rasenheizung = true,
+            ).hatPremiumAusstattung,
+        )
+        assertTrue(
+            StadionPlanDaten(
+                stehplaetze = 0,
+                sitzplaetze = 1_000,
+                anzeigetafel = "Megawürfel",
+                rasenheizung = true,
+            ).hatPremiumAusstattung,
+        )
+    }
+
+    @Test
+    fun rasenMuster_premiumKleinstadionImmerMuster() {
+        for (seed in 0 until 64) {
+            val muster = StadionPlanLogik.rasenMuster(5_000, seed, premiumAusstattung = true)
+            assertTrue(
+                "Kleines Stadion mit Premium-Ausstattung hat ein Muster (Seed $seed)",
+                muster != RasenMuster.KEINS,
+            )
+        }
+    }
+
+    @Test
+    fun rasenMuster_premiumWechseltMitSaison() {
+        val plan = StadionPlanDaten(
+            stehplaetze = 1_000,
+            sitzplaetze = 4_000,
+            anzeigetafel = "Multimediawürfel",
+            rasenheizung = true,
+        )
+        val saison1 = StadionPlanLogik.variante(plan, saison = 3).rasen
+        val saison2 = StadionPlanLogik.variante(plan, saison = 4).rasen
+        assertNotEquals("Neue Saison → anderes Muster", saison1, saison2)
+        // Gleiche Saison bleibt deterministisch.
+        assertEquals(
+            StadionPlanLogik.variante(plan, saison = 4).rasen,
+            StadionPlanLogik.variante(plan, saison = 4).rasen,
+        )
+    }
+
+    @Test
+    fun rasenMuster_ohnePremiumSaisonSpinntNicht() {
+        // Ein kleines Stadion ohne Premium bleibt ohne Muster – egal welche Saison.
+        assertEquals(
+            RasenMuster.KEINS,
+            StadionPlanLogik.variante(StadionPlanDaten(stehplaetze = 3_000, sitzplaetze = 7_000), saison = 12).rasen,
+        )
     }
 }

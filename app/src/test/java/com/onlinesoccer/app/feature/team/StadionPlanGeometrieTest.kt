@@ -1,10 +1,15 @@
 package com.onlinesoccer.app.feature.team
 
 import androidx.compose.ui.geometry.Offset
+import com.onlinesoccer.app.data.model.Ecke
+import com.onlinesoccer.app.data.model.Grundform
+import com.onlinesoccer.app.data.model.StadionBand
 import com.onlinesoccer.app.data.model.StadionBereich
 import com.onlinesoccer.app.data.model.StadionLage
 import com.onlinesoccer.app.data.model.StadionPlanDaten
 import com.onlinesoccer.app.data.model.StadionPlanLogik
+import com.onlinesoccer.app.data.model.StadionVariante
+import com.onlinesoccer.app.data.model.VipPlatzierung
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -21,15 +26,25 @@ class StadionPlanGeometrieTest {
         plan: StadionPlanDaten,
         breite: Float = canvasBreite,
         hoehe: Float = canvasHoehe,
+        variante: StadionVariante = festeVariante(plan),
     ): PlanGeometrie {
-        val zonen = StadionPlanLogik.zonen(plan)
-        return berechneGeometrie(breite, hoehe, plan, zonen)
+        val zonen = StadionPlanLogik.zonen(plan, variante)
+        return berechneGeometrie(breite, hoehe, plan, zonen, variante)
     }
 
+    /** Deterministische, geometrisch stabile Variante: Kasten, ohne Riesenkurve
+     *  und ohne Gästeblock-Ecke (Gästeblock bleibt Sektor – deterministisch). */
+    private fun festeVariante(plan: StadionPlanDaten): StadionVariante =
+        StadionPlanLogik.variante(plan).copy(
+            grundform = Grundform.KASTEN,
+            riesenKurve = false,
+            gaesteblockEcke = null,
+        )
+
     private val aggregatPlan = StadionPlanDaten(
-        stehplaetze = 3_000,
-        sitzplaetze = 7_000,
-        sitzUeberdacht = 4_000,
+        stehplaetze = 9_000,
+        sitzplaetze = 36_000,
+        sitzUeberdacht = 12_000,
     )
 
     @Test
@@ -149,7 +164,7 @@ class StadionPlanGeometrieTest {
     @Test
     fun detailInhalt_tribueneInAggregatNenntSchätzung() {
         val plan = aggregatPlan
-        val zone = StadionPlanLogik.zonen(plan).first { it.lage != null }
+        val zone = StadionPlanLogik.zonen(plan).first { it.name == "Haupttribüne" }
         val (titel, hinweis, zeilen) = detailInhalt(zone, plan)
 
         assertEquals("Haupttribüne", titel)
@@ -227,4 +242,153 @@ class StadionPlanGeometrieTest {
         assertEquals("15.000", zeilen.toMap()["Sitzplätze"])
         assertEquals("15.000", zeilen.toMap()["Kapazität"])
     }
+
+    @Test
+    fun variante_bandEinteilungUndGrundformen() {
+        val formen = Grundform.values().toSet()
+        assertEquals(Grundform.values().size, 4)
+
+        for (kapazitaet in intArrayOf(8_000, 30_000, 45_000, 60_000, 75_000)) {
+            val v = StadionPlanLogik.variante(plan(0, kapazitaet))
+            assertTrue("Band für $kapazitaet in ${formen.size} Grundformen", formen.contains(v.grundform))
+        }
+
+        assertEquals(StadionBand.A, StadionPlanLogik.variante(plan(0, 8_000)).band)
+        assertEquals(StadionBand.B, StadionPlanLogik.variante(plan(0, 30_000)).band)
+        assertEquals(StadionBand.C, StadionPlanLogik.variante(plan(0, 45_000)).band)
+        assertEquals(StadionBand.D, StadionPlanLogik.variante(plan(0, 60_000)).band)
+        assertEquals(StadionBand.E, StadionPlanLogik.variante(plan(0, 75_000)).band)
+
+        assertEquals(1, StadionPlanLogik.variante(plan(0, 30_000)).rangzahl)
+        assertEquals(2, StadionPlanLogik.variante(plan(0, 45_000)).rangzahl)
+        assertEquals(3, StadionPlanLogik.variante(plan(0, 75_000)).rangzahl)
+    }
+
+    @Test
+    fun variante_istDeterministisch() {
+        val plan = plan(steh = 9_000, sitz = 36_000, sitzUeber = 12_000)
+        assertEquals(StadionPlanLogik.variante(plan), StadionPlanLogik.variante(plan))
+    }
+
+    @Test
+    fun variante_vipModusJeBand() {
+        assertEquals(VipPlatzierung.KEIN, StadionPlanLogik.variante(plan(0, 28_000)).vip)
+        assertEquals(VipPlatzierung.STREIFEN, StadionPlanLogik.variante(plan(0, 40_000)).vip)
+        assertEquals(VipPlatzierung.STREIFEN, StadionPlanLogik.variante(plan(0, 50_000)).vip)
+        assertEquals(VipPlatzierung.MITTELRANG, StadionPlanLogik.variante(plan(0, 62_000)).vip)
+        assertTrue(
+            "Band E nur MITTELRANG oder VERSTREUT",
+            listOf(VipPlatzierung.MITTELRANG, VipPlatzierung.VERSTREUT)
+                .contains(StadionPlanLogik.variante(plan(0, 80_000)).vip),
+        )
+    }
+
+    @Test
+    fun riesenKurve_nurMitStehplaetzenInGrossenBaendern() {
+        val ohneSteh = StadionPlanLogik.variante(plan(0, 50_000))
+        assertTrue("Ohne Stehplätze keine Riesenkurve", !ohneSteh.riesenKurve)
+        assertTrue("Band A/B nie Riesenkurve", !StadionPlanLogik.variante(plan(9_000, 20_000)).riesenKurve)
+        assertTrue("Band A/B nie Riesenkurve", !StadionPlanLogik.variante(plan(9_000, 30_000)).riesenKurve)
+    }
+
+    @Test
+    fun offeneEcken_entfernenDieKurvenImRing() {
+        val variante = festeVariante(aggregatPlan).copy(grundform = Grundform.OFFENE_ECKEN)
+        val geo = berechneGeometrie(canvasBreite, canvasHoehe, aggregatPlan, StadionPlanLogik.zonen(aggregatPlan, variante), variante)
+
+        assertEquals("Offene Ecken: keine Kurven-Eckbereiche", 0, geo.kurven.size)
+        assertEquals(
+            listOf(StadionLage.NORD, StadionLage.SUED, StadionLage.WEST, StadionLage.OST).toSet(),
+            geo.flaechen.map { it.lage }.toSet(),
+        )
+    }
+
+    @Test
+    fun eckRadius_skaliertMitDerGrundform() {
+        val plan2 = plan(0, 45_000)
+        val zonen2 = StadionPlanLogik.zonen(plan2, festeVariante(plan2))
+        val kasten = berechneGeometrie(canvasBreite, canvasHoehe, plan2, zonen2, festeVariante(plan2))
+        val achteckVariante = festeVariante(plan2).copy(grundform = Grundform.ACHTECK)
+        val ovalVariante = festeVariante(plan2).copy(grundform = Grundform.OVAL)
+        val achteck = berechneGeometrie(canvasBreite, canvasHoehe, plan2, zonen2, achteckVariante)
+        val oval = berechneGeometrie(canvasBreite, canvasHoehe, plan2, zonen2, ovalVariante)
+
+        assertTrue("Achteck rundet am wenigsten", achteck.eckRadius < kasten.eckRadius)
+        assertTrue("Oval rundet am stärksten", kasten.eckRadius < oval.eckRadius)
+        assertEquals("Innenradius folgt dem Außenradius gekappt", kotlin.math.max(0f, achteck.eckRadius - achteck.ringTiefe), achteck.innenRadius, 0.001f)
+    }
+
+    @Test
+    fun vipGeometrie_mittelrangLiegtImSitzbandInnerhalb() {
+        val plan2 = plan(0, 62_000)
+        val variante = festeVariante(plan2).copy(grundform = Grundform.KASTEN)
+        val geo = berechneGeometrie(canvasBreite, canvasHoehe, plan2, StadionPlanLogik.zonen(plan2, variante), variante)
+        val vipIndex = geo.zonen.indexOfFirst { it.vipStreifen }
+        val streifen = geo.streifen.first { it.zoneIndex == vipIndex }
+        val haupt = geo.flaechen.first { it.lage == StadionLage.WEST && geo.zonen[it.zoneIndex].name == "Haupttribüne" }.flaeche
+
+        assertTrue("Mittelrang rückt von der äußeren Kante ein", streifen.rechteck.left > haupt.left)
+        assertEquals(
+            "Streifen ist im Sitzband zentriert",
+            streifen.rechteck.left - haupt.left,
+            haupt.right - streifen.rechteck.right,
+            0.001f,
+        )
+    }
+
+    @Test
+    fun vipGeometrie_verstreutBelegtAlleVierSeiten() {
+        val plan2 = plan(0, 80_000)
+        val variante = festeVariante(plan2).copy(grundform = Grundform.KASTEN, vip = VipPlatzierung.VERSTREUT)
+        val geo = berechneGeometrie(canvasBreite, canvasHoehe, plan2, StadionPlanLogik.zonen(plan2, variante), variante)
+        val vipIndex = geo.zonen.indexOfFirst { it.vipStreifen }
+        val strips = geo.streifen.filter { it.zoneIndex == vipIndex }
+
+        assertEquals("Verstreuter VIP auf allen vier Seiten", 4, strips.size)
+        assertEquals("West-Streifen im Mittelrang, Rest außen", 1, strips.count { it.position == StreifenPosition.MITTELRANG })
+        assertEquals("Ost/Nord/Süd außen", 3, strips.count { it.position == StreifenPosition.AUSSEN })
+        // Zwei horizontale (Nord/Süd) und zwei vertikale (West/Ost) Streifen.
+        assertEquals(2, strips.count { it.rechteck.width > it.rechteck.height })
+        assertEquals(2, strips.count { it.rechteck.height > it.rechteck.width })
+    }
+
+    @Test
+    fun gaesteblock_eckeBelegtEineKompletteKurvenEcke() {
+        val planEck = plan(9_000, 36_000)
+        val variante = festeVariante(planEck).copy(grundform = Grundform.KASTEN, gaesteblockEcke = Ecke.NORDOST)
+        val zonen = StadionPlanLogik.zonen(planEck, variante)
+        val geo = berechneGeometrie(canvasBreite, canvasHoehe, planEck, zonen, variante)
+
+        val gast = zonen.first { it.name == "Gäste" }
+        val gastIndex = zonen.indexOf(gast)
+        assertEquals("Eckblock auf der Seite der Ecke", Ecke.NORDOST.lage, gast.lage)
+        assertEquals(Ecke.NORDOST, gast.ecke)
+        assertTrue("Eckblock ist Kurven-Zone", gast.istKurve)
+        assertTrue("Eckblock belegt kein Seitenband", geo.flaechen.none { it.zoneIndex == gastIndex })
+
+        assertEquals("Nordkurve behält nur ihre West-Ecke", 1, geo.kurven.first { it.lage == StadionLage.NORD && it.zoneIndex != gastIndex }.ecken.size)
+        val gastKurve = geo.kurven.first { it.zoneIndex == gastIndex }
+        assertEquals(1, gastKurve.ecken.size)
+        assertEquals("Gast-Ecke liegt auf der Nordseite", Ecke.NORDOST.lage, gastKurve.lage)
+
+        // Eckmitte trifft den Gästeblock, die gegenüberliegende Ecke die Nordkurve.
+        fun eckMitte(kg: KurvenGeometrie, eck: EckGeometrie): Offset {
+            val winkel = (eck.startWinkel + 45f) * Math.PI / 180.0
+            val radius = (geo.innenRadius + geo.eckRadius) / 2f
+            return Offset(
+                eck.mitte.x + radius * kotlin.math.cos(winkel).toFloat(),
+                eck.mitte.y + radius * kotlin.math.sin(winkel).toFloat(),
+            )
+        }
+        val nord = geo.kurven.first { it.lage == StadionLage.NORD && it.zoneIndex != gastIndex }
+        assertEquals(gastIndex, zoneAnPunkt(eckMitte(gastKurve, gastKurve.ecken.first()), geo))
+        assertEquals(nord.zoneIndex, zoneAnPunkt(eckMitte(nord, nord.ecken.first()), geo))
+    }
+
+    private fun plan(steh: Int, sitz: Int, sitzUeber: Int = 0): StadionPlanDaten =
+        StadionPlanDaten(
+            stehplaetze = steh,
+            sitzplaetze = sitz,
+            sitzUeberdacht = sitzUeber,
+        )
 }

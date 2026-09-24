@@ -10,13 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,6 +51,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -64,10 +63,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onlinesoccer.app.data.model.PlatzKategorie
 import com.onlinesoccer.app.data.model.PlatzTyp
+import com.onlinesoccer.app.data.model.RasenMuster
 import com.onlinesoccer.app.data.model.StadionLage
 import com.onlinesoccer.app.data.model.StadionPlanDaten
 import com.onlinesoccer.app.data.model.StadionPlanLogik
 import com.onlinesoccer.app.data.model.StadionPlanZone
+import com.onlinesoccer.app.data.model.StadionVariante
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.PI
@@ -77,6 +78,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 // Farbwelt des Plans: harmoniert mit dem grünen App-Design. Sitz (Blau) und
 // Steh (Amber) sind auch für Farbsehschwächen klar unterscheidbar; zusätzlich
@@ -91,6 +93,10 @@ private val sitzZeile = Color(0xFF5C9ADB)
 private val vipFarbe = Color(0xFF7B1FA2)
 private val stehFarbe = Color(0xFFE07B1E)
 private val stehZeile = Color(0xFFF2AB54)
+// Eigene Farbe für den Gästeblock (Weinrot) – klar abgesetzt von Sitz (Blau),
+// Steh (Amber) und der Riesenkurve, auch für Farbsehschwache erkennbar.
+private val gaesteblockFarbe = Color(0xFF9E1F1F)
+private val gaesteblockZeile = Color(0xFFC96A5E)
 private val dachFarbe = Color(0xFF0B1D10)
 private val basisFarbe = Color(0xFF24382A)
 private val lueckeFarbe = Color(0xFF1C311F)
@@ -101,6 +107,10 @@ private val pilleText = Color(0xFFF2F7F2)
 private val bowlKanteFarbe = Color(0xFF08210E)
 // Dezente Ausgrauung nicht relevanter Bereiche bei aktiver Kategorie-Auswahl.
 private val ausgegrautFarbe = Color(0xFF7E8983)
+// Deckkraft der Graustufen-Überlagerung über nicht zur Auswahl gehörende
+// Bereiche. Ausreichend hoch, damit selbst kräftig gefärbte Bänder eindeutig
+// ausgegraut wirken (vgl. UEBERDACHT/Zweig unten).
+private const val grauueberlagerungAlpha = 0.6f
 private val kurveGesamtFarbe = Color(0xFF5C6F66)
 
 /** Auswahlzustand unterhalb des Plans: eine Kategorie oder ein angetippter Bereich. */
@@ -120,10 +130,11 @@ private sealed interface PlanAuswahl {
  * auswählen. Kurven und Seiten bilden einen geschlossenen Stadionring.
  */
 @Composable
-fun StadionPlanView(plan: StadionPlanDaten, modifier: Modifier = Modifier) {
-    val zonen = remember(plan) { StadionPlanLogik.zonen(plan) }
+fun StadionPlanView(plan: StadionPlanDaten, modifier: Modifier = Modifier, saison: Int = 0) {
+    val variante = remember(plan, saison) { StadionPlanLogik.variante(plan, saison) }
+    val zonen = remember(plan) { StadionPlanLogik.zonen(plan, variante) }
     val grad = remember(plan) { StadionPlanLogik.detaillierungsGrad(plan.kapazitaet) }
-    val kategorien = remember(plan, grad) { StadionPlanLogik.kategorien(plan, grad) }
+    val kategorien = remember(plan, grad) { StadionPlanLogik.kategorien(plan, grad, variante) }
     val textMeasurer = rememberTextMeasurer()
     var auswahl by remember { mutableStateOf<PlanAuswahl?>(null) }
 
@@ -135,9 +146,14 @@ fun StadionPlanView(plan: StadionPlanDaten, modifier: Modifier = Modifier) {
             Modifier.fillMaxWidth().padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (plan.kapazitaet > 0) {
+                BautypZeile(variante.bautypZeile)
+            }
+
             StadionPlanCanvas(
                 plan = plan,
                 zonen = zonen,
+                variante = variante,
                 textMeasurer = textMeasurer,
                 auswahl = auswahl,
                 onSelect = { auswahl = it },
@@ -178,9 +194,26 @@ fun StadionPlanView(plan: StadionPlanDaten, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun BautypZeile(text: String) {
+    Surface(
+        Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+    ) {
+        Text(
+            "Bautyp: $text",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp),
+        )
+    }
+}
+
+@Composable
 private fun StadionPlanCanvas(
     plan: StadionPlanDaten,
     zonen: List<StadionPlanZone>,
+    variante: StadionVariante,
     textMeasurer: TextMeasurer,
     auswahl: PlanAuswahl?,
     onSelect: (PlanAuswahl?) -> Unit,
@@ -195,24 +228,45 @@ private fun StadionPlanCanvas(
         val layoutDirection = LocalLayoutDirection.current
         val breitePx = with(density) { breite.toPx() }
         val hoehePx = with(density) { hoehe.toPx() }
-        val geometrie = remember(plan, zonen, breitePx, hoehePx) {
-            berechneGeometrie(breitePx, hoehePx, plan, zonen)
+        val geometrie = remember(plan, zonen, variante, breitePx, hoehePx) {
+            berechneGeometrie(breitePx, hoehePx, plan, zonen, variante)
         }
         val auswahlAktuell = rememberUpdatedState(auswahl)
         val onSelectAktuell = rememberUpdatedState(onSelect)
 
-        // Der gesamte Plan wird einmalig in eine Bitmap gerendert (nur bei
-        // Daten-/Auswahlwechsel neu). Beim Scrollen wird pro Frame nur noch die
-        // fertige Bitmap wiedergegeben – statt hunderter Zeichenaufrufe.
-        val planBild = remember(plan, zonen, geometrie, breitePx, hoehePx, layoutDirection, density, auswahl) {
+        // Beschriftungs-Layouts werden nur bei Plan-/Größenwechsel gemessen – ein
+        // Kategorie-/Zone-Wechsel bleibt dadurch frei von Text-Shaping.
+        val labelLayouts = remember(zonen, breitePx, hoehePx, density) {
+            val b = min(breitePx, hoehePx)
+            val fontSize = with(density) { (b * 0.030f).coerceAtLeast(8f).toSp() }
+            val kapazitaetFs = with(density) { (b * 0.024f).coerceAtLeast(7f).toSp() }
+            zonen.map { zone ->
+                ZoneLabelLayout(
+                    name = textMeasurer.measure(
+                        zone.name,
+                        TextStyle(color = pilleText, fontSize = fontSize, fontWeight = FontWeight.SemiBold),
+                    ),
+                    kapazitaet = zone.kapazitaet?.let {
+                        textMeasurer.measure(
+                            formatAnzahl(it),
+                            TextStyle(color = pilleText.copy(alpha = 0.85f), fontSize = kapazitaetFs, fontWeight = FontWeight.Medium),
+                        )
+                    },
+                )
+            }
+        }
+        // Basisschicht: kompletter Plan in einer Bitmap, ohne Filter und ohne
+        // Auswahl – wird gecacht und nur bei echter Plan-/Größenänderung neu
+        // gerendert. Graustufen (Filter) und Zonen-Hervorhebung laufen als
+        // bewusst kleines Overlay darüber (siehe Canvas unten), damit ein
+        // Auswahlwechsel kein vollständiges Neu-Rendern auslöst.
+        val planBild = remember(plan, zonen, geometrie, breitePx, hoehePx, layoutDirection, density) {
             val breite = breitePx.roundToInt().coerceAtLeast(1)
             val hoehe = hoehePx.roundToInt().coerceAtLeast(1)
             val bitmap = ImageBitmap(breite, hoehe)
             androidx.compose.ui.graphics.Canvas(bitmap).let { canvas ->
                 CanvasDrawScope().draw(density, layoutDirection, canvas, Size(breitePx, hoehePx)) {
-                    val filter = (auswahl as? PlanAuswahl.Kategorie)?.kategorie
-                    val gewaehlteZone = (auswahl as? PlanAuswahl.Zone)?.index
-                    zeichneStadionPlan(geometrie, plan, zonen, gewaehlteZone, filter, textMeasurer)
+                    zeichneStadionPlan(geometrie, plan, zonen, labelLayouts, variante.rasen)
                 }
             }
             bitmap
@@ -236,6 +290,13 @@ private fun StadionPlanCanvas(
                     },
             ) {
                 drawImage(planBild, topLeft = Offset.Zero)
+                val filter = (auswahl as? PlanAuswahl.Kategorie)?.kategorie
+                if (filter != null) {
+                    zeichneFilterOverlay(geometrie, zonen, filter)
+                }
+                (auswahl as? PlanAuswahl.Zone)?.index?.let { index ->
+                    zeichneAuswahlHervorhebung(index, geometrie)
+                }
             }
         }
     }
@@ -272,6 +333,7 @@ private fun KategorieAuswahl(
 private fun KategorieSwatch(kategorie: PlatzKategorie) {
     val farbe = when {
         kategorie.zoneName == "VIP- und Business-Bereich" -> vipFarbe
+        kategorie.zoneName == "Gäste" -> gaesteblockFarbe
         kategorie.typ == PlatzTyp.SITZ -> sitzFarbe
         kategorie.typ == PlatzTyp.STEH -> stehFarbe
         else -> kurveGesamtFarbe
@@ -441,6 +503,8 @@ private enum class BandZustand {
     VOLL,
     /** Nur der überdachte Teil des Bandes gehört zur Kategorie. */
     UEBERDACHT,
+    /** Nur der nicht überdachte (offene) Teil des Bandes gehört zur Kategorie. */
+    NUR_UNUEBERDACHT,
     /** Band gehört nicht zur Kategorie und wird ausgegraut. */
     GRAU,
 }
@@ -468,18 +532,26 @@ private fun bandZustand(
     // Stadionweite Kategorie (Sitz-/Stehplätze): wirkt je Bandtyp.
     val typPasst = filter.typ == null || filter.typ == typ
     if (!typPasst) return BandZustand.GRAU
-    if (!filter.ueberdacht) return BandZustand.VOLL
-    if (ueberdachtAnteil > 0f) return BandZustand.UEBERDACHT
-    return BandZustand.GRAU
+    if (filter.nurUnueberdacht) {
+        // „Nicht überdachte Plätze": ganz überdachte Bänder passen nicht,
+        // teilweise überdachte zeigen nur ihren offenen Teil.
+        if (ueberdachtAnteil >= 1f) return BandZustand.GRAU
+        if (ueberdachtAnteil > 0f) return BandZustand.NUR_UNUEBERDACHT
+        return BandZustand.VOLL
+    }
+    if (filter.ueberdacht) {
+        if (ueberdachtAnteil > 0f) return BandZustand.UEBERDACHT
+        return BandZustand.GRAU
+    }
+    return BandZustand.VOLL
 }
 
 private fun DrawScope.zeichneStadionPlan(
     geometrie: PlanGeometrie,
     plan: StadionPlanDaten,
     zonen: List<StadionPlanZone>,
-    gewaehlteZone: Int?,
-    filter: PlatzKategorie?,
-    textMeasurer: TextMeasurer,
+    labelLayouts: List<ZoneLabelLayout>,
+    rasen: RasenMuster,
 ) {
     val basis = min(size.width, size.height)
     if (basis <= 0f) return
@@ -499,6 +571,9 @@ private fun DrawScope.zeichneStadionPlan(
     }
 
     val hatPlaetze = plan.kapazitaet > 0
+    // Basisschicht immer ohne Kategorie-Filter: Graustufen legt das Overlay
+    // (zeichneFilterOverlay) bei Auswahl darüber; hier bleibt alles normal.
+    val filter: PlatzKategorie? = null
 
     clipPath(aussenPath) {
         // Grundfläche des Rings.
@@ -513,7 +588,7 @@ private fun DrawScope.zeichneStadionPlan(
             }
             geometrie.flaechen.forEach { zf ->
                 if (zf.zoneIndex in zonen.indices) {
-                    zeichneBereich(zf, zonen[zf.zoneIndex], geometrie, basis, filter, textMeasurer)
+                    zeichneBereich(zf, zonen[zf.zoneIndex], geometrie, basis, filter)
                 }
             }
 
@@ -524,8 +599,24 @@ private fun DrawScope.zeichneStadionPlan(
                 }
             }
 
-            gewaehlteZone?.let { index ->
-                zeichneAuswahlHervorhebung(index, geometrie)
+            // Beschriftungen zuletzt, damit VIP-Streifen (Mittelrang/Verteilt) und
+            // Kurven die Tribünen-Pillen nicht überdecken. Die Auswahl-Hervorhebung
+            // wird als Overlay über der fertigen Bitmap gezeichnet.
+            geometrie.flaechen.forEach { zf ->
+                if (zf.zoneIndex in zonen.indices && zf.zoneIndex in labelLayouts.indices) {
+                    zeichneBeschriftung(zf.flaeche, zf.lage, basis, labelLayouts[zf.zoneIndex])
+                }
+            }
+
+            // Pille für reine Eck-Zonen (Gästeblock-Ecke großer Stadien), die kein
+            // gerades Band belegen und daher im flaechen-Durchlauf fehlen würden.
+            val flaechenIndices = gebauteFlaechenIndices(geometrie)
+            geometrie.kurven.forEach { kg ->
+                if (kg.zoneIndex !in zonen.indices) return@forEach
+                if (kg.zoneIndex in flaechenIndices) return@forEach
+                if (!kg.ecken.isEmpty() && kg.zoneIndex in labelLayouts.indices) {
+                    zeichneKurvenEckeBeschriftung(kg, geometrie, basis, labelLayouts[kg.zoneIndex])
+                }
             }
         }
     }
@@ -545,7 +636,7 @@ private fun DrawScope.zeichneStadionPlan(
         style = Stroke(width = basis * 0.006f),
     )
 
-    zeichneSpielfeld(geometrie.pitch, basis)
+    zeichneSpielfeld(geometrie.pitch, basis, rasen)
 
     // Äußere Bowl-Kante.
     drawRoundRect(
@@ -604,6 +695,164 @@ private fun DrawScope.zeichneAuswahlHervorhebung(index: Int, geometrie: PlanGeom
     }
 }
 
+/**
+ * Zeichnet bei aktiver Kategorie-Auswahl die Graustufen über die Basisschicht.
+ * Nutzt dieselben Hilfsfunktionen wie die Zeichnung ([bandRect], [annulusPath],
+ * [eckElbowPath]), damit Filter-Look und Plan exakt übereinstimmen. Die
+ * Überlagerung ist bewusst NEUTRAL ([ausgegrautFarbe], halbdeckend): Über einem
+ * bereits vollfarbig gezeichneten Band wirkt die Bandfarbe selbst bei geringem
+ * Alpha NICHT als Abdunklung (gleiche Farbe über gleicher Farbe bleibt gleich).
+ */
+private fun DrawScope.zeichneFilterOverlay(
+    geometrie: PlanGeometrie,
+    zonen: List<StadionPlanZone>,
+    filter: PlatzKategorie,
+) {
+    // Gerade Seiten-/Kurvenbänder (Sitz außen, Steh innen).
+    geometrie.flaechen.forEach { zf ->
+        if (zf.zoneIndex !in zonen.indices) return@forEach
+        val zone = zonen[zf.zoneIndex]
+        val haengend = zf.lage == StadionLage.WEST || zf.lage == StadionLage.OST
+        val tiefe = if (haengend) zf.flaeche.width else zf.flaeche.height
+        if (tiefe <= 0f) return@forEach
+        val (sitzT, stehT) = StadionPlanLogik.bandTiefen(zone.sitzAnteil, zone.stehAnteil, tiefe)
+        if (sitzT > 0f) {
+            val zustand = bandZustand(filter, zone, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil)
+            val rect = bandRect(zf.flaeche, sitzT, zf.lage, aussenBand = true)
+            zeichneFilterBand(rect, zustand, zone.sitzUeberdachtAnteil, zf.lage)
+        }
+        if (stehT > 0f) {
+            val zustand = bandZustand(filter, zone, PlatzTyp.STEH, zone.stehUeberdachtAnteil)
+            val rect = bandRect(zf.flaeche, stehT, zf.lage, aussenBand = false)
+            zeichneFilterBand(rect, zustand, zone.stehUeberdachtAnteil, zf.lage)
+        }
+    }
+
+    // VIP-Streifen der Haupttribüne (folgt dem Sitzband der Zone).
+    geometrie.streifen.forEach { sf ->
+        if (sf.zoneIndex !in zonen.indices) return@forEach
+        val zone = zonen[sf.zoneIndex]
+        val zustand = bandZustand(filter, zone, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil)
+        if (zustand == BandZustand.VOLL) {
+            // Zur gewählten Kategorie (VIP) gehörend: Der Grauschleier des
+            // Besitzer-Bandes (Haupttribüne) liegt bereits darunter und würde den
+            // Streifen sonst überdecken – deshalb vollfarbig darüber zeichnen.
+            zeichneVipStreifen(sf, zone, min(size.width, size.height), filter = null)
+        } else {
+            zeichneFilterBand(sf.rechteck, zustand, zone.sitzUeberdachtAnteil, zone.lage)
+        }
+    }
+
+    // Kurven-Ecken: annulare Bänder (Sitz außen / Steh innen) und Elbow-Reste.
+    geometrie.kurven.forEach { kg ->
+        if (kg.zoneIndex !in zonen.indices) return@forEach
+        val zone = zonen[kg.zoneIndex]
+        val aussenRadius = geometrie.eckRadius
+        val innenRadius = geometrie.innenRadius
+        val tiefe = aussenRadius - innenRadius
+        if (tiefe <= 0f) return@forEach
+        val (sitzT, stehT) = StadionPlanLogik.bandTiefen(zone.sitzAnteil, zone.stehAnteil, tiefe)
+        kg.ecken.forEach { eck ->
+            if (sitzT > 0f) {
+                val zustand = bandZustand(filter, zone, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil)
+                val innerR = aussenRadius - sitzT
+                val decke = sitzT * zone.sitzUeberdachtAnteil.coerceIn(0f, 1f)
+                when (zustand) {
+                    BandZustand.GRAU ->
+                        drawPath(annulusPath(eck.mitte, innerR, aussenRadius, eck.startWinkel, 90f), grau)
+                    BandZustand.UEBERDACHT -> if (decke > 0f) {
+                        // Nicht überdachter (innerer) Teil ausgrauen.
+                        drawPath(annulusPath(eck.mitte, innerR, aussenRadius - decke, eck.startWinkel, 90f), grau)
+                    }
+                    BandZustand.NUR_UNUEBERDACHT -> if (decke > 0f) {
+                        // Überdachter (äußerer) Teil ausgrauen.
+                        drawPath(annulusPath(eck.mitte, aussenRadius - decke, aussenRadius, eck.startWinkel, 90f), grau)
+                    }
+                    BandZustand.VOLL -> Unit
+                }
+            }
+            if (stehT > 0f) {
+                val zustand = bandZustand(filter, zone, PlatzTyp.STEH, zone.stehUeberdachtAnteil)
+                val outerR = aussenRadius - sitzT
+                val decke = stehT * zone.stehUeberdachtAnteil.coerceIn(0f, 1f)
+                when (zustand) {
+                    BandZustand.GRAU ->
+                        drawPath(annulusPath(eck.mitte, innenRadius, outerR, eck.startWinkel, 90f), grau)
+                    BandZustand.UEBERDACHT -> if (decke > 0f) {
+                        drawPath(annulusPath(eck.mitte, innenRadius, outerR - decke, eck.startWinkel, 90f), grau)
+                    }
+                    BandZustand.NUR_UNUEBERDACHT -> if (decke > 0f) {
+                        drawPath(annulusPath(eck.mitte, outerR - decke, outerR, eck.startWinkel, 90f), grau)
+                    }
+                    BandZustand.VOLL -> Unit
+                }
+            }
+            if (sitzT > 0f || stehT > 0f) {
+                val typ = if (sitzT > 0f) PlatzTyp.SITZ else PlatzTyp.STEH
+                val ueberdacht = if (typ == PlatzTyp.SITZ) zone.sitzUeberdachtAnteil else zone.stehUeberdachtAnteil
+                if (bandZustand(filter, zone, typ, ueberdacht) == BandZustand.GRAU) {
+                    drawPath(eckElbowPath(geometrie, eck), grau)
+                }
+            }
+        }
+    }
+}
+
+/** Graustufen-Füllung für das Filter-Overlay (halbdeckend). */
+private val grau: Color get() = ausgegrautFarbe.copy(alpha = grauueberlagerungAlpha)
+
+/**
+ * Filterdarstellung eines einzelnen geraden Bandes: GRAU (=neutrale, halb
+ * deckende Ausgrauung), UEBERDACHT (=nicht überdeckter Rest ausgegraut) bzw.
+ * NUR_UNUEBERDACHT (=überdeckter Teil ausgegraut).
+ */
+private fun DrawScope.zeichneFilterBand(
+    band: Rect,
+    zustand: BandZustand,
+    ueberdachtAnteil: Float,
+    lage: StadionLage,
+) {
+    when (zustand) {
+        BandZustand.VOLL -> Unit
+        BandZustand.GRAU ->
+            drawRect(ausgegrautFarbe.copy(alpha = grauueberlagerungAlpha), topLeft = band.topLeft, size = band.size)
+        BandZustand.UEBERDACHT -> if (ueberdachtAnteil > 0f) {
+            val rest = offenerBandRest(band, lage, ueberdachtAnteil)
+            drawRect(ausgegrautFarbe, topLeft = rest.topLeft, size = rest.size)
+        }
+        BandZustand.NUR_UNUEBERDACHT -> if (ueberdachtAnteil > 0f) {
+            val decke = bandTiefe(band, lage) * ueberdachtAnteil.coerceIn(0f, 1f)
+            val ueberdacht = bandUeberdachung(band, lage, decke)
+            drawRect(ausgegrautFarbe, topLeft = ueberdacht.topLeft, size = ueberdacht.size)
+        }
+    }
+}
+
+private fun bandTiefe(band: Rect, lage: StadionLage): Float =
+    if (lage == StadionLage.NORD || lage == StadionLage.SUED) band.height else band.width
+
+/** Unüberdachter Rest eines Bandes (Gesamtband abzüglich der Dachfläche). */
+private fun bandOhneUeberdachung(band: Rect, lage: StadionLage, decke: Float): Rect = when (lage) {
+    StadionLage.NORD -> Rect(band.left, band.top + decke, band.right, band.bottom)
+    StadionLage.SUED -> Rect(band.left, band.top, band.right, band.bottom - decke)
+    StadionLage.WEST -> Rect(band.left + decke, band.top, band.right, band.bottom)
+    StadionLage.OST -> Rect(band.left, band.top, band.right - decke, band.bottom)
+}
+
+/** Überdeckter (Dach-)Teil eines Bandes – spiegelbildlich zu [bandOhneUeberdachung]. */
+private fun bandUeberdachung(band: Rect, lage: StadionLage, decke: Float): Rect = when (lage) {
+    StadionLage.NORD -> Rect(band.left, band.top, band.right, band.top + decke)
+    StadionLage.SUED -> Rect(band.left, band.bottom - decke, band.right, band.bottom)
+    StadionLage.WEST -> Rect(band.left, band.top, band.left + decke, band.bottom)
+    StadionLage.OST -> Rect(band.right - decke, band.top, band.right, band.bottom)
+}
+
+/** Unüberdachter Rest eines Bandes direkt aus dem Überdachungs-Anteil. */
+private fun offenerBandRest(band: Rect, lage: StadionLage, ueberdachtAnteil: Float): Rect {
+    val decke = bandTiefe(band, lage) * ueberdachtAnteil.coerceIn(0f, 1f)
+    return bandOhneUeberdachung(band, lage, decke)
+}
+
 /** Ein Bereichsband (Sitz außen / Steh innen) einer geraden Stadionseite. */
 private fun DrawScope.zeichneBereich(
     zf: ZoneFlaeche,
@@ -611,7 +860,6 @@ private fun DrawScope.zeichneBereich(
     geometrie: PlanGeometrie,
     basis: Float,
     filter: PlatzKategorie?,
-    textMeasurer: TextMeasurer,
 ) {
     val rechteck = zf.flaeche
     val haengend = zf.lage == StadionLage.WEST || zf.lage == StadionLage.OST
@@ -623,12 +871,14 @@ private fun DrawScope.zeichneBereich(
     if (sitzT > 0f) {
         val sitzRect = bandRect(rechteck, sitzT, zf.lage, aussenBand = true)
         val zustand = bandZustand(filter, zone, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil)
-        zeichneRechteckBand(sitzRect, zf.lage, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil, basis, zustand)
+        zeichneRechteckBand(sitzRect, zone, zf.lage, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil, basis, zustand, geometrie.rangzahl)
+        // Ränge der Tribüne als Trennlinien im Sitzband (2. und ggf. 3. Rang).
+        zeichneRangTrenner(sitzRect, zf.lage, geometrie.rangzahl)
     }
     if (stehT > 0f) {
         val stehRect = bandRect(rechteck, stehT, zf.lage, aussenBand = false)
         val zustand = bandZustand(filter, zone, PlatzTyp.STEH, zone.stehUeberdachtAnteil)
-        zeichneRechteckBand(stehRect, zf.lage, PlatzTyp.STEH, zone.stehUeberdachtAnteil, basis, zustand)
+        zeichneRechteckBand(stehRect, zone, zf.lage, PlatzTyp.STEH, zone.stehUeberdachtAnteil, basis, zustand, geometrie.rangzahl)
     }
 
     if (sitzT > 0f && stehT > 0f) {
@@ -643,20 +893,46 @@ private fun DrawScope.zeichneBereich(
     }
 
     zeichneGänge(rechteck, zf.lage, basis)
-    zeichneBeschriftung(rechteck, zone, zf.lage, basis, textMeasurer)
+}
+
+/** Trennlinien zwischen den Rängen einer Tribüne (2. und ggf. 3. Rang). */
+private fun DrawScope.zeichneRangTrenner(
+    sitzBand: Rect,
+    lage: StadionLage,
+    rangzahl: Int,
+) {
+    if (rangzahl < 2) return
+    val waagerecht = lage == StadionLage.NORD || lage == StadionLage.SUED
+    val tiefe = if (waagerecht) sitzBand.height else sitzBand.width
+    if (tiefe <= 0f) return
+    val farbe = lerp(sitzFarbe, Color.Black, 0.55f).copy(alpha = 0.75f)
+    for (i in 1 until rangzahl) {
+        val pos = tiefe * i / rangzahl
+        val start: Offset
+        val ende: Offset
+        if (waagerecht) {
+            start = Offset(sitzBand.left, sitzBand.top + pos)
+            ende = Offset(sitzBand.right, sitzBand.top + pos)
+        } else {
+            start = Offset(sitzBand.left + pos, sitzBand.top)
+            ende = Offset(sitzBand.left + pos, sitzBand.bottom)
+        }
+        drawLine(farbe, start, ende, strokeWidth = 1.5.dp.toPx())
+    }
 }
 
 /** Zeichnet ein rechteckiges Sitz-/Stehband mit Reihen, Überdachung und Filterzustand. */
 private fun DrawScope.zeichneRechteckBand(
     band: Rect,
+    zone: StadionPlanZone,
     lage: StadionLage,
     typ: PlatzTyp,
     ueberdachtAnteil: Float,
     basis: Float,
     zustand: BandZustand,
+    rangzahl: Int = 1,
 ) {
-    val farbe = if (typ == PlatzTyp.SITZ) sitzFarbe else stehFarbe
-    val zeileFarbe = if (typ == PlatzTyp.SITZ) sitzZeile else stehZeile
+    val (farbe, zeileFarbe) = zonenFarben(zone, typ)
     val gestrichelt = typ == PlatzTyp.SITZ
     val tiefe = if (lage == StadionLage.NORD || lage == StadionLage.SUED) band.height else band.width
 
@@ -666,7 +942,7 @@ private fun DrawScope.zeichneRechteckBand(
     }
 
     drawRect(farbe, topLeft = band.topLeft, size = band.size)
-    zeichneReihen(band, lage, ueberdachtAnteil, zeileFarbe, gestrichelt, basis)
+    zeichneReihen(band, lage, ueberdachtAnteil, zeileFarbe, gestrichelt, basis, rangzahl)
 
     if (zustand == BandZustand.UEBERDACHT && ueberdachtAnteil > 0f) {
         val decke = tiefe * ueberdachtAnteil.coerceIn(0f, 1f)
@@ -675,12 +951,15 @@ private fun DrawScope.zeichneRechteckBand(
     }
 }
 
-/** Der nicht überdachte Rest eines Bandes (Gesamtband abzüglich der Dachfläche). */
-private fun bandOhneUeberdachung(band: Rect, lage: StadionLage, decke: Float): Rect = when (lage) {
-    StadionLage.NORD -> Rect(band.left, band.top + decke, band.right, band.bottom)
-    StadionLage.SUED -> Rect(band.left, band.top, band.right, band.bottom - decke)
-    StadionLage.WEST -> Rect(band.left + decke, band.top, band.right, band.bottom)
-    StadionLage.OST -> Rect(band.left, band.top, band.right - decke, band.bottom)
+/**
+ * Flächen- und Reihenfarbe einer Zone je Bandtyp. Der Gästeblock hebt sich mit
+ * eigener Farbe deutlich von den angrenzenden Kurven und Bändern ab.
+ */
+private fun zonenFarben(zone: StadionPlanZone, typ: PlatzTyp): Pair<Color, Color> {
+    if (zone.name == "Gäste") return gaesteblockFarbe to gaesteblockZeile
+    val farbe = if (typ == PlatzTyp.SITZ) sitzFarbe else stehFarbe
+    val zeile = if (typ == PlatzTyp.SITZ) sitzZeile else stehZeile
+    return farbe to zeile
 }
 
 /**
@@ -792,11 +1071,13 @@ private fun DrawScope.zeichneReihen(
     zeileFarbe: Color,
     gestrichelt: Boolean,
     basis: Float,
+    rangzahl: Int = 1,
 ) {
     val waagerecht = lage == StadionLage.NORD || lage == StadionLage.SUED
     val tiefe = if (waagerecht) band.height else band.width
     if (tiefe <= 0f) return
-    val anzahl = ((tiefe / (basis * 0.022f)).roundToInt()).coerceIn(2, 8)
+    // Mehr Reihen bei mehr Rängen, nie unter 4 Reihen.
+    val anzahl = ((tiefe / (basis * 0.022f)).roundToInt()).coerceIn(2 + rangzahl * 2, 4 * rangzahl + 2)
 
     val dash = if (gestrichelt) {
         PathEffect.dashPathEffect(floatArrayOf(basis * 0.012f, basis * 0.008f))
@@ -896,27 +1177,24 @@ private fun DrawScope.zeichneGänge(rechteck: Rect, lage: StadionLage, basis: Fl
 }
 
 /** Beschriftung (Bereichsname + Kapazität) als Pille auf dem Bereich. */
+/**
+ * Vorberechnete Beschriftungs-Layouts einer Zone (Name + optionale Kapazität).
+ * Wird in [StadionPlanCanvas] gecacht, damit Kategorie-/Zone-Wechsel keine
+ * Text-Shaping-Kosten mehr auslösen.
+ */
+private class ZoneLabelLayout(
+    val name: TextLayoutResult,
+    val kapazitaet: TextLayoutResult?,
+)
+
 private fun DrawScope.zeichneBeschriftung(
     rechteck: Rect,
-    zone: StadionPlanZone,
     lage: StadionLage,
     basis: Float,
-    textMeasurer: TextMeasurer,
+    layout: ZoneLabelLayout,
 ) {
-    val fontSize = (basis * 0.030f).coerceAtLeast(8f).toSp()
-    val kapazitaetFs = (basis * 0.024f).coerceAtLeast(7f).toSp()
-
-    val nameLayout = textMeasurer.measure(
-        zone.name,
-        TextStyle(color = pilleText, fontSize = fontSize, fontWeight = FontWeight.SemiBold),
-    )
-    val kapazitaet = zone.kapazitaet
-    val kapLayout = kapazitaet?.let {
-        textMeasurer.measure(
-            formatAnzahl(it),
-            TextStyle(color = pilleText.copy(alpha = 0.85f), fontSize = kapazitaetFs, fontWeight = FontWeight.Medium),
-        )
-    }
+    val nameLayout = layout.name
+    val kapLayout = layout.kapazitaet
 
     val textBreite = max(
         (nameLayout.size?.width ?: 0).toFloat(),
@@ -943,6 +1221,37 @@ private fun DrawScope.zeichneBeschriftung(
             zeichnePille(rechteck.center, nameLayout, kapLayout, pillBreite, pillHoehe, rotation = winkel)
         }
     }
+}
+
+/** Zone-Indizes, die ein gerades Band ([einen Sektor]) im Plan belegen. */
+private fun gebauteFlaechenIndices(geometrie: PlanGeometrie): Set<Int> =
+    geometrie.flaechen.mapTo(mutableSetOf()) { it.zoneIndex }
+
+/**
+ * Pille für eine reine Eck-Zone (Gästeblock großer Stadien) ohne gerades Band:
+ * zentriert auf der Winkelhalbierenden des 90°-Ecksegments, auf halbem Ringradius.
+ * Es wird nur der Zonenname gezeichnet, damit die Pille in den kleinen Ecken
+ * Platz findet (eine zusätzliche Kapazitätszeile würde in die Nachbarbereiche ragen).
+ */
+private fun DrawScope.zeichneKurvenEckeBeschriftung(
+    kg: KurvenGeometrie,
+    geometrie: PlanGeometrie,
+    basis: Float,
+    layout: ZoneLabelLayout,
+) {
+    val eck = kg.ecken.first()
+    val mittelR = (geometrie.innenRadius + geometrie.eckRadius) / 2f
+    val winkel = Math.toRadians((eck.startWinkel + 45f).toDouble())
+    val zentrum = Offset(
+        eck.mitte.x + mittelR * cos(winkel).toFloat(),
+        eck.mitte.y + mittelR * sin(winkel).toFloat(),
+    )
+    val nameLayout = layout.name
+    val padX = basis * 0.020f
+    val padY = basis * 0.012f
+    val pillBreite = (nameLayout.size?.width ?: 0).toFloat() + 2f * padX
+    val pillHoehe = (nameLayout.size?.height ?: 0).toFloat() + 2f * padY
+    zeichnePille(zentrum, nameLayout, null, pillBreite, pillHoehe, rotation = 0f)
 }
 
 /**
@@ -983,14 +1292,14 @@ private fun DrawScope.zeichneKurvenEcke(
         val zustand = bandZustand(filter, zone, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil)
         zeichneKurvenBand(
             eck.mitte, aussenRadius - sitzT, aussenRadius,
-            eck.startWinkel, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil, basis, zustand,
+            eck.startWinkel, zone, PlatzTyp.SITZ, zone.sitzUeberdachtAnteil, basis, zustand, geometrie.rangzahl,
         )
     }
     if (stehT > 0f) {
         val zustand = bandZustand(filter, zone, PlatzTyp.STEH, zone.stehUeberdachtAnteil)
         zeichneKurvenBand(
             eck.mitte, innenRadius, aussenRadius - sitzT,
-            eck.startWinkel, PlatzTyp.STEH, zone.stehUeberdachtAnteil, basis, zustand,
+            eck.startWinkel, zone, PlatzTyp.STEH, zone.stehUeberdachtAnteil, basis, zustand, geometrie.rangzahl,
         )
     }
 
@@ -1027,7 +1336,7 @@ private fun DrawScope.zeichneEckElbow(
     filter: PlatzKategorie?,
 ) {
     val zustand = bandZustand(filter, zone, typ, ueberdachtAnteil)
-    val farbe = if (typ == PlatzTyp.SITZ) sitzFarbe else stehFarbe
+    val (farbe, _) = zonenFarben(zone, typ)
     val path = eckElbowPath(geometrie, eck)
     if (zustand == BandZustand.GRAU) {
         drawPath(path, farbe.copy(alpha = 0.15f))
@@ -1094,13 +1403,14 @@ private fun DrawScope.zeichneKurvenBand(
     innerR: Float,
     outerR: Float,
     startWinkel: Float,
+    zone: StadionPlanZone,
     typ: PlatzTyp,
     ueberdachtAnteil: Float,
     basis: Float,
     zustand: BandZustand,
+    rangzahl: Int = 1,
 ) {
-    val farbe = if (typ == PlatzTyp.SITZ) sitzFarbe else stehFarbe
-    val zeileFarbe = if (typ == PlatzTyp.SITZ) sitzZeile else stehZeile
+    val (farbe, zeileFarbe) = zonenFarben(zone, typ)
     val tiefe = outerR - innerR
     if (tiefe <= 0f) return
 
@@ -1114,8 +1424,8 @@ private fun DrawScope.zeichneKurvenBand(
 
     drawPath(annulusPath(mitte, innerR, outerR, startWinkel, 90f), farbe)
 
-    // Konzentrische Reihen entlang des Kurvenbogens.
-    val anzahl = ((tiefe / (basis * 0.022f)).roundToInt()).coerceIn(2, 8)
+    // Konzentrische Reihen entlang des Kurvenbogens (dichter bei mehr Rängen).
+    val anzahl = ((tiefe / (basis * 0.022f)).roundToInt()).coerceIn(2 + rangzahl * 2, 4 * rangzahl + 2)
     for (i in 1 until anzahl) {
         val r = innerR + tiefe * i / anzahl
         drawArc(
@@ -1229,19 +1539,58 @@ private fun DrawScope.zeichnePille(
 private fun DrawScope.padYInPille(): Float = (size.height * 0.012f)
 
 /** Vertikal ausgerichtetes Spielfeld (68:105), Tore oben/unten. */
-private fun DrawScope.zeichneSpielfeld(pitch: Rect, basis: Float) {
-    drawRect(bruestungFarbe, topLeft = pitch.topLeft, size = pitch.size)
-
-    // Rasenstreifen.
-    val streifenzahl = 10
+/** Horizontale Rasenstreifen über die Spielfeldlänge (quer statt längs gemäht). */
+private fun DrawScope.zeichneRasenStreifen(pitch: Rect, streifenzahl: Int) {
     val streifenh = pitch.height / streifenzahl
     for (i in 0 until streifenzahl) {
-        val farbe = if (i % 2 == 0) rasenHell else rasenDunkel
         drawRect(
-            farbe,
+            if (i % 2 == 0) rasenHell else rasenDunkel,
             topLeft = Offset(pitch.left, pitch.top + i * streifenh),
             size = Size(pitch.width, streifenh),
         )
+    }
+}
+
+private fun DrawScope.zeichneSpielfeld(pitch: Rect, basis: Float, rasen: RasenMuster) {
+    drawRect(bruestungFarbe, topLeft = pitch.topLeft, size = pitch.size)
+
+    // Mäh-/Druckmuster: einfarbig (kleine Stadien) bis ausgefallene Muster.
+    when (rasen) {
+        RasenMuster.KEINS -> drawRect(rasenHell, topLeft = pitch.topLeft, size = pitch.size)
+        RasenMuster.STREIFEN_BREIT -> zeichneRasenStreifen(pitch, 6)
+        RasenMuster.STREIFEN_SCHMAL -> zeichneRasenStreifen(pitch, 14)
+        RasenMuster.KARRIERT -> {
+            // Schachbrettmuster aus annähernd quadratischen Kacheln.
+            val zellenX = 8
+            val zellenY = ((pitch.height / (pitch.width / zellenX)) + 0.5f).roundToInt()
+            val kachelW = pitch.width / zellenX
+            val kachelH = pitch.height / zellenY
+            for (zeile in 0 until zellenY) {
+                for (spalte in 0 until zellenX) {
+                    val farbe = if ((zeile + spalte) % 2 == 0) rasenHell else rasenDunkel
+                    drawRect(
+                        farbe,
+                        topLeft = Offset(pitch.left + spalte * kachelW, pitch.top + zeile * kachelH),
+                        size = Size(kachelW + 0.5f, kachelH + 0.5f),
+                    )
+                }
+            }
+        }
+        RasenMuster.KREISE -> {
+            // Bullseye: konzentrische Kreise um den Mittelpunkt.
+            val maxR = sqrt(pitch.width * pitch.width + pitch.height * pitch.height) / 2f
+            val ringe = 12
+            val ringBreite = maxR / ringe
+            clipRect(pitch.left, pitch.top, pitch.right, pitch.bottom) {
+                for (i in ringe - 1 downTo 0) {
+                    drawCircle(
+                        if (i % 2 == 0) rasenHell else rasenDunkel,
+                        radius = ringBreite * (i + 1),
+                        center = pitch.center,
+                    )
+                }
+            }
+        }
     }
 
     val linie = linieFarbe.copy(alpha = 0.85f)

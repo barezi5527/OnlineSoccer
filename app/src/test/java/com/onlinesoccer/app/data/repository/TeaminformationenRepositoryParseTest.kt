@@ -62,6 +62,34 @@ class TeaminformationenRepositoryParseTest {
     }
 
     @Test
+    fun teaminfo_liestZeilenUndStadionplan() {
+        val teaminfo = repo.parseTeaminfo(dump("showteam_s5"))
+
+        assertTrue("Teaminfo-Zeilen vorhanden", teaminfo.zeilen.isNotEmpty())
+        val zeilenMap = teaminfo.zeilen.toMap()
+        assertTrue("Teamname vorhanden", zeilenMap.containsKey("Teamname"))
+        assertTrue("Stadionname vorhanden", zeilenMap.containsKey("Stadionname"))
+
+        val plan = teaminfo.stadionPlan
+        assertNotNull("Stadionplan aus Teaminfo", plan)
+        assertEquals(90_500, plan!!.sitzplaetze)
+        assertEquals(0, plan.stehplaetze)
+        assertEquals("Sitzplätze voll überdacht", 90_500, plan.sitzUeberdacht)
+        assertEquals("Stehplätze ohne Überdachung", 0, plan.stehUeberdacht)
+        assertEquals("Fassungsvermögen = Stadiongrösse", 90_500, plan.fassungsvermoegen)
+    }
+
+    @Test
+    fun teaminfo_liestAnzeigetafelUndRasenheizung() {
+        val plan = repo.parseTeaminfo(dump("showteam_s5")).stadionPlan
+
+        assertNotNull("Stadionplan aus Teaminfo", plan)
+        assertEquals("Multimediawürfel als Anzeigetafel", "Multimediawürfel", plan!!.anzeigetafel)
+        assertTrue("Rasenheizung bejaht", plan.rasenheizung)
+        assertTrue("Premium-Ausstattung aus Teaminfo", plan.hatPremiumAusstattung)
+    }
+
+    @Test
     fun saisonplan_liestSaisonsUndSpiele() {
         val daten = repo.parseSaisonplan(dump("showteam_s6"))
         assertEquals("Saisons 1..24", (1..24).toList(), daten.saisons.sorted())

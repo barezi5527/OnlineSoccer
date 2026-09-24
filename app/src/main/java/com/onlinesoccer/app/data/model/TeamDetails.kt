@@ -114,6 +114,11 @@ data class StatistikZeile(
 /** Teaminfo/Stadion (`showteam.php?s=5`). */
 data class Teaminfo(
     val zeilen: List<Pair<String, String>> = emptyList(),
+    /**
+     * Daraus abgeleitete Stadion-Kennzahlen (Sitz-/Stehplätze, überdachte Anteile,
+     * Fassungsvermögen) für den Stadionplan; `null`, wenn die Seite keine Plätze liefert.
+     */
+    val stadionPlan: StadionPlanDaten? = null,
 )
 
 /**

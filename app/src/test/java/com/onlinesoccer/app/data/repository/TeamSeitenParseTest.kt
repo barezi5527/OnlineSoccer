@@ -3,6 +3,8 @@ package com.onlinesoccer.app.data.repository
 import com.onlinesoccer.app.data.model.AktionFeldTyp
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -157,6 +159,31 @@ class TeamSeitenParseTest {
         assertEquals("Stehplätze bauen", steh.ueberschrift)
         assertEquals("2.859 pro Platz", steh.untertitel)
         assertEquals("10.000", steh.werte.toMap()["Maximum"])
+    }
+
+    @Test
+    fun stadion_liestAusstattungAlsPremiumDaten() {
+        val ansicht = repo.parseStadion(dump("stadion_ausbau"))
+
+        val zustand = ansicht.abschnitte.first { it.titel == "Aktueller Stadion-Zustand" }
+        val plan = zustand.stadionPlan
+        assertNotNull("Stadionplan vorhanden", plan)
+        assertEquals("Multimediawürfel als Anzeigetafel", "Multimediawürfel", plan!!.anzeigetafel)
+        assertTrue("Rasenheizung installiert", plan.rasenheizung)
+        assertTrue("Premium-Ausstattung erkannt", plan.hatPremiumAusstattung)
+    }
+
+    @Test
+    fun stadion_einfacheAnzeigetafelKeinPremium() {
+        // Einfache „Anzeigetafel" + Rasenheizung zählt nicht als Premium.
+        val ansicht = repo.parseStadion(dump("stadion_mit_bereichen"))
+
+        val zustand = ansicht.abschnitte.firstOrNull { it.titel == "Aktueller Stadion-Zustand" }
+        val plan = zustand?.stadionPlan
+        assertNotNull("Stadionplan vorhanden", plan)
+        assertEquals("Einfache Anzeigetafel bleibt bestehen", "Anzeigetafel", plan!!.anzeigetafel)
+        assertTrue("Rasenheizung installiert", plan.rasenheizung)
+        assertFalse("Einfache Anzeigetafel → kein Premium", plan.hatPremiumAusstattung)
     }
 
     @Test

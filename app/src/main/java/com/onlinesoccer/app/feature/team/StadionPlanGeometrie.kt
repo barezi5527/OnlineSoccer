@@ -2,10 +2,13 @@ package com.onlinesoccer.app.feature.team
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import com.onlinesoccer.app.data.model.Ecke
 import com.onlinesoccer.app.data.model.StadionLage
 import com.onlinesoccer.app.data.model.StadionPlanDaten
 import com.onlinesoccer.app.data.model.StadionPlanLogik
 import com.onlinesoccer.app.data.model.StadionPlanZone
+import com.onlinesoccer.app.data.model.StadionVariante
+import com.onlinesoccer.app.data.model.VipPlatzierung
 import kotlin.math.max
 import kotlin.math.min
 
@@ -17,6 +20,14 @@ internal enum class ZoneAusrichtung {
     SENKRECHT,
 }
 
+/** Lage eines VIP-Streifens innerhalb der Sitzbänder. */
+internal enum class StreifenPosition {
+    /** Äußerste Kante (oberste Reihen) der Tribüne. */
+    AUSSEN,
+    /** In der Mitte des Sitzbands (Mittelrang-VIP). */
+    MITTELRANG,
+}
+
 /** Fläche eines darzustellenden Seitenbereichs samt zugehöriger Zone. */
 internal data class ZoneFlaeche(
     val zoneIndex: Int,
@@ -26,11 +37,13 @@ internal data class ZoneFlaeche(
 
 /**
  * Streifen eines Sonderbereichs, der kein eigenes Seitenband belegt (VIP):
- * ein dünner Abschnitt an der äußeren Kante der Haupttribüne derselben Seite.
+ * ein Abschnitt an der äußeren Kante [StreifenPosition.AUSSEN] oder in der Mitte
+ * des Sitzbands [StreifenPosition.MITTELRANG] der jeweiligen Stadionseite.
  */
 internal data class ZoneStreifen(
     val zoneIndex: Int,
     val rechteck: Rect,
+    val position: StreifenPosition = StreifenPosition.AUSSEN,
 )
 
 /**
@@ -77,6 +90,10 @@ internal data class PlanGeometrie(
     /** Spielfeld (68:105, vertikal) im Zentrum. */
     val pitch: Rect,
     val zonen: List<StadionPlanZone>,
+    /** Anzahl der Ränge (Trennlinien) dieser Bauform. */
+    val rangzahl: Int,
+    /** Die zugrunde liegende Bauform (Band, Grundform, VIP-Modus). */
+    val variante: StadionVariante,
 ) {
     init {
         require(flaechen.all { it.zoneIndex in zonen.indices }) {
@@ -103,6 +120,7 @@ internal fun berechneGeometrie(
     hoehe: Float,
     plan: StadionPlanDaten,
     zonen: List<StadionPlanZone>,
+    variante: StadionVariante,
 ): PlanGeometrie {
     val basis = min(breite, hoehe)
     val kapazitaetsFaktor = StadionPlanLogik.kapazitaetsFaktor(plan.kapazitaet)
@@ -110,7 +128,9 @@ internal fun berechneGeometrie(
     // Kleine Stadien belegen weniger Fläche (mehr Außenfläche), große füllen den Bowl.
     val aussenRand = basis * 0.02f + basis * 0.10f * (1f - kapazitaetsFaktor)
     val ringTiefe = basis * (0.085f + 0.10f * kapazitaetsFaktor)
-    val eckRadius = basis * (0.035f + 0.055f * kapazitaetsFaktor)
+    // Eckenradius je Grundform: Achteck kantig, Kasten neutral, Oval stark gerundet.
+    val eckBasis = basis * (0.030f + 0.050f * kapazitaetsFaktor)
+    val eckRadius = (eckBasis * variante.grundform.eckFaktor).coerceAtMost(basis * 0.45f)
     val innenRadius = max(0f, eckRadius - ringTiefe)
 
     val aussen = Rect(
@@ -159,7 +179,8 @@ internal fun berechneGeometrie(
         }
         val haengend = ausrichtung(lage) == ZoneAusrichtung.SENKRECHT
         val laenge = (if (haengend) trasse.height else trasse.width).coerceAtLeast(0f)
-        val bandZonen = gruppe.filterNot { it.vipStreifen }
+        // Zonen, die eine ganze Ecke besetzen (Gästeblock), belegen kein Seitenband.
+        val bandZonen = gruppe.filterNot { it.vipStreifen || it.ecke != null }
         val anteile = gewichtAnteile(bandZonen)
         var start = if (haengend) trasse.top else trasse.left
         bandZonen.forEach { zone ->
@@ -192,58 +213,109 @@ internal fun berechneGeometrie(
         }
     }
 
-    // VIP-Streifen: oberste zwei Reihen der Haupttribüne (äußere Kante des
-    // ersten Bereichs derselben Seite, bei West die linke Kante). Die Tiefe
-    // wird an das Sitzband der Tribüne geklemmt, damit der Streifen nie über
-    // das Stehband oder den Rand hinaus zeichnet.
+    // VIP-Streifen: je Modus auf einer oder mehreren Stadionseiten. Der Streifen
+    // liegt an der äußeren Kante ([STREIFEN]) bzw. in der Mitte des Sitzbands
+    // ([MITTELRANG]) der jeweiligen Tribüne; bei [VERSTREUT] wird der VIP-Bereich
+    // über den ganzen Ring (West Mitte, Ost/Nord/Süd außen) verteilt. Die Tiefe
+    // wird an das Sitzband der Tribüne geklemmt, damit er nie über das Stehband
+    // oder den Rand hinaus zeichnet.
+    val vipZonen = zonen.filter { it.vipStreifen }
     val streifen = buildList {
-        zonen.forEach { zone ->
-            if (!zone.vipStreifen) return@forEach
-            var owner = zonen.indexOfFirst { it.lage == zone.lage && it.name == "Haupttribüne" }
-            if (owner < 0) {
-                owner = zonen.indexOfFirst { it.lage == zone.lage && !it.vipStreifen }
+        vipZonen.forEach { zone ->
+            val modus = variante.vip
+            if (modus == VipPlatzierung.KEIN) return@forEach
+            val seiten: List<StadionLage> = when (modus) {
+                VipPlatzierung.STREIFEN, VipPlatzierung.MITTELRANG -> listOf(StadionLage.WEST)
+                VipPlatzierung.VERSTREUT -> listOf(
+                    StadionLage.WEST, StadionLage.OST, StadionLage.NORD, StadionLage.SUED,
+                )
+                VipPlatzierung.KEIN -> emptyList()
             }
-            val sektor = sektorJeZone[owner] ?: return@forEach
-            val haengend = ausrichtung(zone.lage) == ZoneAusrichtung.SENKRECHT
-            val tiefe = if (haengend) sektor.width else sektor.height
-            if (tiefe <= 0f) return@forEach
-            val ownerZone = zonen.getOrNull(owner)
-            val (sitzT, _) = if (ownerZone != null) {
-                StadionPlanLogik.bandTiefen(ownerZone.sitzAnteil, ownerZone.stehAnteil, tiefe)
-            } else {
-                tiefe to 0f
+            val zoneIndex = zonen.indexOfFirst { it === zone }
+            seiten.forEach { seite ->
+                val position = if (
+                    modus == VipPlatzierung.MITTELRANG ||
+                    (modus == VipPlatzierung.VERSTREUT && seite == StadionLage.WEST)
+                ) {
+                    StreifenPosition.MITTELRANG
+                } else {
+                    StreifenPosition.AUSSEN
+                }
+                var owner = zonen.indexOfFirst { it.lage == seite && it.name == "Haupttribüne" }
+                if (owner < 0) {
+                    owner = zonen.indexOfFirst { it.lage == seite && !it.vipStreifen }
+                }
+                if (owner < 0) return@forEach
+                val sektor = sektorJeZone[owner] ?: return@forEach
+                val haengend = ausrichtung(seite) == ZoneAusrichtung.SENKRECHT
+                val tiefe = if (haengend) sektor.width else sektor.height
+                if (tiefe <= 0f) return@forEach
+                val ownerZone = zonen.getOrNull(owner)
+                val (sitzT, _) = if (ownerZone != null) {
+                    StadionPlanLogik.bandTiefen(ownerZone.sitzAnteil, ownerZone.stehAnteil, tiefe)
+                } else {
+                    tiefe to 0f
+                }
+                val kanteFaktor = if (position == StreifenPosition.MITTELRANG) 0.20f else 0.14f
+                val streifenTiefe = min(tiefe * kanteFaktor, sitzT.coerceAtLeast(0f))
+                if (streifenTiefe <= 0f) return@forEach
+                val abstand = if (position == StreifenPosition.MITTELRANG) {
+                    max(0f, (sitzT - streifenTiefe) / 2f)
+                } else {
+                    0f
+                }
+                val rechteck: Rect = when (seite) {
+                    StadionLage.WEST ->
+                        Rect(sektor.left + abstand, sektor.top, sektor.left + abstand + streifenTiefe, sektor.bottom)
+                    StadionLage.OST ->
+                        Rect(sektor.right - abstand - streifenTiefe, sektor.top, sektor.right - abstand, sektor.bottom)
+                    StadionLage.NORD ->
+                        Rect(sektor.left, sektor.top + abstand, sektor.right, sektor.top + abstand + streifenTiefe)
+                    StadionLage.SUED ->
+                        Rect(sektor.left, sektor.bottom - abstand - streifenTiefe, sektor.right, sektor.bottom - abstand)
+                }
+                add(ZoneStreifen(zoneIndex = zoneIndex, rechteck = rechteck, position = position))
             }
-            val streifenTiefe = min(tiefe * 0.14f, sitzT.coerceAtLeast(0f))
-            if (streifenTiefe <= 0f) return@forEach
-            val rechteck: Rect = when (zone.lage) {
-                StadionLage.WEST -> Rect(sektor.left, sektor.top, sektor.left + streifenTiefe, sektor.bottom)
-                StadionLage.OST -> Rect(sektor.right - streifenTiefe, sektor.top, sektor.right, sektor.bottom)
-                StadionLage.NORD -> Rect(sektor.left, sektor.top, sektor.right, sektor.top + streifenTiefe)
-                StadionLage.SUED -> Rect(sektor.left, sektor.bottom - streifenTiefe, sektor.right, sektor.bottom)
-            }
-            add(ZoneStreifen(zoneIndex = zonen.indexOfFirst { it === zone }, rechteck = rechteck))
         }
     }
 
-    val kurven = zonen.filter { it.istKurve }.mapNotNull { zone ->
-        val lage = zone.lage
-        val ecken = when (lage) {
-            StadionLage.NORD -> listOf(
-                EckGeometrie(Offset(aussen.left + eckRadius, aussen.top + eckRadius), 1f, 1f, 180f),
-                EckGeometrie(Offset(aussen.right - eckRadius, aussen.top + eckRadius), -1f, 1f, 270f),
-            )
-            StadionLage.SUED -> listOf(
-                EckGeometrie(Offset(aussen.left + eckRadius, aussen.bottom - eckRadius), 1f, -1f, 90f),
-                EckGeometrie(Offset(aussen.right - eckRadius, aussen.bottom - eckRadius), -1f, -1f, 0f),
-            )
-            else -> emptyList()
+    // Kurven nur, wenn die Ecken bestückt sind: Bei „Offene Ecken" bleiben die
+    // Eckbereiche des Rings frei (Laufbahn-Optik). Eine vom Gästeblock belegte
+    // Ecke wird aus der jeweiligen Kurven-Zone herausgelöst und dem Gästeblock
+    // als komplette Eck-Viertelfläche zugeordnet.
+    val kurven = if (variante.offeneEcken) {
+        emptyList()
+    } else {
+        val besetzteEcken = zonen.filter { it.ecke != null }.associateBy { it.ecke!! }
+        buildList {
+            zonen.filter { it.istKurve && it.ecke == null }.forEach { zone ->
+                val lage = zone.lage ?: return@forEach
+                val ecken = eckenDerSeite(lage, aussen, eckRadius)
+                    .filter { (ecke, _) -> !besetzteEcken.containsKey(ecke) }
+                    .map { it.second }
+                if (ecken.isNotEmpty()) {
+                    add(
+                        KurvenGeometrie(
+                            zoneIndex = zonen.indexOfFirst { it === zone },
+                            lage = lage,
+                            ecken = ecken,
+                        ),
+                    )
+                }
+            }
+            besetzteEcken.forEach { (ecke, zone) ->
+                val ecken = eckenDerSeite(ecke.lage, aussen, eckRadius)
+                    .filter { it.first == ecke }
+                    .map { it.second }
+                add(
+                    KurvenGeometrie(
+                        zoneIndex = zonen.indexOfFirst { it === zone },
+                        lage = ecke.lage,
+                        ecken = ecken,
+                    ),
+                )
+            }
         }
-        if (ecken.isEmpty()) return@mapNotNull null
-        KurvenGeometrie(
-            zoneIndex = zonen.indexOfFirst { it === zone },
-            lage = lage!!,
-            ecken = ecken,
-        )
     }
 
     return PlanGeometrie(
@@ -257,7 +329,29 @@ internal fun berechneGeometrie(
         innenRadius = innenRadius,
         pitch = pitch,
         zonen = zonen,
+        rangzahl = variante.rangzahl,
+        variante = variante,
     )
+}
+
+/**
+ * Die beiden Eck-Viertelkreise einer Kurzseite, jeweils benannt nach der [Ecke].
+ * Reihenfolge: erst die West-, dann die Ost-Ecke.
+ */
+private fun eckenDerSeite(
+    lage: StadionLage,
+    aussen: Rect,
+    eckRadius: Float,
+): List<Pair<Ecke, EckGeometrie>> = when (lage) {
+    StadionLage.NORD -> listOf(
+        Ecke.NORDWEST to EckGeometrie(Offset(aussen.left + eckRadius, aussen.top + eckRadius), 1f, 1f, 180f),
+        Ecke.NORDOST to EckGeometrie(Offset(aussen.right - eckRadius, aussen.top + eckRadius), -1f, 1f, 270f),
+    )
+    StadionLage.SUED -> listOf(
+        Ecke.SUEDWEST to EckGeometrie(Offset(aussen.left + eckRadius, aussen.bottom - eckRadius), 1f, -1f, 90f),
+        Ecke.SUEDOST to EckGeometrie(Offset(aussen.right - eckRadius, aussen.bottom - eckRadius), -1f, -1f, 0f),
+    )
+    else -> emptyList()
 }
 
 /** Relative Anteile einer Zonengruppe entlang einer Seite (Gewicht = Kapazität). */

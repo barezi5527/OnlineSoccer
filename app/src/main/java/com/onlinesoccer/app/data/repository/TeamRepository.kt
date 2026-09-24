@@ -753,6 +753,9 @@ class TeamRepository @Inject constructor(
                     sitzUeberdacht = aufbereitet.zahl("davon überdacht (Sitz)"),
                     fassungsvermoegen = zustand.zahl("Fassungsvermögen").takeIf { it > 0 },
                     bereiche = parseStadionBereiche(doc),
+                    anzeigetafel = zustand.wert("Anzeigetafel"),
+                    rasenheizung = zustand.wert("Rasenheizung")
+                        ?.equals("installiert", ignoreCase = true) == true,
                 ),
             )
         }
@@ -822,6 +825,11 @@ class TeamRepository @Inject constructor(
         val roh = firstOrNull { it.first.equals(label, ignoreCase = true) }?.second ?: return 0
         return roh.filter { it.isDigit() }.toIntOrNull() ?: 0
     }
+
+    /** Liest den Text-Wert eines Zustands-Labels; `null` wenn fehlend oder leer. */
+    private fun List<Pair<String, String>>.wert(label: String): String? =
+        firstOrNull { it.first.equals(label, ignoreCase = true) }
+            ?.second?.replace('\u00a0', ' ')?.trim()?.takeIf { it.isNotEmpty() }
 
     /**
      * Liest echte Tribünen aus der Stadionausbau-Seite. Die aktuelle Serverversion
@@ -1205,6 +1213,11 @@ class TeamRepository @Inject constructor(
         "schnitt marktwert", "summe gehalt", "schnitt gehalt",
     )
 
+    /**
+     * Parst die Teaminfo/Stadion-Seite (`s=5`). Zusätzlich zu den Anzeige-Zeilen wird
+     * daraus ein [StadionPlanDaten] für den Stadionplan aufgebaut (Sitz-/Stehplätze,
+     * überdachte Anteile, Fassungsvermögen) – `null`, wenn die Seite keine Plätze liefert.
+     */
     internal fun parseTeaminfo(html: String): Teaminfo {
         val doc = Jsoup.parse(html)
         val zeilen = mutableListOf<Pair<String, String>>()
@@ -1226,7 +1239,25 @@ class TeamRepository @Inject constructor(
                 }
             }
         }
-        return Teaminfo(zeilen)
+
+        val davon = zeilen
+            .filter { it.first.equals("davon überdacht", ignoreCase = true) }
+            .map { it.second.filter(Char::isDigit).toIntOrNull() ?: 0 }
+        val sitz = zeilen.zahl("Sitzplätze")
+        val steh = zeilen.zahl("Stehplätze")
+        val stadionPlan = StadionPlanDaten(
+            stehplaetze = steh,
+            sitzplaetze = sitz,
+            stehUeberdacht = if (steh > 0) davon.getOrNull(1) ?: 0 else 0,
+            sitzUeberdacht = if (sitz > 0) davon.getOrNull(0) ?: 0 else 0,
+            fassungsvermoegen = zeilen.zahl("Stadiongrösse").takeIf { it > 0 },
+            anzeigetafel = zeilen.wert("Anzeigetafel"),
+            rasenheizung = zeilen.wert("Rasenheizung")
+                ?.let { it.equals("ja", ignoreCase = true) || it.equals("installiert", ignoreCase = true) }
+                == true,
+        ).takeIf { it.kapazitaet > 0 }
+
+        return Teaminfo(zeilen, stadionPlan)
     }
 
     /**

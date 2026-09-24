@@ -125,7 +125,7 @@ fun TeaminformationenContentScreen(
                     gesamt = true,
                     onGesamt = { gesamt -> viewModel.ladeStatistik(gesamt, teamId) },
                 )
-                "s5" -> TeaminfoAnsicht(uiState.teaminfo)
+                "s5" -> TeaminfoAnsicht(uiState.teaminfo, uiState.saison)
                 "s6" -> SaisonplanAnsicht(
                     uiState.saisonplan,
                     onSaison = { saison -> viewModel.ladeSaisonplan(saison, teamId) },

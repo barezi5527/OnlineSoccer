@@ -13,6 +13,7 @@ import com.onlinesoccer.app.data.model.Teaminfo
 import com.onlinesoccer.app.data.model.TransferhistorieBlock
 import com.onlinesoccer.app.data.model.VereinshistorieEintrag
 import com.onlinesoccer.app.data.model.VertragZeile
+import com.onlinesoccer.app.data.repository.BewerbeRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -44,6 +45,8 @@ data class TeamUiState(
     val saisonhistorie: List<SaisonhistorieEintrag>? = null,
     val tabellenplatzBild: ByteArray? = null,
     val tabellenplatzTeamId: Long? = null,
+    /** Aktuelle Saison (Server-Standard) – steuert den Rasenmuster-Wechsel. */
+    val saison: Int = 0,
 ) {
     val gefiltert: List<KaderSpieler>
         get() = kader
@@ -64,11 +67,23 @@ enum class Sortierung {
 @HiltViewModel
 class TeamViewModel @Inject constructor(
     private val repository: TeamRepository,
+    private val bewerbeRepository: BewerbeRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TeamUiState())
     val uiState: StateFlow<TeamUiState> = _uiState.asStateFlow()
     private var ladeJob: Job? = null
+
+    init {
+        ladeSaison()
+    }
+
+    private fun ladeSaison() {
+        viewModelScope.launch {
+            val saison = runCatching { bewerbeRepository.ladeSpieltag()?.saison ?: 0 }.getOrDefault(0)
+            _uiState.value = _uiState.value.copy(saison = saison)
+        }
+    }
 
     fun ladeKader(teamId: Long? = null) {
         ladeJob?.cancel()

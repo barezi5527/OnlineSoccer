@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.onlinesoccer.app.data.model.AktionForm
 import com.onlinesoccer.app.data.model.SeitenAnsicht
+import com.onlinesoccer.app.data.repository.BewerbeRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -21,12 +22,15 @@ data class SeiteUiState(
     val aktioFehler: String? = null,
     /** In einer Zwischenansicht geladenes Formular (z. B. Scouting-Gebot). */
     val dialogFormular: AktionForm? = null,
+    /** Aktuelle Saison (Server-Standard) – steuert den Rasenmuster-Wechsel. */
+    val saison: Int = 0,
 )
 
 @HiltViewModel
 class SeiteViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: TeamRepository,
+    private val bewerbeRepository: BewerbeRepository,
 ) : ViewModel() {
 
     private val path: String = savedStateHandle["path"] ?: ""
@@ -41,21 +45,27 @@ class SeiteViewModel @Inject constructor(
     fun lade() {
         viewModelScope.launch {
             _uiState.value = SeiteUiState(ladend = true)
+            val saison = ladeAktuelleSaison()
             _uiState.value = try {
                 val ansicht = repository.ladeSeite(path)
                 if (ansicht == null) {
                     SeiteUiState(
                         ladend = false,
                         fehler = "Seite nicht verfügbar – bitte anmelden und erneut versuchen.",
+                        saison = saison,
                     )
                 } else {
-                    SeiteUiState(ladend = false, seite = ansicht)
+                    SeiteUiState(ladend = false, seite = ansicht, saison = saison)
                 }
             } catch (e: Exception) {
-                SeiteUiState(ladend = false, fehler = e.message ?: "Seite konnte nicht geladen werden.")
+                SeiteUiState(ladend = false, fehler = e.message ?: "Seite konnte nicht geladen werden.", saison = saison)
             }
         }
     }
+
+    /** Aktuelle Saison des Servers (Standard ohne Filter); 0, wenn sie unbekannt bleibt. */
+    private suspend fun ladeAktuelleSaison(): Int =
+        runCatching { bewerbeRepository.ladeSpieltag()?.saison ?: 0 }.getOrDefault(0)
 
     /** Sendet ein ausgefülltes Formular und lädt die Seite danach frisch. */
     fun sendeAktion(ziel: String, felder: List<Pair<String, String>>) {

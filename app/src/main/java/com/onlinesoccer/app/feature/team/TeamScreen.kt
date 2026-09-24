@@ -601,7 +601,7 @@ private fun zeilenFarbe(zahl: Int, markiert: Boolean): Color = when {
 }
 
 @Composable
-internal fun TeaminfoAnsicht(teaminfo: Teaminfo?) {
+internal fun TeaminfoAnsicht(teaminfo: Teaminfo?, saison: Int = 0) {
     if (teaminfo == null) {
         Text("Keine Team-Informationen gefunden.", Modifier.padding(24.dp))
         return
@@ -609,7 +609,13 @@ internal fun TeaminfoAnsicht(teaminfo: Teaminfo?) {
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        teaminfo.stadionPlan?.let { plan ->
+            item {
+                StadionPlanView(plan, saison = saison)
+            }
+        }
         item {
             Card(
                 Modifier.fillMaxWidth(),

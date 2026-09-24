@@ -93,6 +93,7 @@ fun SeiteScreen(
                 aktioFehler = uiState.aktioFehler,
                 onSende = viewModel::sendeAktion,
                 onFormularOeffnen = viewModel::ladeFormular,
+                saison = uiState.saison,
             )
         }
 
@@ -134,6 +135,7 @@ private fun SeitenAnsicht(
     aktioFehler: String?,
     onSende: (String, List<Pair<String, String>>) -> Unit,
     onFormularOeffnen: (String) -> Unit,
+    saison: Int = 0,
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -171,7 +173,7 @@ private fun SeitenAnsicht(
 
         if (ansicht.abschnitte.isNotEmpty()) {
             items(ansicht.abschnitte) { abschnitt ->
-                AbschnittView(abschnitt, onSende, onFormularOeffnen)
+                AbschnittView(abschnitt, onSende, onFormularOeffnen, saison)
             }
         } else {
             if (ansicht.absaetze.isEmpty() && ansicht.tabellen.isEmpty()) {
@@ -207,6 +209,7 @@ private fun AbschnittView(
     abschnitt: UebersichtAbschnitt,
     onSende: (String, List<Pair<String, String>>) -> Unit,
     onFormularOeffnen: (String) -> Unit,
+    saison: Int = 0,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         abschnitt.titel?.let { titel ->
@@ -218,7 +221,7 @@ private fun AbschnittView(
             )
         }
 
-        abschnitt.stadionPlan?.let { plan -> StadionPlanView(plan) }
+        abschnitt.stadionPlan?.let { plan -> StadionPlanView(plan, saison = saison) }
 
         if (abschnitt.stadionPlan != null) {
             // Stadionseite: Gesamtdaten werden übersichtlich in Gruppen dargestellt.
