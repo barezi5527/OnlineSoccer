@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -36,7 +35,6 @@ enum class StatistikBereich(
     val titel: String,
     val untertitel: String? = null,
 ) {
-    TOPSCORER("Topscorer", "Die besten Torschützen der Spielwelt"),
     TOP_TEAMS("Top-Teams", "Die wertvollsten Teams nach Filter"),
 }
 
@@ -51,12 +49,6 @@ data class StatistikMenuEintrag(
 /** Statische Abbildung des Website-Untermenüs „Statistiken" (umgesetzte Einträge). */
 object StatistikMenu {
     val eintraege: List<StatistikMenuEintrag> = listOf(
-        StatistikMenuEintrag(
-            "Topscorer",
-            "Die besten Torschützen der Spielwelt",
-            StatistikBereich.TOPSCORER,
-            Icons.Filled.SportsSoccer,
-        ),
         StatistikMenuEintrag(
             "Top-Teams",
             "Die wertvollsten Teams nach Filter",
