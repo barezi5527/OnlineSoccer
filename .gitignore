@@ -21,3 +21,13 @@ captures/
 .externalNativeBuild/
 .cxx/
 .kotlin/
+
+# Lokale Arbeits-/Dokumentationsdateien im Repo-Root (nicht Teil der App)
+/elf.bmp
+/Elf.png
+/Logo-app.png
+/Logo-app2.png
+/LogoOS*.png
+/Formation Spielbericht.png
+/Screenshot Website *.png
+/App AufstellungScreenshot*.jpg
