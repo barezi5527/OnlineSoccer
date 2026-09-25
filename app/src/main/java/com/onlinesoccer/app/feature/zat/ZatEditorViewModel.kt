@@ -161,12 +161,10 @@ abstract class ZugabgabeElementeViewModel(
     private fun werteVollstaendig(formular: ZugabgabeFormular): Boolean {
         val werte = _uiState.value.werte
         val pflicht = when (formular.typ) {
-            ZugabgabeElementTyp.EINWECHSLUNG -> {
-                val basis = listOf("zao_einspieler", "zao_spieler", "zao_minute", "zao_abhaengigkeit")
-                // Sonderplatz (P3): „als Torwart"/„auf Kartenposition" ersetzt die
-                // manuelle Positionsangabe (P1/P2) – genau wie auf der Website.
-                if (werte["P3"].orEmpty().isNotBlank()) basis else basis + listOf("P1", "P2")
-            }
+            // Position (P1/P2) und Sonderplatz (P3) sind bei der Einwechslung
+            // optional: ohne Angabe wechselt der Server den Spieler „auf
+            // Kartenposition" (gleiche Position wie der Auswechselspieler).
+            ZugabgabeElementTyp.EINWECHSLUNG -> listOf("zao_einspieler", "zao_spieler", "zao_minute", "zao_abhaengigkeit")
             ZugabgabeElementTyp.EINSATZ,
             ZugabgabeElementTyp.HAERTE,
             ZugabgabeElementTyp.SPIELWEISE,
