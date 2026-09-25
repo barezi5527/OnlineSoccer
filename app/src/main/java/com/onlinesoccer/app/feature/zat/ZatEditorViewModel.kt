@@ -70,7 +70,10 @@ abstract class ZugabgabeElementeViewModel(
             if (typ.gruppe != gruppe) return@launch
             try {
                 val formular = repository.ladeFormular(typ)
-                _uiState.value = _uiState.value.copy(formular = formular)
+                _uiState.value = _uiState.value.copy(
+                    formular = formular,
+                    werte = standardWerte(formular),
+                )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(fehler = e.message ?: "Formular konnte nicht geladen werden.")
             }
@@ -144,10 +147,26 @@ abstract class ZugabgabeElementeViewModel(
         }
     }
 
+    /**
+     * Vorbelegt die Website-Standards, damit Aktionen wie „Einwechslung“ ohne
+     * zwingende Nutzereingabe für Minute/Abhängigkeit abgeschickt werden können.
+     * Die Website wählt Minute 1 und „Immer durchführen“ (erste Option) voraus.
+     */
+    private fun standardWerte(formular: ZugabgabeFormular?): Map<String, String> = buildMap {
+        if (formular == null) return@buildMap
+        formular.minuten.firstOrNull()?.id?.takeIf { it.isNotBlank() }?.let { put("zao_minute", it) }
+        formular.abhaengigkeiten.firstOrNull()?.id?.takeIf { it.isNotBlank() }?.let { put("zao_abhaengigkeit", it) }
+    }
+
     private fun werteVollstaendig(formular: ZugabgabeFormular): Boolean {
         val werte = _uiState.value.werte
         val pflicht = when (formular.typ) {
-            ZugabgabeElementTyp.EINWECHSLUNG -> listOf("zao_einspieler", "zao_spieler", "zao_minute", "zao_abhaengigkeit", "P1", "P2")
+            ZugabgabeElementTyp.EINWECHSLUNG -> {
+                val basis = listOf("zao_einspieler", "zao_spieler", "zao_minute", "zao_abhaengigkeit")
+                // Sonderplatz (P3): „als Torwart"/„auf Kartenposition" ersetzt die
+                // manuelle Positionsangabe (P1/P2) – genau wie auf der Website.
+                if (werte["P3"].orEmpty().isNotBlank()) basis else basis + listOf("P1", "P2")
+            }
             ZugabgabeElementTyp.EINSATZ,
             ZugabgabeElementTyp.HAERTE,
             ZugabgabeElementTyp.SPIELWEISE,
