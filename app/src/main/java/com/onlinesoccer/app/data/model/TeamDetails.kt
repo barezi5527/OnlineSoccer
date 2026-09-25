@@ -119,6 +119,7 @@ data class Teaminfo(
      * Fassungsvermögen) für den Stadionplan; `null`, wenn die Seite keine Plätze liefert.
      */
     val stadionPlan: StadionPlanDaten? = null,
+    val stadionname: String? = null,
 )
 
 /**

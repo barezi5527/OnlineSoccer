@@ -1257,7 +1257,11 @@ class TeamRepository @Inject constructor(
                 == true,
         ).takeIf { it.kapazitaet > 0 }
 
-        return Teaminfo(zeilen, stadionPlan)
+        return Teaminfo(
+            zeilen = zeilen,
+            stadionPlan = stadionPlan,
+            stadionname = zeilen.wert("Stadionname"),
+        )
     }
 
     /**

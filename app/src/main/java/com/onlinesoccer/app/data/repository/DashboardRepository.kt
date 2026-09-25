@@ -47,6 +47,12 @@ class DashboardRepository @Inject constructor(
         }
     }
 
+    suspend fun invalidate() {
+        mutex.withLock {
+            cacheDatensatz = null
+        }
+    }
+
     private suspend fun ladeVonServer(): DashboardData = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder().url(OsApi.MAIN).build()

@@ -185,4 +185,26 @@ class BerichtRepositoryParseTest {
         assertEquals(15, gastGelesen["T"]!!.feldzeile)
         assertEquals(5, gastGelesen["T"]!!.feldspalte)
     }
+
+    @Test
+    fun parseBericht_liestVereinsIdsAusStatischerUrl() {
+        val html = """
+            <html><body>
+            <h2>SC Viktoria Ulm - SC Kaiserslautern</h2>
+            <p>Datum : 01.09.2026      Stadion : Stadion von SC Viktoria Ulm      Spielart : Pflicht      Zuschaueranzahl : 10.000</p>
+            <div>Es folgt der Spielbericht :</div><div>Es folgen die Spielstatistiken</div>
+            </body></html>
+        """.trimIndent()
+
+        val bericht = repo.parseBericht(
+            html,
+            "https://os.ongapo.com/rep/saison/24/1/3449-709.html",
+            null,
+        )
+
+        assertEquals(24, bericht.saison)
+        assertEquals(1, bericht.zat)
+        assertEquals(3449L, bericht.heimId)
+        assertEquals(709L, bericht.gastId)
+    }
 }

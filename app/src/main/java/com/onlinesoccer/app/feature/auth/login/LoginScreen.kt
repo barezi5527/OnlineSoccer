@@ -18,13 +18,24 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.autofill.AutofillNode
+import androidx.compose.ui.autofill.AutofillType
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalAutofill
+import androidx.compose.ui.platform.LocalAutofillTree
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -32,9 +43,16 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -42,12 +60,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.onlinesoccer.app.R
 import com.onlinesoccer.app.ui.AppViewModel
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScreen(
     viewModel: AppViewModel = viewModel(),
@@ -59,6 +79,7 @@ fun LoginScreen(
     val serverUnavailable by viewModel.serverUnavailable.collectAsStateWithLifecycle()
     val keyboard = LocalSoftwareKeyboardController.current
     val labelColor = MaterialTheme.colorScheme.onSurface
+    var passwortSichtbar by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -110,7 +131,11 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next,
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .autofillHinweise(listOf(AutofillType.Username, AutofillType.EmailAddress)) {
+                    viewModel.onEmailChange(it)
+                },
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
@@ -120,7 +145,15 @@ fun LoginScreen(
             singleLine = true,
             enabled = !loggingIn,
             colors = fieldColors,
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwortSichtbar) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { passwortSichtbar = !passwortSichtbar }) {
+                    Icon(
+                        imageVector = if (passwortSichtbar) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = if (passwortSichtbar) "Passwort ausblenden" else "Passwort anzeigen",
+                    )
+                }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
@@ -131,7 +164,11 @@ fun LoginScreen(
                     viewModel.login()
                 },
             ),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .autofillHinweise(listOf(AutofillType.Password)) {
+                    viewModel.onPasswordChange(it)
+                },
         )
 
         if (serverUnavailable) {
@@ -185,6 +222,47 @@ fun LoginScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * Registriert ein Feld beim Android-Autofill-Framework, damit Passwort-Manager
+ * (z. B. Chrome) Vorschläge anbieten und die Zugangsdaten befüllen können.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+private fun Modifier.autofillHinweise(
+    typen: List<AutofillType>,
+    onFill: (String) -> Unit,
+): Modifier = this.composed {
+    val autofill = LocalAutofill.current
+    val autofillTree = LocalAutofillTree.current
+    var bereit by remember { mutableStateOf(false) }
+    val aktuellesOnFill by rememberUpdatedState(onFill)
+    val knoten = remember(typen) {
+        AutofillNode(autofillTypes = typen) { aktuellesOnFill(it) }
+    }
+
+    LaunchedEffect(knoten) {
+        autofillTree += knoten
+    }
+    DisposableEffect(knoten) {
+        onDispose {
+            autofillTree.children.remove(knoten.id)
+        }
+    }
+
+    Modifier
+        .onGloballyPositioned {
+            knoten.boundingBox = it.boundsInWindow()
+            bereit = true
+        }
+        .onFocusChanged { fokus ->
+            if (!bereit) return@onFocusChanged
+            if (fokus.isFocused) {
+                autofill?.requestAutofillForNode(knoten)
+            } else {
+                autofill?.cancelAutofillForNode(knoten)
+            }
+        }
 }
 
 /**

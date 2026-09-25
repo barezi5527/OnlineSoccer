@@ -31,6 +31,13 @@ import org.jsoup.Jsoup
 class BerichtRepository @Inject constructor(
     private val client: OkHttpClient,
 ) {
+
+    private data class RepDaten(
+        val heimId: Long,
+        val gastId: Long,
+        val zat: Int,
+        val saison: Int,
+    )
     suspend fun ladeBericht(sid: String?, url: String? = null): SpielBericht? = withContext(Dispatchers.IO) {
         val basis = OsApi.BASE_URL
         val staticUrl = url?.takeIf { it.startsWith("http") }
@@ -79,6 +86,12 @@ class BerichtRepository @Inject constructor(
             gastId = g.toLongOrNull()
             zat = z.toIntOrNull() ?: 0
             saison = s.toIntOrNull() ?: 0
+        }
+        parseRepDaten(url)?.let { daten ->
+            heimId = daten.heimId
+            gastId = daten.gastId
+            zat = daten.zat
+            saison = daten.saison
         }
 
         // Der statische Bericht führt die Vereinsnamen in der h2-Überschrift.
@@ -149,6 +162,20 @@ class BerichtRepository @Inject constructor(
             gastSpielerStatistikListe = gastSpielerStatistikListe,
             rohtext = bodyText,
             url = url,
+        )
+    }
+
+    private fun parseRepDaten(url: String): RepDaten? {
+        val treffer = Regex(
+            "/rep/saison/(\\d+)/(\\d+)/(\\d+)-(\\d+)\\.html(?:[?#].*)?",
+            RegexOption.IGNORE_CASE,
+        ).find(url) ?: return null
+        val (saison, zat, heim, gast) = treffer.destructured
+        return RepDaten(
+            heimId = heim.toLongOrNull()?.takeIf { it > 0 } ?: return null,
+            gastId = gast.toLongOrNull()?.takeIf { it > 0 } ?: return null,
+            zat = zat.toIntOrNull()?.takeIf { it > 0 } ?: return null,
+            saison = saison.toIntOrNull()?.takeIf { it > 0 } ?: return null,
         )
     }
 

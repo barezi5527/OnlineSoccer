@@ -7,6 +7,7 @@ import com.onlinesoccer.app.core.auth.LoginResult
 import com.onlinesoccer.app.core.auth.SessionManager
 import com.onlinesoccer.app.core.storage.TokenStorage
 import com.onlinesoccer.app.data.model.VertragZeile
+import com.onlinesoccer.app.data.repository.DashboardRepository
 import com.onlinesoccer.app.data.repository.PmRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,6 +42,7 @@ class AppViewModel @Inject constructor(
     private val tokenStorage: TokenStorage,
     private val teamRepository: TeamRepository,
     private val pmRepository: PmRepository,
+    private val dashboardRepository: DashboardRepository,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthUiState> = sessionManager.state
@@ -71,7 +73,11 @@ class AppViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             sessionManager.restore()
-            if (sessionManager.state.value == AuthUiState.SignedIn) pruefeVertragslaufzeiten()
+            if (sessionManager.state.value == AuthUiState.SignedIn) {
+                pruefeVertragslaufzeiten()
+            } else {
+                dashboardRepository.invalidate()
+            }
             starteUngelesenePolling()
         }
     }
@@ -130,6 +136,7 @@ class AppViewModel @Inject constructor(
             _loggingIn.value = true
             _loginError.value = null
             _serverUnavailable.value = false
+            dashboardRepository.invalidate()
             tokenStorage.lastEmail = email
             when (val result = sessionManager.login(email, password)) {
                 is LoginResult.Success -> {
@@ -149,6 +156,7 @@ class AppViewModel @Inject constructor(
             _loggingIn.value = true
             _loginError.value = null
             _serverUnavailable.value = false
+            dashboardRepository.invalidate()
             when (val result = sessionManager.guestLogin()) {
                 LoginResult.Success -> Unit
                 is LoginResult.Failure -> _loginError.value = result.message
@@ -161,6 +169,9 @@ class AppViewModel @Inject constructor(
     fun logout() {
         _vertragsWarnung.value = emptyList()
         _ungeleseneNachrichten.value = 0
-        viewModelScope.launch { sessionManager.logout() }
+        viewModelScope.launch {
+            dashboardRepository.invalidate()
+            sessionManager.logout()
+        }
     }
 }

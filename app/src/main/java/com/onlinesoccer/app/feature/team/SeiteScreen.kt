@@ -55,6 +55,7 @@ import com.onlinesoccer.app.data.model.AktionForm
 import com.onlinesoccer.app.data.model.AktionFeld
 import com.onlinesoccer.app.data.model.AktionFeldTyp
 import com.onlinesoccer.app.data.model.SeitenAnsicht
+import com.onlinesoccer.app.data.model.StadionnameLogik
 import com.onlinesoccer.app.data.model.UebersichtAbschnitt
 import com.onlinesoccer.app.data.model.UebersichtZeile
 import com.onlinesoccer.app.data.model.WertTabelle
@@ -94,6 +95,10 @@ fun SeiteScreen(
                 onSende = viewModel::sendeAktion,
                 onFormularOeffnen = viewModel::ladeFormular,
                 saison = uiState.saison,
+                stadionname = uiState.stadionname,
+                onStadionnameGeaendert = viewModel::stadionnameGeaendert,
+                onStadionnameSpeichern = viewModel::stadionnameSpeichern,
+                onServernamenVerwenden = viewModel::servernamenVerwenden,
             )
         }
 
@@ -136,6 +141,10 @@ private fun SeitenAnsicht(
     onSende: (String, List<Pair<String, String>>) -> Unit,
     onFormularOeffnen: (String) -> Unit,
     saison: Int = 0,
+    stadionname: StadionnameUiState? = null,
+    onStadionnameGeaendert: (String) -> Unit = {},
+    onStadionnameSpeichern: () -> Unit = {},
+    onServernamenVerwenden: () -> Unit = {},
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -173,9 +182,38 @@ private fun SeitenAnsicht(
 
         if (ansicht.abschnitte.isNotEmpty()) {
             items(ansicht.abschnitte) { abschnitt ->
-                AbschnittView(abschnitt, onSende, onFormularOeffnen, saison)
+                AbschnittView(
+                    abschnitt = abschnitt,
+                    onSende = onSende,
+                    onFormularOeffnen = onFormularOeffnen,
+                    saison = saison,
+                    stadionname = stadionname,
+                    onStadionnameGeaendert = onStadionnameGeaendert,
+                    onStadionnameSpeichern = onStadionnameSpeichern,
+                    onServernamenVerwenden = onServernamenVerwenden,
+                )
+            }
+            if (stadionname != null && ansicht.abschnitte.none { it.titel == "Aktueller Stadion-Zustand" }) {
+                item {
+                    StadionnameKarte(
+                        state = stadionname,
+                        onGeaendert = onStadionnameGeaendert,
+                        onSpeichern = onStadionnameSpeichern,
+                        onServernamenVerwenden = onServernamenVerwenden,
+                    )
+                }
             }
         } else {
+            if (stadionname != null) {
+                item {
+                    StadionnameKarte(
+                        state = stadionname,
+                        onGeaendert = onStadionnameGeaendert,
+                        onSpeichern = onStadionnameSpeichern,
+                        onServernamenVerwenden = onServernamenVerwenden,
+                    )
+                }
+            }
             if (ansicht.absaetze.isEmpty() && ansicht.tabellen.isEmpty()) {
                 item {
                     Text(
@@ -210,6 +248,10 @@ private fun AbschnittView(
     onSende: (String, List<Pair<String, String>>) -> Unit,
     onFormularOeffnen: (String) -> Unit,
     saison: Int = 0,
+    stadionname: StadionnameUiState? = null,
+    onStadionnameGeaendert: (String) -> Unit = {},
+    onStadionnameSpeichern: () -> Unit = {},
+    onServernamenVerwenden: () -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         abschnitt.titel?.let { titel ->
@@ -223,10 +265,20 @@ private fun AbschnittView(
 
         abschnitt.stadionPlan?.let { plan -> StadionPlanView(plan, saison = saison) }
 
+        val istStadionZustand = abschnitt.titel == "Aktueller Stadion-Zustand"
         if (abschnitt.stadionPlan != null) {
-            // Stadionseite: Gesamtdaten werden übersichtlich in Gruppen dargestellt.
             StadionDatenKarte(abschnitt.infoZeilen)
-        } else if (abschnitt.infoZeilen.isNotEmpty()) {
+        }
+        if (istStadionZustand) {
+            stadionname?.let {
+                StadionnameKarte(
+                    state = it,
+                    onGeaendert = onStadionnameGeaendert,
+                    onSpeichern = onStadionnameSpeichern,
+                    onServernamenVerwenden = onServernamenVerwenden,
+                )
+            }
+        } else if (abschnitt.stadionPlan == null && abschnitt.infoZeilen.isNotEmpty()) {
             Card(
                 Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -382,6 +434,79 @@ private fun StadionDatenKarte(infoZeilen: List<Pair<String, String>>) {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StadionnameKarte(
+    state: StadionnameUiState,
+    onGeaendert: (String) -> Unit,
+    onSpeichern: () -> Unit,
+    onServernamenVerwenden: () -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                "Anzeigename im Spielbericht",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "Der Name wird nur in künftigen Spielberichten deines eigenen Heims verwendet.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            state.serverName?.let {
+                Text(
+                    "Servername: $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            OutlinedTextField(
+                value = state.eingabe,
+                onValueChange = onGeaendert,
+                label = { Text("Anzeigename") },
+                singleLine = true,
+                enabled = state.teamId != null && !state.speichernd,
+                isError = state.eingabeFehler != null,
+                supportingText = { Text("${state.eingabe.length}/${StadionnameLogik.MAX_LAENGE}") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            state.eingabeFehler?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            state.ladeFehler?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Button(
+                    onClick = onSpeichern,
+                    enabled = state.kannSpeichern,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(if (state.speichernd) "Speichert …" else "Speichern")
+                }
+                if (state.gespeicherterName.isNotBlank()) {
+                    TextButton(
+                        onClick = onServernamenVerwenden,
+                        enabled = state.teamId != null && !state.speichernd,
+                    ) {
+                        Text("Servernamen verwenden")
+                    }
+                }
+            }
+            state.meldung?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall)
             }
         }
     }

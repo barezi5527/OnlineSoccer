@@ -69,6 +69,7 @@ class TeaminformationenRepositoryParseTest {
         val zeilenMap = teaminfo.zeilen.toMap()
         assertTrue("Teamname vorhanden", zeilenMap.containsKey("Teamname"))
         assertTrue("Stadionname vorhanden", zeilenMap.containsKey("Stadionname"))
+        assertEquals(zeilenMap["Stadionname"], teaminfo.stadionname)
 
         val plan = teaminfo.stadionPlan
         assertNotNull("Stadionplan aus Teaminfo", plan)
