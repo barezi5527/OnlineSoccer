@@ -3,6 +3,11 @@
 credentials*
 *.pem
 
+# Release-Signierung - niemals ins Repo
+release.keystore
+*.jks
+keystore.properties
+
 # Lokale Analyse-Cookies
 .cookies/
 
