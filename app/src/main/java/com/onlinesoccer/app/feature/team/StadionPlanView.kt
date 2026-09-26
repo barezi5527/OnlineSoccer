@@ -58,6 +58,8 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -147,7 +149,10 @@ fun StadionPlanView(plan: StadionPlanDaten, modifier: Modifier = Modifier, saiso
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (plan.kapazitaet > 0) {
-                BautypZeile(variante.bautypZeile)
+                KapazitaetsKopf(
+                    kapazitaet = plan.fassungsvermoegen ?: plan.kapazitaet,
+                    bautyp = variante.bautypZeile,
+                )
             }
 
             StadionPlanCanvas(
@@ -158,6 +163,10 @@ fun StadionPlanView(plan: StadionPlanDaten, modifier: Modifier = Modifier, saiso
                 auswahl = auswahl,
                 onSelect = { auswahl = it },
             )
+
+            if (!StadionPlanLogik.nutztEchteBereiche(plan)) {
+                HinweisGeschaetzt()
+            }
 
             KategorieAuswahl(
                 kategorien = kategorien,
@@ -194,19 +203,45 @@ fun StadionPlanView(plan: StadionPlanDaten, modifier: Modifier = Modifier, saiso
 }
 
 @Composable
-private fun BautypZeile(text: String) {
-    Surface(
-        Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-    ) {
+private fun KapazitaetsKopf(kapazitaet: Int, bautyp: String) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Text(
+                formatAnzahl(kapazitaet),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                " Plätze",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+        }
         Text(
-            "Bautyp: $text",
+            bautyp,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
+}
+
+@Composable
+private fun HinweisGeschaetzt() {
+    Text(
+        "Aufteilung der Bereiche geschätzt nach typischen Bundesliga-Stadien.",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -238,18 +273,27 @@ private fun StadionPlanCanvas(
         // Kategorie-/Zone-Wechsel bleibt dadurch frei von Text-Shaping.
         val labelLayouts = remember(zonen, breitePx, hoehePx, density) {
             val b = min(breitePx, hoehePx)
-            val fontSize = with(density) { (b * 0.030f).coerceAtLeast(8f).toSp() }
-            val kapazitaetFs = with(density) { (b * 0.024f).coerceAtLeast(7f).toSp() }
+            val fontSize = with(density) { (b * 0.034f).coerceAtLeast(9f).toSp() }
+            val kapazitaetFs = with(density) { (b * 0.026f).coerceAtLeast(8f).toSp() }
+            val maxBreite = (b * 0.42f).toInt().coerceAtLeast(1)
             zonen.map { zone ->
                 ZoneLabelLayout(
                     name = textMeasurer.measure(
                         zone.name,
                         TextStyle(color = pilleText, fontSize = fontSize, fontWeight = FontWeight.SemiBold),
+                        overflow = TextOverflow.Ellipsis,
+                        softWrap = true,
+                        maxLines = 2,
+                        constraints = Constraints(maxWidth = maxBreite),
                     ),
                     kapazitaet = zone.kapazitaet?.let {
                         textMeasurer.measure(
                             formatAnzahl(it),
                             TextStyle(color = pilleText.copy(alpha = 0.85f), fontSize = kapazitaetFs, fontWeight = FontWeight.Medium),
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false,
+                            maxLines = 1,
+                            constraints = Constraints(maxWidth = maxBreite),
                         )
                     },
                 )

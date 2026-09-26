@@ -7,6 +7,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** Logiktests für den Stadionplan (reine Datenlogik, ohne UI). */
@@ -592,5 +593,48 @@ class StadionPlanLogikTest {
             RasenMuster.KEINS,
             StadionPlanLogik.variante(StadionPlanDaten(stehplaetze = 3_000, sitzplaetze = 7_000), saison = 12).rasen,
         )
+    }
+
+    @Test
+    fun gaesteblock_bestehtUeberwiegendAusSitzplaetzen() {
+        val plan = StadionPlanDaten(stehplaetze = 10_000, sitzplaetze = 40_000)
+        val gaeste = StadionPlanLogik.tribuenenModell(plan).gaesteblock!!
+
+        assertTrue("Gästeblock hat Sitzplätze", gaeste.sitz.plaetze > 0)
+        assertTrue("Gästeblock hat Stehplätze", gaeste.steh.plaetze > 0)
+        assertTrue("Gästeblock überwiegend Sitzplätze", gaeste.sitz.plaetze > gaeste.steh.plaetze)
+    }
+
+    @Test
+    fun suedUndNordkurve_sindAehnlichGross() {
+        val plan = StadionPlanDaten(stehplaetze = 10_000, sitzplaetze = 40_000)
+        val variante = StadionPlanLogik.variante(plan).copy(riesenKurve = false)
+        val m = StadionPlanLogik.tribuenenModell(plan, Detaillierungsgrad.GROSS, variante)
+
+        val sued = m.suedkurve.kapazitaet
+        val nord = m.nordkurve.kapazitaet
+        assertTrue("Süd- und Nordkurve annähernd gleich groß", abs(sued - nord) <= sued * 0.25f)
+    }
+
+    @Test
+    fun reinesSitzplatzStadion_verteiltAusgewogen() {
+        val plan = StadionPlanDaten(stehplaetze = 0, sitzplaetze = 55_000)
+        val m = StadionPlanLogik.tribuenenModell(plan)
+
+        assertTrue("Südkurve nennenswert belegt", m.suedkurve.kapazitaet >= plan.kapazitaet * 0.15f)
+        assertTrue("Nordkurve nennenswert belegt", m.nordkurve.kapazitaet >= plan.kapazitaet * 0.15f)
+        assertTrue("Keine Tribüne extrem dominant", m.haupttribuene.kapazitaet <= plan.kapazitaet * 0.35f)
+    }
+
+    @Test
+    fun tribuenen_erscheinenSukzessive() {
+        val unter = StadionPlanLogik.tribuenenModell(StadionPlanDaten(stehplaetze = 2_000, sitzplaetze = 8_000))
+        assertEquals("Unter 12.000 keine Südkurve", 0, unter.suedkurve.kapazitaet)
+
+        val knapp = StadionPlanLogik.tribuenenModell(StadionPlanDaten(stehplaetze = 3_000, sitzplaetze = 10_000))
+        assertTrue("Knapp über 12.000: kleine Südkurve", knapp.suedkurve.kapazitaet > 0)
+
+        val voll = StadionPlanLogik.tribuenenModell(StadionPlanDaten(stehplaetze = 4_000, sitzplaetze = 16_000))
+        assertTrue("Südkurve wächst mit der Größe", voll.suedkurve.kapazitaet > knapp.suedkurve.kapazitaet)
     }
 }

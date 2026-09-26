@@ -415,7 +415,7 @@ object StadionPlanLogik {
         val riesenKurve =
             plan.stehplaetze > 0 &&
                 band.ordinal >= StadionBand.C.ordinal &&
-                seed % 3 == 0
+                seed % 8 == 0
         val teilDach = (plan.sitzUeberdacht + plan.stehUeberdacht) < plan.kapazitaet
         // Gästeblock in einer Ecke der Nordkurve (traditioneller Gästetribünen-
         // Bereich): nur bei geschlossenem Ring und nicht, wenn die Ecken ohnehin
@@ -809,25 +809,28 @@ object StadionPlanLogik {
             )
         }
 
-        // Aktive Tribünen je Ausbaustufe (Reihenfolge: West, Ost, Süd, Nord).
-        val aktive = buildList {
-            add(StadionLage.WEST) // Haupttribüne gibt es immer
-            if (kap >= GEGENTRIBUENE_AB) add(StadionLage.OST)
-            if (kap >= SUEDKURVE_AB) add(StadionLage.SUED)
-            if (kap >= NORDKURVE_AB) add(StadionLage.NORD)
+        // Präsenz je Seite: Tribünen wachsen sanft mit der Stadiongröße, statt
+        // hart bei einer Schwelle zu erscheinen. West ist immer da; Ost/Süd/Nord
+        // blenden über einen Bereich ein (0..1), damit kein sprunghafter
+        // Kapazitätswechsel beim Ausbau entsteht.
+        fun rampe(ab: Int, voll: Int): Float = when {
+            kap <= ab -> 0f
+            kap >= voll -> 1f
+            else -> (kap - ab).toFloat() / (voll - ab).toFloat()
         }
-        val indexVon = { lage: StadionLage -> when (lage) {
-            StadionLage.NORD -> 3
-            StadionLage.SUED -> 2
-            StadionLage.OST -> 1
-            StadionLage.WEST -> 0
-        } }
+        // Reihenfolge der vier Seiten: West, Ost, Süd, Nord.
+        val praesenz = listOf(
+            1f,
+            rampe(GEGENTRIBUENE_AB, GEGENTRIBUENE_AB + 4_000),
+            rampe(SUEDKURVE_AB, SUEDKURVE_AB + 4_000),
+            rampe(NORDKURVE_AB, NORDKURVE_AB + 4_000),
+        )
 
         // Sonderbereiche nur ab typischer Größe – vorher nicht vorhanden.
         // VIP = oberste zwei Reihen der Haupttribüne (≈ 2 % der Sitzplätze).
         val vipZiel = if (kap >= VIP_AB) (sitz * 0.02f).roundToInt() else 0
-        // Barrierefrei ist größer als früher: Es übernimmt die Fläche/Anzahl,
-        // die vormals der separate VIP-Sektor belegt hat.
+        // Barrierefrei übernimmt die Fläche/Anzahl, die vormals der separate
+        // VIP-Sektor belegt hat.
         val barriereZiel = if (kap >= BARRIEREFREI_AB) {
             ((kap * 0.005f).roundToInt() + vipZiel).coerceIn(24, 1_500)
         } else {
@@ -846,51 +849,64 @@ object StadionPlanLogik {
         val barrierefrei = sonder[1]
         val sitzOhneSonder = (sitz - vip - barrierefrei).coerceAtLeast(0)
 
-        // Gästeblock: bevorzugt aus Stehplätzen (Kurven), Rest aus Sitzplätzen.
+        // Gästeblock: überwiegend Sitzplätze (ca. 60 %), Rest Stehplätze – wie in
+        // echten Gästeblöcken, statt früher „zuerst alles aus Stehplätzen".
         val gaestZiel = if (kap >= GAESTEBLOCK_AB) ((kap * 0.05f).roundToInt()).coerceIn(400, 6000) else 0
-        val gaestSteh = min(gaestZiel, steh)
-        val gaestSitz = min(gaestZiel - gaestSteh, sitzOhneSonder.coerceAtLeast(0))
+        val gaestSitzZiel = (gaestZiel * 0.6f).roundToInt()
+        val gaestStehZiel = gaestZiel - gaestSitzZiel
+        val gaestSitz = min(gaestSitzZiel, sitzOhneSonder.coerceAtLeast(0))
+        val gaestSteh = min(gaestStehZiel, steh)
         val stehOhneGaest = steh - gaestSteh
         val sitzVerteilt = sitzOhneSonder - gaestSitz
 
-        // Bundesliga-typische Ausstattung: Langseiten eher Sitz, Kurzseiten eher Steh.
+        // Seiten-Gewichte je Ausbaustufe; mit der Stadionklasse wachsen die Kurven.
         val lagenGew = lagenGewichte(grad, variannt.riesenKurve)
-        val sitzPraef = listOf(0.90f, 0.80f, 0.30f, 0.25f) // West, Ost, Süd, Nord
-        val stehPraef = listOf(0.10f, 0.20f, 0.70f, 0.75f)
-        val aktivIndizes = aktive.map { indexVon(it) }
-        val wSitz = normalisiere(aktivIndizes.mapIndexed { i, idx -> lagenGew[idx] * sitzPraef[idx] })
-        val wSteh = normalisiere(aktivIndizes.mapIndexed { i, idx -> lagenGew[idx] * stehPraef[idx] })
+        // Sitz-/Steh-Präferenz je Seite (West/Ost/Süd/Nord). Reine Sitzplatz-
+        // Stadien (All-Seater) werden ausgewogen verteilt; sonst gelten die
+        // Bundesliga-typischen Stehkurven (Langseiten sitzen, Kurven stehen).
+        val sitzPraef = if (steh == 0) {
+            listOf(0.25f, 0.25f, 0.25f, 0.25f)
+        } else {
+            listOf(0.90f, 0.80f, 0.40f, 0.40f)
+        }
+        val stehPraef = listOf(0.10f, 0.20f, 0.75f, 0.75f)
 
-        val sitzJeAktiv = verteile(sitzVerteilt, wSitz)
-        val stehJeAktiv = verteile(stehOhneGaest, wSteh)
+        val wSitz = normalisiere(lagenGew.indices.map { lagenGew[it] * praesenz[it] * sitzPraef[it] })
+        val wSteh = normalisiere(lagenGew.indices.map { lagenGew[it] * praesenz[it] * stehPraef[it] })
+
+        val sitzJe = verteile(sitzVerteilt, wSitz)
+        val stehJe = verteile(stehOhneGaest, wSteh)
 
         // Überdachte Plätze je Position (getrennt nach Sitz/Steh), anteilig.
+        // Index-Reihenfolge: West, Ost, Süd, Nord, dann Gäste.
         val udGewichteSitz = buildList {
-            aktive.forEachIndexed { i, lage ->
-                add((sitzJeAktiv[i] + if (lage == StadionLage.WEST) vip + barrierefrei else 0).toFloat())
-            }
+            for (i in 0..3) add((sitzJe[i] + if (i == 0) vip + barrierefrei else 0).toFloat())
             add(gaestSitz.toFloat())
         }
         val udSitz = verteile(plan.sitzUeberdacht.coerceAtLeast(0), udGewichteSitz)
         val udWest = verteile(
             udSitz.getOrElse(0) { 0 },
-            listOf(vip.toFloat(), barrierefrei.toFloat(), sitzJeAktiv.getOrElse(0) { 0 }.toFloat()),
+            listOf(vip.toFloat(), barrierefrei.toFloat(), sitzJe.getOrElse(0) { 0 }.toFloat()),
         )
         val udSteh = verteile(
             plan.stehUeberdacht.coerceAtLeast(0),
             buildList {
-                aktive.forEachIndexed { i, _ -> add(stehJeAktiv.getOrElse(i) { 0 }.toFloat()) }
+                for (i in 0..3) add(stehJe.getOrElse(i) { 0 }.toFloat())
                 add(gaestSteh.toFloat())
             },
         )
 
         fun tribuene(lage: StadionLage, sitzUeber: Int, stehUeber: Int): Zonentribuene {
-            val i = aktive.indexOf(lage)
-            if (i < 0) return leer(lage)
+            val i = when (lage) {
+                StadionLage.WEST -> 0
+                StadionLage.OST -> 1
+                StadionLage.SUED -> 2
+                StadionLage.NORD -> 3
+            }
             return Zonentribuene(
                 lage = lage,
-                sitz = Platzangabe(sitzJeAktiv.getOrElse(i) { 0 }, sitzUeber),
-                steh = Platzangabe(stehJeAktiv.getOrElse(i) { 0 }, stehUeber),
+                sitz = Platzangabe(sitzJe[i], sitzUeber),
+                steh = Platzangabe(stehJe[i], stehUeber),
             )
         }
 
@@ -899,13 +915,11 @@ object StadionPlanLogik {
             gegentribuene = tribuene(StadionLage.OST, udSitz.getOrElse(1) { 0 }, udSteh.getOrElse(1) { 0 }),
             suedkurve = tribuene(StadionLage.SUED, udSitz.getOrElse(2) { 0 }, udSteh.getOrElse(2) { 0 }),
             nordkurve = tribuene(StadionLage.NORD, udSitz.getOrElse(3) { 0 }, udSteh.getOrElse(3) { 0 }),
-            // Gästeblock-Lage aus der Variante (Ecke großer Stadien → Doppelseite),
-                // sonst als proportionaler Sektor in der Südkurve.
             gaesteblock = if (gaestSitz + gaestSteh > 0) {
                 Zonentribuene(
                     variannt.gaesteblockEcke?.lage ?: StadionLage.SUED,
-                    Platzangabe(gaestSitz, udSitz.getOrElse(aktive.size) { 0 }),
-                    Platzangabe(gaestSteh, udSteh.getOrElse(aktive.size) { 0 }),
+                    Platzangabe(gaestSitz, udSitz.getOrElse(4) { 0 }),
+                    Platzangabe(gaestSteh, udSteh.getOrElse(4) { 0 }),
                 )
             } else {
                 null
@@ -921,10 +935,10 @@ object StadionPlanLogik {
         riesenKurve: Boolean = false,
     ): List<Float> {
         val basis = when (grad) {
-            Detaillierungsgrad.KLEIN -> listOf(0.34f, 0.30f, 0.19f, 0.17f)
-            Detaillierungsgrad.MITTEL -> listOf(0.32f, 0.28f, 0.22f, 0.18f)
-            Detaillierungsgrad.GROSS -> listOf(0.31f, 0.27f, 0.23f, 0.19f)
-            Detaillierungsgrad.SEHR_GROSS -> listOf(0.30f, 0.26f, 0.24f, 0.20f)
+            Detaillierungsgrad.KLEIN -> listOf(0.34f, 0.30f, 0.18f, 0.18f)
+            Detaillierungsgrad.MITTEL -> listOf(0.32f, 0.28f, 0.20f, 0.20f)
+            Detaillierungsgrad.GROSS -> listOf(0.31f, 0.27f, 0.21f, 0.21f)
+            Detaillierungsgrad.SEHR_GROSS -> listOf(0.30f, 0.26f, 0.22f, 0.22f)
         }
         // Riesenkurve (Dortmund-Typ): Die Südkurve trägt deutlich mehr Plätze,
         // dafür West/Ost/Nord etwas weniger.
