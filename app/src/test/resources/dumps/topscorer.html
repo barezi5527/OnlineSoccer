@@ -1,0 +1,2176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+<title>Online-Soccer 2.0</title>
+
+<script src="js/sorttable.js" type="text/javascript"></script>
+
+<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>-->
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/jquery-ui.min.js"></script>
+
+<link rel="STYLESHEET" type="text/css" href="js/dxhtml/codebase/dhtmlxgrid.css">
+
+<link rel="stylesheet" href="css/os_styles.css" />
+
+<link rel="stylesheet" href="css/print.css" media="print" />
+
+<link rel="SHORTCUT ICON" href="images/favicon.ico" type="image/ico" />
+
+<script type="text/javascript" src="js/osfunc.js"></script>
+
+</head>
+
+<body><div>
+
+<table border="0">
+
+	<tr>
+
+		<td>Land:</td>
+
+		<td>Liga:</td>
+
+		<td>Statistik:</td>
+
+		<td>Position:</td>
+
+		<td>Saison:</td>
+
+	</tr>
+
+	<form method="GET">
+
+	<tr>
+
+		<td>
+
+			<select name="landauswahl">
+
+				<option value="0">--Land---</option>
+
+				<option value="45">Albanien</option><option value="95">Andorra</option><option value="83">Armenien</option><option value="104">Aserbaidschan</option><option value="12">Belgien</option><option value="66">Bosnien-Herzegowina</option><option value="42">Bulgarien</option><option value="8">D&auml;nemark</option><option value="6" SELECTED>Deutschland</option><option value="1">England</option><option value="57">Estland</option><option value="68">Far&ouml;er</option><option value="40">Finnland</option><option value="32">Frankreich</option><option value="49">Georgien</option><option value="30">Griechenland</option><option value="5">Irland</option><option value="29">Island</option><option value="23">Israel</option><option value="10">Italien</option><option value="105">Kasachstan</option><option value="24">Kroatien</option><option value="97">Lettland</option><option value="92">Liechtenstein</option><option value="72">Litauen</option><option value="93">Luxemburg</option><option value="69">Malta</option><option value="86">Mazedonien</option><option value="87">Moldawien</option><option value="11">Niederlande</option><option value="4">Nordirland</option><option value="9">Norwegen</option><option value="14">&Ouml;sterreich</option><option value="25">Polen</option><option value="17">Portugal</option><option value="28">Rum&auml;nien</option><option value="19">Russland</option><option value="98">San Marino</option><option value="2">Schottland</option><option value="27">Schweden</option><option value="37">Schweiz</option><option value="41">Serbien und Montenegro</option><option value="70">Slowakei</option><option value="21">Slowenien</option><option value="13">Spanien</option><option value="18">Tschechien</option><option value="39">T&uuml;rkei</option><option value="20">Ukraine</option><option value="26">Ungarn</option><option value="3">Wales</option><option value="71">Weissrussland</option><option value="38">Zypern</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="ligaauswahl">
+
+				<option value="0">--Liga---</option>
+
+				<option value="1">1. Liga</option><option value="2">2. Liga A</option><option value="3">2. Liga B</option><option value="4">3. Liga A</option><option value="5">3. Liga B</option><option value="6">3. Liga C</option><option value="7">3. Liga D</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="statistik">
+
+				<option value="1" SELECTED>Tore</option><option value="2">Vorlagen</option><option value="3">Scorerpunkte</option><option value="4">Tore pro Spiel</option><option value="5">Vorlagen pro Spiel</option><option value="6">Minuten pro Tor</option><option value="7">Minuten gespielt</option><option value="8">Treter</option><option value="9">Karten pro Spiel</option><option value="10">Karten pro Minute</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="pos">
+
+				<option value="0">--Pos---</option>
+
+				<option value="1">TOR</option><option value="2">ABW</option><option value="3">DMI</option><option value="4">MIT</option><option value="5">OMI</option><option value="6">STU</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="saison">
+
+				<option value="0">--Saison---</option>
+
+				<option value="2">Saison 2</option><option value="3">Saison 3</option><option value="4">Saison 4</option><option value="5">Saison 5</option><option value="6">Saison 6</option><option value="7">Saison 7</option><option value="8">Saison 8</option><option value="9">Saison 9</option><option value="10">Saison 10</option><option value="11">Saison 11</option><option value="12">Saison 12</option><option value="13">Saison 13</option><option value="14">Saison 14</option><option value="15">Saison 15</option><option value="16">Saison 16</option><option value="17">Saison 17</option><option value="18">Saison 18</option><option value="19">Saison 19</option><option value="20">Saison 20</option><option value="21">Saison 21</option><option value="22">Saison 22</option><option value="23">Saison 23</option><option value="24" SELECTED>Saison 24</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<select name="art">
+
+				<option value="0">--ART---</option>
+
+				<option value="4">Friendly</option><option value="1" SELECTED>Liga</option><option value="2">Pokal</option><option value="3">International</option>
+
+			</select>
+
+		</td>
+
+		<td>
+
+			<input type="submit" value="anzeigen">
+
+		</td>
+
+	</tr>
+
+	</form>
+
+</table>
+
+Es werden immer nur die Top 100 ausgegeben!
+
+<br>
+
+<br>
+
+<table border="0">
+
+	<tr>
+
+		<td>#</td>
+
+		<td>Name</td>
+
+		<td>Alter</td>
+
+		<td>Skill</td>
+
+		<td>Opti</td>
+
+		<td>Land</td>
+
+		<td>Verein</td>
+
+		<td>Liga</td>
+
+		<td>Wert</td>
+
+	</tr>
+
+	<tr>
+
+		<td class="STU">1</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(126744)">Aaron Mercer</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">59.12</td>
+
+		<td class="STU">88.78</td>
+
+		<td class="STU"><img src="images/flaggen/NIR.gif" /> NIR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(477)">Kickers Duisburg</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">8.00</td>
+
+	</tr><tr>
+
+		<td class="STU">2</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(139672)">Johannes Baucke</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">57.94</td>
+
+		<td class="STU">85.96</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1057)">Wacker Fulda</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">7.00</td>
+
+	</tr><tr>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(124882)">Manuel Niermann</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">52.12</td>
+
+		<td class="STU">82.00</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1006)">FC Paderborn 1907 e.V</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">6.00</td>
+
+	</tr><tr>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(116902)">Lorenz Gonzalez</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">63.94</td>
+
+		<td class="STU">91.52</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(992)">SC St.Pauli</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">6.00</td>
+
+	</tr><tr>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(104701)">Guido Knoche</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">77.35</td>
+
+		<td class="STU">99.67</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(613)">SGE Frankfurt</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">6.00</td>
+
+	</tr><tr>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(126498)">Davy Van Roy</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">60.12</td>
+
+		<td class="STU">92.52</td>
+
+		<td class="STU"><img src="images/flaggen/BEL.gif" /> BEL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(63)">OSV Rostock</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">6.00</td>
+
+	</tr><tr>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(132483)">Camilo Baruco</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">63.71</td>
+
+		<td class="STU">91.22</td>
+
+		<td class="STU"><img src="images/flaggen/PAN.gif" /> PAN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3449)">SC Viktoria Ulm</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">6.00</td>
+
+	</tr><tr>
+
+		<td class="STU">3</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(131391)">Sven-Eric Spickenborn</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">58.41</td>
+
+		<td class="STU">87.30</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1005)">Blau Weiss Schalke</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">6.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(90002)">Christopher Lumme</a></td>
+
+		<td class="STU">33</td>
+
+		<td class="STU">55.53</td>
+
+		<td class="STU">76.89</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1033)">FV Lichtenberg 62</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(113826)">Tor Arne Østenstad</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">60.82</td>
+
+		<td class="STU">87.48</td>
+
+		<td class="STU"><img src="images/flaggen/NOR.gif" /> NOR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1063)">Bavaria Aschaffenburg</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(125167)">Emanuel Akanji</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">61.53</td>
+
+		<td class="STU">89.11</td>
+
+		<td class="STU"><img src="images/flaggen/NGA.gif" /> NGA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1024)">VfL Fohlen Mönchengladbach 09</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(140864)">Elifas Bukombu</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">49.53</td>
+
+		<td class="STU">80.96</td>
+
+		<td class="STU"><img src="images/flaggen/TAN.gif" /> TAN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(512)">1. FC Marl Hüls</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(106986)">Valery Berketov</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">61.76</td>
+
+		<td class="STU">90.44</td>
+
+		<td class="STU"><img src="images/flaggen/UKR.gif" /> UKR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(914)">1. FC Herne</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(111911)">Svend Jacobsen</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">68.82</td>
+
+		<td class="STU">91.63</td>
+
+		<td class="STU"><img src="images/flaggen/DEN.gif" /> DEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1002)">TSV Rheydt</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(132786)">Sami Ivanova</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">58.06</td>
+
+		<td class="STU">88.70</td>
+
+		<td class="STU"><img src="images/flaggen/TUR.gif" /> TUR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3438)">Aachener BSC</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">9</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(127543)">Hansjürgen Metz</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">58.00</td>
+
+		<td class="STU">86.89</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(527)">FC Otto Fürth</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">5.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(110220)">Colin Mulligan</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">50.47</td>
+
+		<td class="STU">76.52</td>
+
+		<td class="STU"><img src="images/flaggen/IRL.gif" /> IRL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(996)">Dynamo Cottbus</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(111508)">Stefan Kaltenbach</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">69.53</td>
+
+		<td class="STU">94.00</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(613)">SGE Frankfurt</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(94368)">Salto Mugorewera</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">65.00</td>
+
+		<td class="STU">88.33</td>
+
+		<td class="STU"><img src="images/flaggen/RWA.gif" /> RWA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(843)">Arminia Worms</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(135782)">Jerko Tito</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">58.59</td>
+
+		<td class="STU">86.67</td>
+
+		<td class="STU"><img src="images/flaggen/CRO.gif" /> CRO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(422)">BS Südstadt Köln</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(105842)">Rolf Kern</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">61.47</td>
+
+		<td class="STU">89.22</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(477)">Kickers Duisburg</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(129846)">Alay Niyazi</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">65.82</td>
+
+		<td class="STU">91.07</td>
+
+		<td class="STU"><img src="images/flaggen/AZE.gif" /> AZE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1010)">1.FK Köln</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(126612)">Simon Puls</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">68.82</td>
+
+		<td class="STU">95.93</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1024)">VfL Fohlen Mönchengladbach 09</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(139251)">Melron Sankoh</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">59.88</td>
+
+		<td class="STU">90.15</td>
+
+		<td class="STU"><img src="images/flaggen/SLE.gif" /> SLE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1018)">FC 1965 Magdeburg</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="OMI">17</td>
+
+		<td class="OMI"><a href="javascript:spielerinfo(132606)">Kallinikos Vangoulis</a></td>
+
+		<td class="OMI">27</td>
+
+		<td class="OMI">57.82</td>
+
+		<td class="OMI">86.93</td>
+
+		<td class="OMI"><img src="images/flaggen/GRE.gif" /> GRE</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(1940)">FC Franconia Hof</a></td>
+
+		<td class="OMI">2. Liga A Deutschland</td>
+
+		<td class="OMI">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(119132)">Heiko Wölki</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">48.12</td>
+
+		<td class="STU">74.15</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1033)">FV Lichtenberg 62</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(109083)">Lee Reynolds</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">66.71</td>
+
+		<td class="STU">90.59</td>
+
+		<td class="STU"><img src="images/flaggen/WAL.gif" /> WAL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1941)">1. FC Mannheim</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(121887)">Kadyr Glovatsky</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">57.71</td>
+
+		<td class="STU">88.04</td>
+
+		<td class="STU"><img src="images/flaggen/KAZ.gif" /> KAZ</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1961)">Schwaben Stuttgart</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(126675)">Olev Tikerpää</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">60.59</td>
+
+		<td class="STU">86.44</td>
+
+		<td class="STU"><img src="images/flaggen/EST.gif" /> EST</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3449)">SC Viktoria Ulm</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(113729)">Volker Heusch</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">62.41</td>
+
+		<td class="STU">89.22</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(842)">Adler Koblenz</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">17</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(127174)">René Marie-Rose</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">62.29</td>
+
+		<td class="STU">91.07</td>
+
+		<td class="STU"><img src="images/flaggen/FRA.gif" /> FRA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(526)">FC Greuther Fürth</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">4.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(131431)">Erik van den Berg</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">58.59</td>
+
+		<td class="STU">88.74</td>
+
+		<td class="STU"><img src="images/flaggen/NED.gif" /> NED</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1063)">Bavaria Aschaffenburg</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(139945)">Stathis Aristocleous</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">46.59</td>
+
+		<td class="STU">80.44</td>
+
+		<td class="STU"><img src="images/flaggen/CYP.gif" /> CYP</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1953)">Rheinisch Köln</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(148773)">Timo Frommelt</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">57.06</td>
+
+		<td class="STU">84.37</td>
+
+		<td class="STU"><img src="images/flaggen/LIE.gif" /> LIE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1020)">FC Lübeck 04</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(97805)">Johan Korpi</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">63.06</td>
+
+		<td class="STU">90.37</td>
+
+		<td class="STU"><img src="images/flaggen/FIN.gif" /> FIN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1050)">Bonner SpVgg</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(129718)">Ibou Jegou</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">53.82</td>
+
+		<td class="STU">84.26</td>
+
+		<td class="STU"><img src="images/flaggen/SEN.gif" /> SEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(779)">Berliner FC Turbine</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(125186)">Danny Spooner</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">58.18</td>
+
+		<td class="STU">89.22</td>
+
+		<td class="STU"><img src="images/flaggen/NIR.gif" /> NIR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1036)">Eintracht Hamburg</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(122141)">Erik Krause</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">63.29</td>
+
+		<td class="STU">93.33</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1055)">Kickers Dresden</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(91121)">Ramin Rustaveli</a></td>
+
+		<td class="STU">34</td>
+
+		<td class="STU">63.59</td>
+
+		<td class="STU">83.59</td>
+
+		<td class="STU"><img src="images/flaggen/AZE.gif" /> AZE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3446)">1. FC Essen</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(153955)">Vlad Ganea</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">45.94</td>
+
+		<td class="STU">78.26</td>
+
+		<td class="STU"><img src="images/flaggen/ROM.gif" /> ROM</td>
+
+		<td class="STU"><a href="javascript:teaminfo(512)">1. FC Marl Hüls</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(155056)">Gérard Nadol</a></td>
+
+		<td class="STU">23</td>
+
+		<td class="STU">47.06</td>
+
+		<td class="STU">78.96</td>
+
+		<td class="STU"><img src="images/flaggen/AND.gif" /> AND</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1009)">TuS Emden</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(121188)">Ed Ormemund</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">60.12</td>
+
+		<td class="STU">87.78</td>
+
+		<td class="STU"><img src="images/flaggen/ENG.gif" /> ENG</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1063)">Bavaria Aschaffenburg</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(136924)">Baltasar Segura</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">57.41</td>
+
+		<td class="STU">84.30</td>
+
+		<td class="STU"><img src="images/flaggen/VEN.gif" /> VEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1940)">FC Franconia Hof</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="OMI">32</td>
+
+		<td class="OMI"><a href="javascript:spielerinfo(120815)">Vratislav Dubovy</a></td>
+
+		<td class="OMI">29</td>
+
+		<td class="OMI">62.53</td>
+
+		<td class="OMI">90.78</td>
+
+		<td class="OMI"><img src="images/flaggen/CZE.gif" /> CZE</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(1002)">TSV Rheydt</a></td>
+
+		<td class="OMI">3. Liga A Deutschland</td>
+
+		<td class="OMI">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(121872)">Staf Van Hoost</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">53.94</td>
+
+		<td class="STU">81.67</td>
+
+		<td class="STU"><img src="images/flaggen/BEL.gif" /> BEL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(512)">1. FC Marl Hüls</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(111854)">Ingo Berg</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">66.94</td>
+
+		<td class="STU">93.41</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(992)">SC St.Pauli</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(130964)">Petrus Thijs</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">55.94</td>
+
+		<td class="STU">81.59</td>
+
+		<td class="STU"><img src="images/flaggen/BEL.gif" /> BEL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1961)">Schwaben Stuttgart</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(120394)">Daniel Chrisnach</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">57.06</td>
+
+		<td class="STU">87.33</td>
+
+		<td class="STU"><img src="images/flaggen/LUX.gif" /> LUX</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1027)">ASV Homburg</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="OMI">32</td>
+
+		<td class="OMI"><a href="javascript:spielerinfo(110652)">Patrik Biese</a></td>
+
+		<td class="OMI">31</td>
+
+		<td class="OMI">54.82</td>
+
+		<td class="OMI">79.11</td>
+
+		<td class="OMI"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="OMI"><a href="javascript:teaminfo(1061)">SpVgg Ruhr Bochum</a></td>
+
+		<td class="OMI">3. Liga A Deutschland</td>
+
+		<td class="OMI">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(134940)">Mandume Ngeze</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">49.06</td>
+
+		<td class="STU">74.89</td>
+
+		<td class="STU"><img src="images/flaggen/BDI.gif" /> BDI</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1032)">1. FC Offenbach</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(151994)">Franu Nemec</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">51.71</td>
+
+		<td class="STU">81.89</td>
+
+		<td class="STU"><img src="images/flaggen/CRO.gif" /> CRO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1013)">Borussia Rheine</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(105537)">Zhan Ter-Minasian</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">58.53</td>
+
+		<td class="STU">86.04</td>
+
+		<td class="STU"><img src="images/flaggen/ARM.gif" /> ARM</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3450)">FC Mainz 09</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(109191)">Anfinn Jelitsen</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">55.53</td>
+
+		<td class="STU">84.15</td>
+
+		<td class="STU"><img src="images/flaggen/FRO.gif" /> FRO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(300)">FC Stuttgart-Degerloch</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(132091)">Khallid Kravchenko</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">61.18</td>
+
+		<td class="STU">88.59</td>
+
+		<td class="STU"><img src="images/flaggen/KAZ.gif" /> KAZ</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1961)">Schwaben Stuttgart</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(139451)">Teodorico Scotti</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">59.06</td>
+
+		<td class="STU">86.96</td>
+
+		<td class="STU"><img src="images/flaggen/ITA.gif" /> ITA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(264)">Germania Berlin</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(85601)">William Simoto</a></td>
+
+		<td class="STU">34</td>
+
+		<td class="STU">55.53</td>
+
+		<td class="STU">79.41</td>
+
+		<td class="STU"><img src="images/flaggen/KEN.gif" /> KEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1849)">Concordia Leipzig</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(130572)">Simon Barmeier</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">52.35</td>
+
+		<td class="STU">85.41</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1027)">ASV Homburg</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(131153)">Walter Pitje</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">62.76</td>
+
+		<td class="STU">92.70</td>
+
+		<td class="STU"><img src="images/flaggen/NED.gif" /> NED</td>
+
+		<td class="STU"><a href="javascript:teaminfo(164)">Eintracht Wuppertal</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(107675)">Augusto Burbano</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">43.24</td>
+
+		<td class="STU">67.52</td>
+
+		<td class="STU"><img src="images/flaggen/ECU.gif" /> ECU</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1006)">FC Paderborn 1907 e.V</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(139812)">Nektarios Agapiou</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">54.35</td>
+
+		<td class="STU">82.22</td>
+
+		<td class="STU"><img src="images/flaggen/CYP.gif" /> CYP</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1050)">Bonner SpVgg</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">32</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(121047)">Ulrich Sasse</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">57.94</td>
+
+		<td class="STU">86.70</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(676)">Mannheimer SC</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">3.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(146560)">Branko Bjelica</a></td>
+
+		<td class="STU">25</td>
+
+		<td class="STU">52.00</td>
+
+		<td class="STU">77.19</td>
+
+		<td class="STU"><img src="images/flaggen/CRO.gif" /> CRO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1015)">SpVgg Hoffenheim</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(96496)">Bastian Deutschbein</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">52.29</td>
+
+		<td class="STU">78.70</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(995)">Germania Münster</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(138857)">Hector Lizcano</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">48.71</td>
+
+		<td class="STU">77.33</td>
+
+		<td class="STU"><img src="images/flaggen/VEN.gif" /> VEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1049)">Kickers Nordhorn</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(130635)">Gianluca Gaggioli</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">47.65</td>
+
+		<td class="STU">78.44</td>
+
+		<td class="STU"><img src="images/flaggen/ITA.gif" /> ITA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(820)">FC Steigerwald Erfurt</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(106911)">Hannjo Neubauer</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">66.65</td>
+
+		<td class="STU">92.78</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(527)">FC Otto Fürth</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(131877)">Walter Wunder</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">55.65</td>
+
+		<td class="STU">85.41</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1024)">VfL Fohlen Mönchengladbach 09</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(110875)">Eljakim Lev</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">56.18</td>
+
+		<td class="STU">81.59</td>
+
+		<td class="STU"><img src="images/flaggen/ISR.gif" /> ISR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1002)">TSV Rheydt</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(125709)">Dirk Pötzsch</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">53.47</td>
+
+		<td class="STU">79.30</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(995)">Germania Münster</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(150157)">Menelaos Konnafis</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">62.47</td>
+
+		<td class="STU">89.70</td>
+
+		<td class="STU"><img src="images/flaggen/CYP.gif" /> CYP</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1953)">Rheinisch Köln</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(118673)">Petre Velcea</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">64.88</td>
+
+		<td class="STU">91.22</td>
+
+		<td class="STU"><img src="images/flaggen/ROM.gif" /> ROM</td>
+
+		<td class="STU"><a href="javascript:teaminfo(526)">FC Greuther Fürth</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(109523)">Henry Olufosoye Ekubo</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">60.88</td>
+
+		<td class="STU">87.37</td>
+
+		<td class="STU"><img src="images/flaggen/NGA.gif" /> NGA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(676)">Mannheimer SC</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="MIT">62</td>
+
+		<td class="MIT"><a href="javascript:spielerinfo(150879)">Hansjörg Klier</a></td>
+
+		<td class="MIT">24</td>
+
+		<td class="MIT">53.82</td>
+
+		<td class="MIT">81.74</td>
+
+		<td class="MIT"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(997)">Niederrhein Düsseldorf</a></td>
+
+		<td class="MIT">3. Liga B Deutschland</td>
+
+		<td class="MIT">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(103216)">Marc Seidlitz</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">58.59</td>
+
+		<td class="STU">81.19</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(561)">Hamburger FC</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(160142)">Ap Rhys Gray</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">50.82</td>
+
+		<td class="STU">76.00</td>
+
+		<td class="STU"><img src="images/flaggen/WAL.gif" /> WAL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(3450)">FC Mainz 09</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(130757)">Alain Gilberts</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">53.76</td>
+
+		<td class="STU">85.26</td>
+
+		<td class="STU"><img src="images/flaggen/LUX.gif" /> LUX</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1068)">Kickers Darmstadt</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(140484)">Markus Teutenberg</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">46.88</td>
+
+		<td class="STU">78.41</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1952)">SC Hannover</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(106025)">Terrey Darby</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">57.24</td>
+
+		<td class="STU">83.15</td>
+
+		<td class="STU"><img src="images/flaggen/NIR.gif" /> NIR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1033)">FV Lichtenberg 62</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(110546)">Carlos Miguel Semedo</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">57.18</td>
+
+		<td class="STU">87.85</td>
+
+		<td class="STU"><img src="images/flaggen/POR.gif" /> POR</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1063)">Bavaria Aschaffenburg</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(113271)">Godofredo Musco</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">63.06</td>
+
+		<td class="STU">91.85</td>
+
+		<td class="STU"><img src="images/flaggen/ITA.gif" /> ITA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(550)">FC Dynamo Riesa</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(106575)">Tsotne Arveladze</a></td>
+
+		<td class="STU">32</td>
+
+		<td class="STU">64.18</td>
+
+		<td class="STU">93.74</td>
+
+		<td class="STU"><img src="images/flaggen/GEO.gif" /> GEO</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1966)">1.FC Trier</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(159161)">Harald Schürmann</a></td>
+
+		<td class="STU">22</td>
+
+		<td class="STU">53.59</td>
+
+		<td class="STU">80.70</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1953)">Rheinisch Köln</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(146239)">Wasil Hacini</a></td>
+
+		<td class="STU">24</td>
+
+		<td class="STU">52.76</td>
+
+		<td class="STU">74.56</td>
+
+		<td class="STU"><img src="images/flaggen/ALG.gif" /> ALG</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1018)">FC 1965 Magdeburg</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(99338)">Rumen Vazov</a></td>
+
+		<td class="STU">33</td>
+
+		<td class="STU">60.53</td>
+
+		<td class="STU">89.52</td>
+
+		<td class="STU"><img src="images/flaggen/BUL.gif" /> BUL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(222)">Schwarz-Gelb Leipzig</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="MIT">62</td>
+
+		<td class="MIT"><a href="javascript:spielerinfo(132041)">Phivos Kazantzakis</a></td>
+
+		<td class="MIT">27</td>
+
+		<td class="MIT">74.24</td>
+
+		<td class="MIT">98.74</td>
+
+		<td class="MIT"><img src="images/flaggen/CYP.gif" /> CYP</td>
+
+		<td class="MIT"><a href="javascript:teaminfo(1953)">Rheinisch Köln</a></td>
+
+		<td class="MIT">3. Liga A Deutschland</td>
+
+		<td class="MIT">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(110565)">Herbert Bangsi Sigthorsson</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">62.88</td>
+
+		<td class="STU">90.56</td>
+
+		<td class="STU"><img src="images/flaggen/ISL.gif" /> ISL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(300)">FC Stuttgart-Degerloch</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(127098)">Carlo Fagatti</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">51.71</td>
+
+		<td class="STU">78.04</td>
+
+		<td class="STU"><img src="images/flaggen/ITA.gif" /> ITA</td>
+
+		<td class="STU"><a href="javascript:teaminfo(997)">Niederrhein Düsseldorf</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(118148)">Marius Leuthard</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">52.88</td>
+
+		<td class="STU">80.11</td>
+
+		<td class="STU"><img src="images/flaggen/SUI.gif" /> SUI</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1013)">Borussia Rheine</a></td>
+
+		<td class="STU">3. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(119136)">Daire Thompson</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">52.12</td>
+
+		<td class="STU">80.96</td>
+
+		<td class="STU"><img src="images/flaggen/IRL.gif" /> IRL</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1058)">FK 03 Lurup</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(130839)">Frank Stucker</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">57.29</td>
+
+		<td class="STU">86.44</td>
+
+		<td class="STU"><img src="images/flaggen/NED.gif" /> NED</td>
+
+		<td class="STU"><a href="javascript:teaminfo(222)">Schwarz-Gelb Leipzig</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(94993)">Gunnar Butt</a></td>
+
+		<td class="STU">33</td>
+
+		<td class="STU">62.29</td>
+
+		<td class="STU">89.30</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1066)">Kickers Freiburg</a></td>
+
+		<td class="STU">1. Liga Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(129099)">Andi Kluge</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">57.00</td>
+
+		<td class="STU">86.11</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(80)">TSV 1999 Wehen</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(140103)">Max Riechers</a></td>
+
+		<td class="STU">26</td>
+
+		<td class="STU">54.76</td>
+
+		<td class="STU">82.33</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1020)">FC Lübeck 04</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(129950)">Adolphe Rollinger</a></td>
+
+		<td class="STU">27</td>
+
+		<td class="STU">51.00</td>
+
+		<td class="STU">81.44</td>
+
+		<td class="STU"><img src="images/flaggen/LUX.gif" /> LUX</td>
+
+		<td class="STU"><a href="javascript:teaminfo(847)">MSV Neugersdorf</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(119248)">Mamadou Paillard</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">56.35</td>
+
+		<td class="STU">87.63</td>
+
+		<td class="STU"><img src="images/flaggen/SEN.gif" /> SEN</td>
+
+		<td class="STU"><a href="javascript:teaminfo(827)">OS Bavaria München</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(120385)">Marco Rissling</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">59.88</td>
+
+		<td class="STU">85.56</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(847)">MSV Neugersdorf</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(122240)">Andreas Nikefeha</a></td>
+
+		<td class="STU">30</td>
+
+		<td class="STU">49.41</td>
+
+		<td class="STU">77.19</td>
+
+		<td class="STU"><img src="images/flaggen/GRE.gif" /> GRE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1030)">SV Hannover 09</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(113575)">Alexander Schlegel</a></td>
+
+		<td class="STU">29</td>
+
+		<td class="STU">52.65</td>
+
+		<td class="STU">84.56</td>
+
+		<td class="STU"><img src="images/flaggen/LIE.gif" /> LIE</td>
+
+		<td class="STU"><a href="javascript:teaminfo(1030)">SV Hannover 09</a></td>
+
+		<td class="STU">3. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(116653)">Holger Düner</a></td>
+
+		<td class="STU">31</td>
+
+		<td class="STU">63.18</td>
+
+		<td class="STU">92.52</td>
+
+		<td class="STU"><img src="images/flaggen/GER.gif" /> GER</td>
+
+		<td class="STU"><a href="javascript:teaminfo(422)">BS Südstadt Köln</a></td>
+
+		<td class="STU">2. Liga A Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr><tr>
+
+		<td class="STU">62</td>
+
+		<td class="STU"><a href="javascript:spielerinfo(119850)">Stefan Jaufenthaler</a></td>
+
+		<td class="STU">28</td>
+
+		<td class="STU">61.29</td>
+
+		<td class="STU">89.70</td>
+
+		<td class="STU"><img src="images/flaggen/AUT.gif" /> AUT</td>
+
+		<td class="STU"><a href="javascript:teaminfo(774)">Trafo Dresden</a></td>
+
+		<td class="STU">2. Liga B Deutschland</td>
+
+		<td class="STU">2.00</td>
+
+	</tr>
+
+</table>
+</div>
+
+</body>
+
+</html>

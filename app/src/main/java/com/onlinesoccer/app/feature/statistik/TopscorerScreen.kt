@@ -48,18 +48,27 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.LaenderOption
 import com.onlinesoccer.app.feature.server.FehlerBox
 
-private val TEAM_SPALTE = 180.dp
 private val NR_SPALTE = 36.dp
+private val NAME_SPALTE = 160.dp
 private val LAND_SPALTE = 52.dp
-private val WERT_SPALTE = 96.dp
+private val VEREIN_SPALTE = 140.dp
+private val LIGA_SPALTE = 120.dp
+private val ALTER_SPALTE = 48.dp
+private val SKILL_SPALTE = 56.dp
+private val OPTI_SPALTE = 56.dp
+private val WERT_SPALTE = 64.dp
 private val ZEILEN_HOEHE = 40.dp
 
-/** „Top-Teams": Wertvollste Teams nach Land/Liga/Statistik/Anzeige (`osneu/statteam`). */
+/** Kategorie-ID „Treter" (`statistik=8`): Fairplay-Wertung der Karten. */
+private const val TRETER_ID = "8"
+
+/** „Topscorer": Beste Spieler nach Land/Liga/Statistik/Position/Saison/Art (`topscorer.php`). */
 @Composable
-fun TopTeamsScreen(
+fun TopscorerScreen(
     onClose: () -> Unit = {},
+    onSpielerClick: (Long) -> Unit = {},
     onTeamClick: (Long) -> Unit = {},
-    viewModel: TopTeamsViewModel = hiltViewModel(),
+    viewModel: TopscorerViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -75,24 +84,26 @@ fun TopTeamsScreen(
             }
             Column(Modifier.padding(start = 4.dp)) {
                 Text(
-                    "Top-Teams",
+                    "Topscorer",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "Wertvollste Teams nach Filter",
+                    "Beste Spieler nach Filter (Top 20)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
 
-        TopTeamsFilterLeiste(
+        TopscorerFilterLeiste(
             uiState = uiState,
             onLand = viewModel::landWaehlen,
             onLiga = viewModel::ligaWaehlen,
             onStatistik = viewModel::statistikWaehlen,
-            onAnzeige = viewModel::anzeigeWaehlen,
+            onPos = viewModel::posWaehlen,
+            onSaison = viewModel::saisonWaehlen,
+            onArt = viewModel::artWaehlen,
         )
 
         Box(Modifier.fillMaxWidth().weight(1f)) {
@@ -101,20 +112,22 @@ fun TopTeamsScreen(
                     CircularProgressIndicator()
                 }
                 uiState.fehler != null -> FehlerBox(uiState.fehler!!, viewModel::lade)
-                else -> TopTeamsTabelle(uiState = uiState, onTeamClick = onTeamClick)
+                else -> TopscorerTabelle(uiState = uiState, onSpielerClick = onSpielerClick, onTeamClick = onTeamClick)
             }
         }
     }
 }
 
-/** Filter-Leiste (Land/Liga, Statistik/Anzeige) – wie Liga-/Tabellenfilter der App. */
+/** Filter-Leiste: Land/Liga, Kategorie/Position, Saison/Spieltag. */
 @Composable
-private fun TopTeamsFilterLeiste(
-    uiState: TopTeamsUiState,
+private fun TopscorerFilterLeiste(
+    uiState: TopscorerUiState,
     onLand: (String) -> Unit,
     onLiga: (String) -> Unit,
     onStatistik: (String) -> Unit,
-    onAnzeige: (String) -> Unit,
+    onPos: (String) -> Unit,
+    onSaison: (String) -> Unit,
+    onArt: (String) -> Unit,
 ) {
     val enabled = !uiState.ladend
     Column(
@@ -124,7 +137,7 @@ private fun TopTeamsFilterLeiste(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TopTeamsFilterAuswahl(
+            TopscorerFilterAuswahl(
                 leerLabel = "Land",
                 optionen = uiState.laender,
                 wert = uiState.land,
@@ -132,7 +145,7 @@ private fun TopTeamsFilterLeiste(
                 onWaehlen = onLand,
                 modifier = Modifier.weight(1f),
             )
-            TopTeamsFilterAuswahl(
+            TopscorerFilterAuswahl(
                 leerLabel = "Liga",
                 optionen = uiState.ligas,
                 wert = uiState.liga,
@@ -142,20 +155,38 @@ private fun TopTeamsFilterLeiste(
             )
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TopTeamsFilterAuswahl(
-                leerLabel = "Statistik",
+            TopscorerFilterAuswahl(
+                leerLabel = "Kategorie",
                 optionen = uiState.statistiken,
                 wert = uiState.statistik,
                 enabled = enabled,
                 onWaehlen = onStatistik,
                 modifier = Modifier.weight(1f),
             )
-            TopTeamsFilterAuswahl(
-                leerLabel = "Anzeige",
-                optionen = uiState.anzeigen,
-                wert = uiState.anzeige,
+            TopscorerFilterAuswahl(
+                leerLabel = "Position",
+                optionen = uiState.positionen,
+                wert = uiState.pos,
                 enabled = enabled,
-                onWaehlen = onAnzeige,
+                onWaehlen = onPos,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TopscorerFilterAuswahl(
+                leerLabel = "Saison",
+                optionen = uiState.saisons,
+                wert = uiState.saison,
+                enabled = enabled,
+                onWaehlen = onSaison,
+                modifier = Modifier.weight(1f),
+            )
+            TopscorerFilterAuswahl(
+                leerLabel = "Spieltag",
+                optionen = uiState.arten,
+                wert = uiState.art,
+                enabled = enabled,
+                onWaehlen = onArt,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -164,7 +195,7 @@ private fun TopTeamsFilterLeiste(
 
 /** Kompakte Auswahl (OutlinedButton + Dropdown) wie in den Bewerbe-Filtern. */
 @Composable
-private fun TopTeamsFilterAuswahl(
+private fun TopscorerFilterAuswahl(
     leerLabel: String,
     optionen: List<LaenderOption>,
     wert: String,
@@ -203,21 +234,24 @@ private fun TopTeamsFilterAuswahl(
     }
 }
 
-/** Tabellen-Kurzinfo (Anzeige · Statistik · Anzahl). */
-private fun zusatzInfo(uiState: TopTeamsUiState): String {
-    val anzeige = uiState.anzeigen.firstOrNull { it.id == uiState.anzeige }?.label
+/** Tabellen-Kurzinfo (Kategorie · Saison · Spieltag · Anzahl). */
+private fun zusatzInfo(uiState: TopscorerUiState): String {
     val statistik = uiState.statistiken.firstOrNull { it.id == uiState.statistik }?.label
+    val saison = uiState.saisons.firstOrNull { it.id == uiState.saison }?.label
+    val art = uiState.arten.firstOrNull { it.id == uiState.art }?.label
     return buildList {
-        anzeige?.let { add(it) }
         statistik?.let { add(it) }
-        add("${uiState.zeilen.size} Teams")
+        saison?.let { add(it) }
+        art?.let { add(it) }
+        add("${uiState.zeilen.size} Spieler")
     }.joinToString(" · ")
 }
 
-/** Fixierbare Tabelle: fixierte Team-Spalte + scrollbare Zusatzspalten, markierte Zeile zeilenübergreifend. */
+/** Fixierbare Tabelle: fixierte Name-Spalte + scrollbare Zusatzspalten. */
 @Composable
-private fun TopTeamsTabelle(
-    uiState: TopTeamsUiState,
+private fun TopscorerTabelle(
+    uiState: TopscorerUiState,
+    onSpielerClick: (Long) -> Unit,
     onTeamClick: (Long) -> Unit,
 ) {
     val zeilen = uiState.zeilen
@@ -230,7 +264,7 @@ private fun TopTeamsTabelle(
         return
     }
 
-    var markierterTeamId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var markierterSpielerId by rememberSaveable { mutableStateOf<Long?>(null) }
     val vertScroll = rememberScrollState()
     val horizScroll = rememberScrollState()
 
@@ -242,11 +276,25 @@ private fun TopTeamsTabelle(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        if (uiState.statistik == TRETER_ID) {
+            Text(
+                "Fairplay-Wertung: Gelb = 1 Punkt, Rot = 5 Punkte",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant)) {
-            TabellenKopfZelle("Team", TEAM_SPALTE, TextAlign.Start)
+            TabellenKopfZelle("Nr", NR_SPALTE, TextAlign.End)
+            TabellenKopfZelle("Name", NAME_SPALTE, TextAlign.Start)
             Row(Modifier.horizontalScroll(horizScroll)) {
-                TabellenKopfZelle("Nr", NR_SPALTE, TextAlign.End)
                 TabellenKopfZelle("Land", LAND_SPALTE, TextAlign.Center)
+                TabellenKopfZelle("Verein", VEREIN_SPALTE, TextAlign.Start)
+                TabellenKopfZelle("Liga", LIGA_SPALTE, TextAlign.Start)
+                TabellenKopfZelle("Alter", ALTER_SPALTE, TextAlign.End)
+                TabellenKopfZelle("Skill", SKILL_SPALTE, TextAlign.End)
+                TabellenKopfZelle("Opti", OPTI_SPALTE, TextAlign.End)
                 TabellenKopfZelle("Wert", WERT_SPALTE, TextAlign.End)
             }
         }
@@ -254,41 +302,55 @@ private fun TopTeamsTabelle(
         Row(Modifier.fillMaxWidth().weight(1f)) {
             Column(
                 Modifier
-                    .width(TEAM_SPALTE)
+                    .width(NR_SPALTE + NAME_SPALTE)
                     .verticalScroll(vertScroll),
             ) {
                 zeilen.forEachIndexed { index, zeile ->
-                    val teamId = zeile.teamId
-                    val markiert = teamId != null && teamId == markierterTeamId
+                    val markiert = zeile.spielerId != null && zeile.spielerId == markierterSpielerId
                     Row(
                         Modifier
                             .fillMaxWidth()
                             .height(ZEILEN_HOEHE)
-                            .background(zeilenFarbe(index, markiert))
-                            .then(
-                                if (teamId != null) Modifier.clickable {
-                                    markierterTeamId = if (markiert) null else teamId
-                                    onTeamClick(teamId)
-                                } else Modifier,
-                            ),
+                            .background(zeilenFarbe(index, markiert)),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (markiert) {
-                            Box(
-                                Modifier
-                                    .fillMaxHeight()
-                                    .width(3.dp)
-                                    .background(MaterialTheme.colorScheme.primary),
+                        Box(
+                            Modifier
+                                .width(NR_SPALTE)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.CenterEnd,
+                        ) {
+                            if (markiert) {
+                                Box(
+                                    Modifier
+                                        .fillMaxHeight()
+                                        .width(3.dp)
+                                        .background(MaterialTheme.colorScheme.primary)
+                                        .align(Alignment.CenterStart),
+                                )
+                            }
+                            Text(
+                                zeile.nr?.toString() ?: "–",
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Clip,
+                                modifier = Modifier.padding(end = 6.dp),
                             )
                         }
                         Text(
-                            zeile.team,
+                            zeile.name,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (markiert) FontWeight.Bold else FontWeight.Normal,
                             color = if (markiert) MaterialTheme.colorScheme.onPrimaryContainer
                             else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier
                                 .weight(1f)
+                                .then(
+                                    if (zeile.spielerId != null) Modifier.clickable {
+                                        markierterSpielerId = if (markiert) null else zeile.spielerId
+                                        onSpielerClick(zeile.spielerId)
+                                    } else Modifier,
+                                )
                                 .padding(horizontal = 6.dp),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -301,23 +363,65 @@ private fun TopTeamsTabelle(
                 Row(Modifier.horizontalScroll(horizScroll)) {
                     Column(Modifier.verticalScroll(vertScroll)) {
                         zeilen.forEachIndexed { index, zeile ->
-                            val markiert = zeile.teamId != null && zeile.teamId == markierterTeamId
+                            val markiert = zeile.spielerId != null && zeile.spielerId == markierterSpielerId
                             Row(
                                 Modifier
                                     .height(ZEILEN_HOEHE)
                                     .background(zeilenFarbe(index, markiert)),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                StatistikZelle(NR_SPALTE, TextAlign.End) {
+                                StatistikZelle(LAND_SPALTE, TextAlign.Center) {
+                                    FlaggenText(zeile.land)
+                                }
+                                StatistikZelle(VEREIN_SPALTE, TextAlign.Start) {
+                                    val teamId = zeile.teamId
                                     Text(
-                                        zeile.nr?.toString() ?: "–",
+                                        zeile.verein,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (markiert) MaterialTheme.colorScheme.onPrimaryContainer
+                                        else MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier
+                                            .then(
+                                                if (teamId != null) Modifier.clickable {
+                                                    onTeamClick(teamId)
+                                                } else Modifier,
+                                            )
+                                            .padding(horizontal = 4.dp),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                StatistikZelle(LIGA_SPALTE, TextAlign.Start) {
+                                    Text(
+                                        zeile.liga,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                StatistikZelle(ALTER_SPALTE, TextAlign.End) {
+                                    Text(
+                                        zeile.alter,
                                         style = MaterialTheme.typography.bodySmall,
                                         maxLines = 1,
                                         overflow = TextOverflow.Clip,
                                     )
                                 }
-                                StatistikZelle(LAND_SPALTE, TextAlign.Center) {
-                                    FlaggenText(zeile.land)
+                                StatistikZelle(SKILL_SPALTE, TextAlign.End) {
+                                    Text(
+                                        zeile.skill,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Clip,
+                                    )
+                                }
+                                StatistikZelle(OPTI_SPALTE, TextAlign.End) {
+                                    Text(
+                                        zeile.opti,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Clip,
+                                    )
                                 }
                                 StatistikZelle(WERT_SPALTE, TextAlign.End) {
                                     Text(
