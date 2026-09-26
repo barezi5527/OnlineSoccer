@@ -2,11 +2,17 @@ package com.onlinesoccer.app.feature.bewerbe
 
 import com.onlinesoccer.app.data.model.BerichtEreignisTyp
 import com.onlinesoccer.app.data.model.SpielBericht
+import com.onlinesoccer.app.data.repository.ElfAuswertung
 
 /**
  * Erzeugt die Aussage des Heim- oder Gasttrainers zur Pressekonferenz direkt
  * aus dem geparsten Spielbericht. Deterministisch und offline – wie die
  * „Elf des Spieltags" stammt jede Aussage ausschließlich aus den Berichtsdaten.
+ *
+ * Heim- und Gasttrainer erhalten bewusst unterschiedliche Aussagen: eigene
+ * Überschriften, eine trainerabhängige Stellungnahme sowie teambezogene
+ * Einordnung von Ballbesitz und besonderen Ereignissen (Karten, Verletzungen,
+ * Elfmeter).
  */
 internal object KiPressekonferenz {
 
@@ -51,71 +57,78 @@ internal object KiPressekonferenz {
         return Aussage(
             trainer = trainer,
             teamName = eigen,
-            ueberschrift = ueberschrift(ausgang),
+            ueberschrift = ueberschrift(ausgang, trainer),
             text = buildString {
-                append(stellungnahme(ausgang, eigen, gegner))
-                append(" ")
-                append(perspektive(trainer, ausgang))
+                append(stellungnahme(ausgang, trainer, eigen, gegner))
                 ballbesitz(bericht, trainer)?.let { append(" ").append(it) }
-                besonderes(bericht)?.let { append(" ").append(it) }
+                besonderes(bericht, trainer)?.let { append(" ").append(it) }
             },
         )
     }
 
     private enum class Ausgang { SIEG, UNENTSCHIEDEN, NIEDERLAGE, UNBESTIMMT }
 
-    private fun ueberschrift(ausgang: Ausgang): String = when (ausgang) {
-        Ausgang.SIEG -> "„Wir haben an uns geglaubt und uns belohnt!“"
-        Ausgang.UNENTSCHIEDEN -> "„Ein Punkt, der sich wie ein kleiner Sieg anfühlt!“"
-        Ausgang.NIEDERLAGE -> "„Heute hat am Ende die Cleverness gefehlt“"
-        Ausgang.UNBESTIMMT -> "„Mein Blick auf das Spiel“"
+    private fun ueberschrift(ausgang: Ausgang, trainer: Trainer): String = when (ausgang) {
+        Ausgang.SIEG -> if (trainer == Trainer.HEIM)
+            "„Ein Heimsieg zum Feiern!“"
+        else
+            "„Drei Punkte aus der Fremde – Wahnsinn!“"
+        Ausgang.UNENTSCHIEDEN -> if (trainer == Trainer.HEIM)
+            "„Zu Hause mehr erhofft, den Punkt aber mitgenommen.“"
+        else
+            "„Ein Auswärtspunkt, der sich wie ein Sieg anfühlt.“"
+        Ausgang.NIEDERLAGE -> if (trainer == Trainer.HEIM)
+            "„Eine Heimniederlage, die doppelt weh tut.“"
+        else
+            "„Auswärts zu harmlos – das müssen wir ändern.“"
+        Ausgang.UNBESTIMMT -> if (trainer == Trainer.HEIM)
+            "„Mein Blick auf unser Heimspiel.“"
+        else
+            "„Mein Blick auf unser Auswärtsspiel.“"
     }
 
-    private fun stellungnahme(ausgang: Ausgang, eigen: String, gegner: String): String = when (ausgang) {
-        Ausgang.SIEG -> buildString {
-            append("Was für ein Auftritt von $eigen! Den Sieg gegen $gegner haben wir uns ")
-            append("hart erkämpft, und er ist auch verdient. Die Mannschaft hat über 90 Minuten ")
-            append("an sich geglaubt, Leidenschaft und unbedingten Willen gezeigt. ")
-            append("Ich bin mächtig stolz auf diese Truppe!")
+    private fun stellungnahme(ausgang: Ausgang, trainer: Trainer, eigen: String, gegner: String): String = when (ausgang) {
+        Ausgang.SIEG -> if (trainer == Trainer.HEIM) buildString {
+            append("Was für ein Auftritt von $eigen! Vor eigenem Publikum haben wir $gegner ")
+            append("über weite Strecken beherrscht und uns den Sieg redlich verdient. ")
+            append("Die Mannschaft hat von der ersten Minute an an sich geglaubt – ich bin mächtig stolz auf diese Truppe!")
+        } else buildString {
+            append("Was für eine reife Leistung von $eigen! Bei $gegner so cool zu bleiben und ")
+            append("die Punkte mitzunehmen, verlangt besonderen Respekt. ")
+            append("Wir haben unsere Chancen eiskalt genutzt und hinten kaum etwas zugelassen – ich bin stolz auf jeden Einzelnen!")
         }
-        Ausgang.UNENTSCHIEDEN -> buildString {
-            append("Ein Punkt, aber ein verdienter! Gegen $gegner haben wir alles abverlangt ")
-            append("und einen Kampf geliefert, der sich gewaschen hat. Am Ende fehlte das ")
-            append("Quäntchen Glück im Abschluss, doch mit diesem Kampfgeist können wir ")
-            append("zufrieden in die Kabine gehen.")
+        Ausgang.UNENTSCHIEDEN -> if (trainer == Trainer.HEIM) buildString {
+            append("Ein Punkt gegen $gegner, mit dem $eigen am Ende leben kann. ")
+            append("Zu Hause wollten wir mehr und hatten auch die besseren Momente, doch das letzte Quäntchen hat gefehlt. ")
+            append("Mit dem Kampfgeist meiner Mannschaft bin ich zufrieden.")
+        } else buildString {
+            append("$eigen hat sich bei $gegner einen Punkt erkämpft, und der ist für uns Gold wert. ")
+            append("Auswärts haben wir wenig zugelassen und unsere wenigen Chancen konsequent genutzt. ")
+            append("Mit diesem Auftritt können wir sehr zufrieden die Rückreise antreten.")
         }
-        Ausgang.NIEDERLAGE -> buildString {
-            append("Das Ergebnis tut richtig weh, weil die Mannschaft heute viel investiert hat. ")
-            append("Gegen $gegner haben wir uns nie aufgegeben, aber am Ende fehlten uns die ")
-            append("Cleverness und das nötige Glück. Jetzt heißt es: Ärmel hochkrempeln, ")
-            append("aufarbeiten und schnell wieder angreifen.")
+        Ausgang.NIEDERLAGE -> if (trainer == Trainer.HEIM) buildString {
+            append("Das Ergebnis gegen $gegner tut richtig weh, weil $eigen heute viel investiert hat. ")
+            append("Vor eigenem Publikum fehlten uns am Ende Cleverness und Konsequenz. ")
+            append("Jetzt gilt es, die richtigen Schlüsse zu ziehen und schnell wieder anzugreifen.")
+        } else buildString {
+            append("$eigen hat sich bei $gegner nie aufgegeben, aber am Ende wurden wir für unsere Fehler bestraft. ")
+            append("Auswärts haben wir zu selten unser eigenes Spiel durchgesetzt. ")
+            append("Wir müssen das aufarbeiten und schnell wieder in die Spur kommen.")
         }
-        Ausgang.UNBESTIMMT -> buildString {
-            append("Es war ein intensives Spiel, in dem sich beide Mannschaften nichts geschenkt haben. ")
-            append("Ich bin mit der Moral meiner Spieler zufrieden – alles Weitere sehen wir uns genau an.")
-        }
-    }
-
-    private fun perspektive(trainer: Trainer, ausgang: Ausgang): String = when (trainer) {
-        Trainer.HEIM -> when (ausgang) {
-            Ausgang.SIEG -> "Vor unserem Publikum war die Unterstützung von den Rängen heute ein wichtiger Rückhalt."
-            Ausgang.UNENTSCHIEDEN -> "Zu Hause wollten wir mehr, nehmen diesen Punkt aber mit."
-            Ausgang.NIEDERLAGE -> "Vor den eigenen Fans müssen wir aus diesem Rückschlag die richtigen Schlüsse ziehen."
-            Ausgang.UNBESTIMMT -> "Als Heimmannschaft wollen wir die positiven Ansätze mitnehmen."
-        }
-        Trainer.GAST -> when (ausgang) {
-            Ausgang.SIEG -> "Auswärts in dieser Atmosphäre so aufzutreten, verdient besonderen Respekt."
-            Ausgang.UNENTSCHIEDEN -> "Auf fremdem Platz ist dieser Punkt für uns ein ordentliches Ergebnis."
-            Ausgang.NIEDERLAGE -> "Auswärts haben wir heute zu selten unser eigenes Spiel durchgesetzt."
-            Ausgang.UNBESTIMMT -> "Auch auswärts haben wir wichtige Eindrücke für die nächsten Spiele gesammelt."
+        Ausgang.UNBESTIMMT -> if (trainer == Trainer.HEIM) buildString {
+            append("Es war ein intensives Heimspiel, in dem $eigen und $gegner sich nichts geschenkt haben. ")
+            append("Ich bin mit der Moral meiner Spieler zufrieden – wir nehmen die positiven Ansätze mit.")
+        } else buildString {
+            append("$eigen hat bei $gegner eine ordentliche Vorstellung abgeliefert. ")
+            append("Auch wenn nicht alles rund lief, stimmt die Moral – darauf bauen wir auf.")
         }
     }
 
     /** Floskeln aus der Ballbesitz-Statistik (Format „heim : gast“). */
     private fun ballbesitz(bericht: SpielBericht, trainer: Trainer): String? {
         val wert = bericht.statistik?.ballbesitz ?: return null
-        val heim = wert.substringBefore(":").trim().toIntOrNull() ?: return null
-        val gast = wert.substringAfter(":").trim().toIntOrNull() ?: return null
+        val heim = wert.substringBefore(":").trim().removeSuffix("%").toIntOrNull() ?: return null
+        val gast = wert.substringAfter(":").trim().removeSuffix("%").toIntOrNull() ?: return null
         val eigen = if (trainer == Trainer.HEIM) heim else gast
         val fremd = if (trainer == Trainer.HEIM) gast else heim
         return when {
@@ -125,23 +138,53 @@ internal object KiPressekonferenz {
         }
     }
 
-    /** Kurzer Verweis auf besondere Ereignisse des Spiels. */
-    private fun besonderes(bericht: SpielBericht): String? {
-        val roteKarten = bericht.ereignisse.count { it.typ == BerichtEreignisTyp.ROTE_KARTE }
-        val verletzungen = bericht.ereignisse.count { it.typ == BerichtEreignisTyp.VERLETZUNG }
-        val elfmeter = bericht.ereignisse.count { it.typ == BerichtEreignisTyp.ELFMETER }
+    /** Teambezogener Verweis auf besondere Ereignisse des Spiels. */
+    private fun besonderes(bericht: SpielBericht, trainer: Trainer): String? {
+        val heimNamen = bericht.heimAufstellung?.spieler.orEmpty()
+            .mapTo(mutableSetOf()) { it.name.lowercase() }
+        val gastNamen = bericht.gastAufstellung?.spieler.orEmpty()
+            .mapTo(mutableSetOf()) { it.name.lowercase() }
+        val bekannteNamen = (bericht.heimAufstellung?.spieler.orEmpty().map { it.name } +
+            bericht.gastAufstellung?.spieler.orEmpty().map { it.name }).toSet()
+
+        fun seite(name: String): Trainer? = when {
+            name.lowercase() in heimNamen -> Trainer.HEIM
+            name.lowercase() in gastNamen -> Trainer.GAST
+            else -> null
+        }
+
+        val roteKarten = ElfAuswertung.kartenEreignisse(bericht.ereignisse, bekannteNamen)
+            .filter { it.third == BerichtEreignisTyp.ROTE_KARTE }
+            .mapNotNull { seite(it.second) }
+        val verletzungen = ElfAuswertung.verletzteSpieler(bericht.ereignisse, bekannteNamen)
+            .values.mapNotNull { seite(it) }
+        val elfmeter = bericht.ereignisse
+            .filter { it.typ == BerichtEreignisTyp.ELFMETER }
+            .mapNotNull { ereignis ->
+                bekannteNamen
+                    .filter { name -> ereignis.text.contains(name, ignoreCase = true) }
+                    .mapNotNull { seite(it) }
+                    .toSet()
+                    .singleOrNull()
+            }
+
+        val eigeneRote = roteKarten.count { it == trainer }
+        val gegnerRote = roteKarten.count { it != trainer }
+        val eigeneVerletzungen = verletzungen.count { it == trainer }
+        val gegnerVerletzungen = verletzungen.count { it != trainer }
+        val eigeneElfmeter = elfmeter.count { it == trainer }
+        val gegnerElfmeter = elfmeter.count { it != trainer }
 
         val saetze = mutableListOf<String>()
-        if (roteKarten > 0) {
-            saetze += if (roteKarten == 1) "Die Rote Karte hat die Partie zusätzlich aufgeheizt."
-            else "Die roten Karten haben das Spiel unnötig aufgeheizt."
-        }
-        if (verletzungen > 0) {
-            saetze += "Die Verletzungsunterbrechungen haben uns aus dem Rhythmus gebracht."
-        }
-        if (elfmeter > 0) {
-            saetze += "Vom Elfmeterpunkt aus ging es heute hoch her."
-        }
+        if (eigeneRote == 1) saetze += "Die Rote Karte gegen uns hat uns unnötig geschwächt."
+        else if (eigeneRote > 1) saetze += "Die Roten Karten gegen uns haben uns das Leben selbst schwer gemacht."
+        if (gegnerRote == 1) saetze += "Die Rote Karte gegen den Gegner hat uns in die Karten gespielt."
+        else if (gegnerRote > 1) saetze += "Die Roten Karten beim Gegner haben das Spiel zu unseren Gunsten gedreht."
+        if (eigeneVerletzungen > 0) saetze += "Die Verletzungsunterbrechungen in unseren Reihen haben uns aus dem Rhythmus gebracht."
+        if (gegnerVerletzungen > 0) saetze += "Die Verletzungsunterbrechungen beim Gegner haben das Tempo aus dem Spiel genommen."
+        if (eigeneElfmeter > 0) saetze += "Vom Elfmeterpunkt aus haben wir heute unsere Chance gesucht."
+        if (gegnerElfmeter > 0) saetze += "Vom Elfmeterpunkt aus wurde der Gegner heute belohnt."
+
         return saetze.joinToString(" ").ifBlank { null }
     }
 }

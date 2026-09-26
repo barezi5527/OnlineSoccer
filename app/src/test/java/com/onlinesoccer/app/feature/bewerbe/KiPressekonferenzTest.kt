@@ -1,7 +1,9 @@
 package com.onlinesoccer.app.feature.bewerbe
 
+import com.onlinesoccer.app.data.model.BerichtAufstellung
 import com.onlinesoccer.app.data.model.BerichtEreignis
 import com.onlinesoccer.app.data.model.BerichtEreignisTyp
+import com.onlinesoccer.app.data.model.BerichtSpieler
 import com.onlinesoccer.app.data.model.BerichtStatistik
 import com.onlinesoccer.app.data.model.SpielBericht
 import org.junit.Assert.assertFalse
@@ -50,8 +52,9 @@ class KiPressekonferenzTest {
         val aussage = KiPressekonferenz.aussage(
             bericht(
                 ergebnis = "2:1",
+                heimNamen = listOf("Müller"),
                 ereignisse = listOf(
-                    BerichtEreignis(minute = "78", text = "Rote Karte", typ = BerichtEreignisTyp.ROTE_KARTE),
+                    BerichtEreignis(minute = "78", text = "Müller kassiert dafür die Rote Karte", typ = BerichtEreignisTyp.ROTE_KARTE),
                 ),
             ),
         )
@@ -64,8 +67,9 @@ class KiPressekonferenzTest {
         val aussage = KiPressekonferenz.aussage(
             bericht(
                 ergebnis = "1:0",
+                heimNamen = listOf("Müller"),
                 ereignisse = listOf(
-                    BerichtEreignis(minute = "55", text = "Elfmeter", typ = BerichtEreignisTyp.ELFMETER),
+                    BerichtEreignis(minute = "55", text = "Müller verwandelt einen Elfmeter", typ = BerichtEreignisTyp.ELFMETER),
                 ),
             ),
         )
@@ -109,6 +113,38 @@ class KiPressekonferenzTest {
         val gast = KiPressekonferenz.aussage(bericht(ergebnis = "1:1"), KiPressekonferenz.Trainer.GAST)
 
         assertFalse(heim.ganz() == gast.ganz())
+        assertFalse(heim.text == gast.text)
+        assertFalse(heim.ueberschrift == gast.ueberschrift)
+    }
+
+    @Test
+    fun heimUndGasttrainerUnterscheidenSichInJedemAusgang() {
+        listOf("2:1", "0:3", "1:1", null).forEach { ergebnis ->
+            val heim = KiPressekonferenz.aussage(bericht(ergebnis = ergebnis), KiPressekonferenz.Trainer.HEIM)
+            val gast = KiPressekonferenz.aussage(bericht(ergebnis = ergebnis), KiPressekonferenz.Trainer.GAST)
+
+            assertFalse("Überschriften gleich bei $ergebnis", heim.ueberschrift == gast.ueberschrift)
+            assertFalse("Texte gleich bei $ergebnis", heim.text == gast.text)
+            assertFalse("Beiträge gleich bei $ergebnis", heim.ganz() == gast.ganz())
+        }
+    }
+
+    @Test
+    fun roteKarteWirdJeNachTeamUnterschiedlichKommentiert() {
+        val ereignisse = listOf(
+            BerichtEreignis(minute = "60", text = "Müller kassiert dafür die Rote Karte", typ = BerichtEreignisTyp.ROTE_KARTE),
+        )
+        val heim = KiPressekonferenz.aussage(
+            bericht(ergebnis = "1:1", heimNamen = listOf("Müller"), ereignisse = ereignisse),
+            KiPressekonferenz.Trainer.HEIM,
+        )
+        val gast = KiPressekonferenz.aussage(
+            bericht(ergebnis = "1:1", heimNamen = listOf("Müller"), ereignisse = ereignisse),
+            KiPressekonferenz.Trainer.GAST,
+        )
+
+        assertTrue(heim.text.contains("gegen uns"))
+        assertTrue(gast.text.contains("gegen den Gegner"))
     }
 
     @Test
@@ -124,6 +160,8 @@ class KiPressekonferenzTest {
         ergebnis: String?,
         ereignisse: List<BerichtEreignis> = emptyList(),
         ballbesitz: String? = null,
+        heimNamen: List<String> = emptyList(),
+        gastNamen: List<String> = emptyList(),
     ): SpielBericht = SpielBericht(
         saison = 25,
         zat = 12,
@@ -132,6 +170,11 @@ class KiPressekonferenzTest {
         ergebnis = ergebnis,
         ereignisse = ereignisse,
         statistik = ballbesitz?.let { BerichtStatistik(ballbesitz = it) },
+        heimAufstellung = aufstellung(heimNamen),
+        gastAufstellung = aufstellung(gastNamen),
         url = "test",
     )
+
+    private fun aufstellung(namen: List<String>): BerichtAufstellung =
+        BerichtAufstellung(spieler = namen.map { BerichtSpieler(name = it) })
 }
