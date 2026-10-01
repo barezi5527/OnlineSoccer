@@ -342,4 +342,45 @@ class TeamRepositoryParseTest {
             vertraege.first { it.pid == 8L }.position,
         )
     }
+
+    // --- Team-IDs (für den 1|2-Button) ---
+
+    @Test
+    fun teamIds_stammenAusTabellenplatzUndZweitteamLink() {
+        val ids = repo.parseTeamIds(dump("showteam_mit_zweitteam"))
+
+        assertEquals(3449L, ids?.hauptTeamId)
+        assertEquals(1216L, ids?.zweitTeamId)
+    }
+
+    @Test
+    fun teamIds_wechselnDieRollenWennTeam2AktivIst() {
+        // Auf Team 2 zeigt „tabellenplatz" auf 1216 und der Link heißt
+        // „Mein Hauptteam" (3449) — die Erkennung folgt dem Text, nicht der ID.
+        val ids = repo.parseTeamIds(dump("showteam_mit_hauptteam_link"))
+
+        assertEquals(1216L, ids?.hauptTeamId)
+        assertEquals(3449L, ids?.zweitTeamId)
+    }
+
+    @Test
+    fun teamIds_sindNullOhneZweitteam() {
+        val ids = repo.parseTeamIds(dump("showteam_s0"))
+
+        assertEquals(3449L, ids?.hauptTeamId)
+        assertEquals(null, ids?.zweitTeamId)
+    }
+
+    @Test
+    fun teamIds_ignoriertStPhpLinksFremderVereine() {
+        // Fremdvereins-Links (Tabellen) dürfen nicht als Zweitteam gelten.
+        val html = dump("showteam_mit_zweitteam").replace(
+                "<a href=\"st.php?c=1216\" onClick=\"teaminfo(1216); return false;\">Mein Zweitteam</a>",
+                "<a href=\"st.php?c=1382\">SV Beispiel</a>",
+            )
+        val ids = repo.parseTeamIds(html)
+
+        assertEquals(3449L, ids?.hauptTeamId)
+        assertEquals(null, ids?.zweitTeamId)
+    }
 }

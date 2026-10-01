@@ -8,6 +8,17 @@ data class TeamInfoMenuEintrag(
     val tabellenplatzTeamId: Long? = null,
 )
 
+/**
+ * IDs von Haupt- und Zweitteam, aus `showteam.php?s=0` ermittelt.
+ *
+ * `zweitTeamId == null` ⇒ der Account besitzt kein Zweitteam, der 1|2-Button
+ * bleibt dann komplett unsichtbar (kein ausgegrautes Icon).
+ */
+data class TeamIds(
+    val hauptTeamId: Long? = null,
+    val zweitTeamId: Long? = null,
+)
+
 /** Zeile des Saisonplans (`showteam.php?s=6`). */
 data class SaisonplanEintrag(
     val zat: String,

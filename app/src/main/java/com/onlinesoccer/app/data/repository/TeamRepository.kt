@@ -27,6 +27,7 @@ import com.onlinesoccer.app.data.model.StadionPlanDaten
 import com.onlinesoccer.app.data.model.StaerkeZeile
 import com.onlinesoccer.app.data.model.StatistikZeile
 import com.onlinesoccer.app.data.model.Teaminfo
+import com.onlinesoccer.app.data.model.TeamIds
 import com.onlinesoccer.app.data.model.TeamInfoMenuEintrag
 import com.onlinesoccer.app.data.model.TeamTrainer
 import com.onlinesoccer.app.data.model.TransferhistorieBlock
@@ -1305,6 +1306,49 @@ class TeamRepository @Inject constructor(
             safeGet(if (teamId != null && teamId > 0) "${OsApi.BASE_URL}/st.php?c=$teamId" else "${OsApi.BASE_URL}/showteam.php?s=0")
                 ?.let { parseTeaminformationenMenu(it) }.orEmpty()
         }
+
+    /**
+     * Lädt die Team-IDs (Haupt-/Zweitteam) aus `showteam.php?s=0`.
+     * Einmalig nach dem Login für den 1|2-Button; nicht gecacht, weil die
+     * Server-Session die Wahrheit ist (siehe Plan-Regel 1).
+     */
+    suspend fun ladeTeamIds(): TeamIds? = withContext(Dispatchers.IO) {
+        safeGet("${OsApi.BASE_URL}/showteam.php?s=0")?.let { parseTeamIds(it) }
+    }
+
+    /**
+     * Ermittelt die IDs von Haupt- und Zweitteam aus `showteam.php?s=0`.
+     *
+     * Nötig, um den aktiven Index des 1|2-Buttons zu bestimmen: `haupt.php`
+     * nennt nur das gerade aktive Team, nicht die Partner-ID.
+     *
+     * Beide Zugriffe sind sprachneutral:
+     * - **Hauptteam** über `javascript:tabellenplatz(<id>)` — der Menüpunkt
+     *   „Tabellenplätze" der eigenen Mannschaft.
+     * - **Zweitteam** über `st.php?c=<id>` mit Ankertext „Mein Zweitteam" bzw.
+     *   „Mein Hauptteam". Auf dieser Seite gibt es `st.php?c=`-Links auch für
+     *   Fremdvereine, deshalb wird **nur** über den Ankertext gefiltert, nicht
+     *   über das bloße Vorkommen des Musters.
+     *
+     * Ohne Zweitteam ⇒ `zweitTeamId == null`.
+     */
+    internal fun parseTeamIds(html: String): TeamIds? {
+        val doc = Jsoup.parse(html)
+        val hauptTeamId = doc.selectFirst("a[href*='tabellenplatz(']")
+            ?.attr("href")
+            ?.let { Regex("""tabellenplatz\((\d+)\)""").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+        // `ownText()` statt `text()`: der Link ist in einen writePM-Anker
+        // verschachtelt, `text()` würde den Fremdtext mitziehen.
+        val zweitTeamId = doc.select("a[href*=st.php?c=]")
+            .firstOrNull { anker ->
+                val text = anker.ownText().trim()
+                text.equals("Mein Zweitteam", ignoreCase = true) ||
+                    text.equals("Mein Hauptteam", ignoreCase = true)
+            }
+            ?.attr("href")
+            ?.let { Regex("""[?&]c=(\d+)""").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+        return TeamIds(hauptTeamId = hauptTeamId, zweitTeamId = zweitTeamId)
+    }
 
     /** Saisonplan, optional für eine gewählte Saison. */
     suspend fun ladeSaisonplan(saison: Int? = null, teamId: Long? = null): SaisonplanDaten =

@@ -70,16 +70,48 @@ class AppViewModel @Inject constructor(
     private val _ungeleseneNachrichten = MutableStateFlow(0)
     val ungeleseneNachrichten: StateFlow<Int> = _ungeleseneNachrichten.asStateFlow()
 
+    /**
+     * ID des Zweitteams, `null` wenn der Account keins besitzt.
+     *
+     * Wird **einmalig** nach dem Anmelden geladen und bewusst nicht
+     * persistiert: ein stiller Re-Login erzeugt eine neue PHP-Session, in der
+     * der Server auf das Hauptteam zurücksetzt — ein gespeicherter Wert wäre
+     * nach jedem Kaltstart systematisch falsch.
+     */
+    private val _zweitTeamId = MutableStateFlow<Long?>(null)
+    val zweitTeamId: StateFlow<Long?> = _zweitTeamId.asStateFlow()
+
     init {
         viewModelScope.launch {
             sessionManager.restore()
             if (sessionManager.state.value == AuthUiState.SignedIn) {
                 pruefeVertragslaufzeiten()
+                ladeTeamIds()
             } else {
                 dashboardRepository.invalidate()
             }
             starteUngelesenePolling()
+            beobachteAnmeldung()
         }
+    }
+
+    /**
+     * Lädt die Team-IDs bei jedem Übergang in den Angemeldet-Zustand, aber
+     * **nicht** bei jedem Screenwechsel. Gast-/Demo-Sitzungen haben kein
+     * Zweitteam, dort bleibt der Wert `null`.
+     */
+    private suspend fun beobachteAnmeldung() {
+        sessionManager.state.collect { zustand ->
+            when (zustand) {
+                AuthUiState.SignedIn -> ladeTeamIds()
+                AuthUiState.SignedOut, AuthUiState.SignedInDemo -> _zweitTeamId.value = null
+                AuthUiState.Restoring -> Unit
+            }
+        }
+    }
+
+    private suspend fun ladeTeamIds() {
+        _zweitTeamId.value = runCatching { teamRepository.ladeTeamIds()?.zweitTeamId }.getOrNull()
     }
 
     /** Pollt periodisch die Anzahl ungelesener PMs für den Briefumschlag-Badge. */
@@ -169,6 +201,8 @@ class AppViewModel @Inject constructor(
     fun logout() {
         _vertragsWarnung.value = emptyList()
         _ungeleseneNachrichten.value = 0
+        // Nicht persistiert (Regel 1) — der Wert gehört zur alten Anmeldung.
+        _zweitTeamId.value = null
         viewModelScope.launch {
             dashboardRepository.invalidate()
             sessionManager.logout()
