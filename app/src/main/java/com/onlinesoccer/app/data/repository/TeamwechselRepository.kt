@@ -40,17 +40,18 @@ class TeamwechselRepository @Inject constructor(
     private val laeuft = AtomicBoolean(false)
 
     /**
-     * Führt den Toggle genau einmal aus.
+     * Führt den Toggle genau einmal aus und reicht die Antwort durch.
      *
-     * `true` = der Server hat geantwortet (der Wechsel **kann** stattgefunden
-     * haben — geprüft wird das in [aktivesTeamAusHtml]), `false` = Fehler,
-     * Abbruch oder bereits laufender Toggle. Ein Fehler wird nie durch einen
-     * zweiten Versuch kompensiert: genau das wäre ein Rück-Toggle.
+     * `null` = Fehler, Abbruch oder bereits laufender Toggle — es wurde dann
+     * **nichts** bestätigt. Der HTML-Text wird bewusst nicht hier geparst: die
+     * Identität des neuen Teams liest der Aufrufer mit [aktivesTeamAusHtml] und
+     * bewertet sie über [werteAus]. Ein Fehler wird nie durch einen zweiten
+     * Versuch kompensiert: genau das wäre ein Rück-Toggle.
      */
-    suspend fun teamwechselDurchfuehren(): Boolean {
-        if (!laeuft.compareAndSet(false, true)) return false
+    suspend fun teamwechselDurchfuehren(): String? {
+        if (!laeuft.compareAndSet(false, true)) return null
         return try {
-            holeToggleHtml() != null
+            holeToggleHtml()
         } finally {
             laeuft.set(false)
         }

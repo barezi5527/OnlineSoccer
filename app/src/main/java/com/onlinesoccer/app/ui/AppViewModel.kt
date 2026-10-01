@@ -6,12 +6,15 @@ import com.onlinesoccer.app.core.auth.AuthUiState
 import com.onlinesoccer.app.core.auth.LoginResult
 import com.onlinesoccer.app.core.auth.SessionManager
 import com.onlinesoccer.app.core.storage.TokenStorage
+import com.onlinesoccer.app.data.model.TeamwechselErgebnis
 import com.onlinesoccer.app.data.model.VertragZeile
 import com.onlinesoccer.app.data.repository.DashboardRepository
 import com.onlinesoccer.app.data.repository.PmRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
+import com.onlinesoccer.app.data.repository.TeamwechselRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +39,61 @@ internal fun vertraegeKurzVorAuslauf(
     zeile.laufzeit?.trim()?.toIntOrNull()?.let { it <= schwelle } == true
 }
 
+/**
+ * Zustand des 1|2-Buttons.
+ *
+ * [aktiverIndex] ist **immer** aus dem Serverbefund abgeleitet und wird nie
+ * persistiert: ein stiller Re-Login setzt die PHP-Session auf das Hauptteam
+ * zurück, ein gespeicherter Index wäre nach jedem Kaltstart falsch.
+ */
+internal data class TeamwechselUiState(
+    /** Der Server kennt einen `changetosecond`-Anker, d. h. es gibt ein Zweitteam. */
+    val wechselMoeglich: Boolean = false,
+    /** Anzeigename des Zielteams (aus „Zu X wechseln"). */
+    val zweitTeamName: String? = null,
+    /** Team-ID des gerade aktiven Teams, aus dem Serverbefund. */
+    val teamId: Long? = null,
+    /** Anzeigename des gerade aktiven Teams, aus dem Dashboard-Befund. */
+    val teamName: String? = null,
+    /**
+     * Team-ID des Zweitteams, aus `showteam.php` **beim Anmelden** ermittelt.
+     *
+     * ⚠️ `parseTeamIds` ist rollenbezogen: steht das Zweitteam aktiv, meldet die
+     * Seite „Mein Hauptteam" und liefert 3449. Der Wert darf deshalb **nicht**
+     * nach einem Wechsel neu gelesen werden, sonst springt [aktiverIndex] auf 1
+     * zurück, obwohl Team 2 aktiv ist.
+     */
+    val zweitTeamId: Long? = null,
+    /** Ein Wechsel läuft gerade — der Button ist dann deaktiviert. */
+    val laeuft: Boolean = false,
+    /** Kurzmeldung für die Snackbar (Erfolg nennt den neuen Teamnamen). */
+    val meldung: String? = null,
+) {
+    /**
+     * 1 = Hauptteam, 2 = Zweitteam.
+     *
+     * Default 1, weil der Login serverseitig immer auf dem Hauptteam landet.
+     * Ohne bekannte Zweitteam-ID gibt es nur „1" — ohne Zweitteam wird der
+     * Button gar nicht gerendert.
+     */
+    val aktiverIndex: Int get() = if (zweitTeamId != null && teamId == zweitTeamId) 2 else 1
+}
+
+/**
+ * Kurzmeldung zum Teamwechsel für die Snackbar.
+ *
+ * ⚠️ Erfolg nennt den Teamnamen aus dem **Refetch** ([TeamwechselErgebnis.Erfolgreich]),
+ * nicht den Zweitteam-Namen aus dem `changetosecond`-Link: der benennt nach dem
+ * Wechsel das eben **verlassene** Team.
+ */
+internal fun teamwechselMeldung(ergebnis: TeamwechselErgebnis): String = when (ergebnis) {
+    is TeamwechselErgebnis.Erfolgreich ->
+        ergebnis.teamName?.let { "Jetzt aktiv: $it" } ?: "Teamwechsel erfolgreich."
+    TeamwechselErgebnis.Unveraendert ->
+        "Der Server meldet weiterhin dasselbe Team – es wurde nicht gewechselt."
+    is TeamwechselErgebnis.Fehler -> ergebnis.text
+}
+
 @HiltViewModel
 class AppViewModel @Inject constructor(
     private val sessionManager: SessionManager,
@@ -43,6 +101,7 @@ class AppViewModel @Inject constructor(
     private val teamRepository: TeamRepository,
     private val pmRepository: PmRepository,
     private val dashboardRepository: DashboardRepository,
+    private val teamwechselRepository: TeamwechselRepository,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthUiState> = sessionManager.state
@@ -81,12 +140,15 @@ class AppViewModel @Inject constructor(
     private val _zweitTeamId = MutableStateFlow<Long?>(null)
     val zweitTeamId: StateFlow<Long?> = _zweitTeamId.asStateFlow()
 
+    /** Zustand des 1|2-Buttons inkl. Serverbefund. */
+    private val _teamwechsel = MutableStateFlow(TeamwechselUiState())
+    internal val teamwechsel: StateFlow<TeamwechselUiState> = _teamwechsel.asStateFlow()
+
     init {
         viewModelScope.launch {
             sessionManager.restore()
             if (sessionManager.state.value == AuthUiState.SignedIn) {
                 pruefeVertragslaufzeiten()
-                ladeTeamIds()
             } else {
                 dashboardRepository.invalidate()
             }
@@ -99,19 +161,117 @@ class AppViewModel @Inject constructor(
      * Lädt die Team-IDs bei jedem Übergang in den Angemeldet-Zustand, aber
      * **nicht** bei jedem Screenwechsel. Gast-/Demo-Sitzungen haben kein
      * Zweitteam, dort bleibt der Wert `null`.
+     *
+     * Deckt auch den Kaltstart ab: [kotlinx.coroutines.flow.StateFlow.collect]
+     * liefert den aktuellen Zustand sofort mit — deshalb wird `ladeTeamIds()`
+     * hier **nicht** zusätzlich im `init` aufgerufen.
      */
     private suspend fun beobachteAnmeldung() {
         sessionManager.state.collect { zustand ->
             when (zustand) {
                 AuthUiState.SignedIn -> ladeTeamIds()
-                AuthUiState.SignedOut, AuthUiState.SignedInDemo -> _zweitTeamId.value = null
+                AuthUiState.SignedOut, AuthUiState.SignedInDemo -> teamwechselZuruecksetzen()
                 AuthUiState.Restoring -> Unit
             }
         }
     }
 
     private suspend fun ladeTeamIds() {
-        _zweitTeamId.value = runCatching { teamRepository.ladeTeamIds()?.zweitTeamId }.getOrNull()
+        val ids = runCatching { teamRepository.ladeTeamIds() }.getOrNull()
+        val zweitId = ids?.zweitTeamId
+        _zweitTeamId.value = zweitId
+        _teamwechsel.value = _teamwechsel.value.copy(
+            zweitTeamId = zweitId,
+            wechselMoeglich = zweitId != null,
+            // Beim Anmelden steht der Server garantiert auf dem Hauptteam (ein
+            // stiller Re-Login setzt zurück), `hauptTeamId` ist hier also der
+            // 1:1-Befund für das aktive Team — und damit zugleich der
+            // Vorzustand, den `wechsleTeam()` für den ersten Vergleich braucht.
+            teamId = ids?.hauptTeamId,
+            teamName = null,
+        )
+    }
+
+    /** Gast-/Abmeldezustand: kein Zweitteam, der 1|2-Button bleibt unsichtbar. */
+    private fun teamwechselZuruecksetzen() {
+        _zweitTeamId.value = null
+        _teamwechsel.value = TeamwechselUiState()
+    }
+
+    /**
+     * Wechselt zwischen Haupt- und Zweitteam — **ein** Klick, **ein**
+     * Schreibvorgang, **ein** Refetch.
+     *
+     * Kein Optimismus: der Button zeigt den neuen Wert erst, wenn der Server
+     * ihn bestätigt hat. Der Backstack-Reset und das Neu-Binden der
+     * ViewModel-Caches passieren in der UI (Plan T26/T27), dieser Pfad liefert
+     * nur den Serverstand.
+     */
+    fun wechsleTeam() {
+        // Regel 6: `laeuft` wird vor dem `launch` gesetzt — zwei Klicks in
+        // derselben Frame passieren sonst beide die Prüfung. Zusätzlich
+        // dedupliziert `TeamwechselRepository` den Toggle selbst.
+        if (_teamwechsel.value.laeuft) return
+        _teamwechsel.value = _teamwechsel.value.copy(laeuft = true, meldung = null)
+        viewModelScope.launch {
+            try {
+                fuehreWechselAus()
+            } catch (e: CancellationException) {
+                // Kein Fehler: ein App-Kill mitten im Toggle ist harmlos, der
+                // nächste Start liest den Server. Nur die Sperre aufräumen.
+                _teamwechsel.value = _teamwechsel.value.copy(laeuft = false)
+                throw e
+            }
+        }
+    }
+
+    private suspend fun fuehreWechselAus() {
+        val stand = _teamwechsel.value
+        // 1) Vorzustand aus dem letzten Serverbefund — nie persistiert (Regel 1).
+        val vorher = stand.teamId?.let { it to stand.teamName }
+
+        // 2) Genau ein Schreibvorgang (Regel 3). `null` = Fehler/Abbruch/laufend;
+        //    es wird **nicht** nachgefasst, das wäre ein Rück-Toggle.
+        val antwort = teamwechselRepository.teamwechselDurchfuehren()
+
+        // 3) Cache leeren, bevor irgendjemand neu befüllt: der Toggle lief außerhalb
+        //    von `DashboardRepository`, sonst könnte hier der Team-1-Stand
+        //    liegen bleiben. `invalidate()` und `fetchDashboard` teilen denselben
+        //    Mutex — ein laufender Fetch kann also nicht dazwischen einschieben.
+        dashboardRepository.invalidate()
+
+        // 4) Genau ein Refetch, unabhängig vom Toggle-Ergebnis: der gemeinsame
+        //    Cache soll in jedem Fall den Stand des aktiven Teams zeigen.
+        val refreshed = try {
+            dashboardRepository.fetchDashboard(forceRefresh = true)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+
+        // 5) Nachzustand = Server-Wahrheit. Der Refetch ist die belastbarste
+        //    Quelle, die Toggle-Antwort die unabhängige zweite — sie greift, wenn
+        //    der Refetch ausfiel. ⚠️ Nicht `refreshed.teamwechsel.zweitTeamName`:
+        //    das ist das Team, in das man jetzt wechseln *könnte*.
+        val nachher = refreshed?.teamId?.toLong()?.let { it to refreshed.teamName }
+            ?: antwort?.let { teamwechselRepository.aktivesTeamAusHtml(it) }
+
+        // 6) Bewertung: „Erfolg" heißt, der Server meldet jetzt ein anderes Team.
+        val ergebnis = teamwechselRepository.werteAus(vorher, nachher)
+
+        // Auf den aktuellen Stand schreiben, nicht auf [stand]: zwischen Toggle
+        // und Refetch suspendiert der Pfad, da kann ein Logout dazwischenliegen.
+        val neu = _teamwechsel.value
+        _teamwechsel.value = neu.copy(
+            laeuft = false,
+            // Unbekannter Befund ⇒ Vorwert behalten statt auf null zu setzen.
+            teamId = nachher?.first ?: neu.teamId,
+            teamName = nachher?.second ?: neu.teamName,
+            wechselMoeglich = refreshed?.teamwechsel?.wechselMoeglich ?: neu.wechselMoeglich,
+            zweitTeamName = refreshed?.teamwechsel?.zweitTeamName ?: neu.zweitTeamName,
+            meldung = teamwechselMeldung(ergebnis),
+        )
     }
 
     /** Pollt periodisch die Anzahl ungelesener PMs für den Briefumschlag-Badge. */
@@ -202,7 +362,7 @@ class AppViewModel @Inject constructor(
         _vertragsWarnung.value = emptyList()
         _ungeleseneNachrichten.value = 0
         // Nicht persistiert (Regel 1) — der Wert gehört zur alten Anmeldung.
-        _zweitTeamId.value = null
+        teamwechselZuruecksetzen()
         viewModelScope.launch {
             dashboardRepository.invalidate()
             sessionManager.logout()
