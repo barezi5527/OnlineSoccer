@@ -22,6 +22,12 @@ data class DashboardData(
      * Abrechnung den Verein verlässt (Text des `ju.php`-Links auf haupt.php).
      */
     val jugendHinweis: String? = null,
+    /**
+     * Zweitteam-Befund aus dem `changetosecond`-Anker der Begrüßungszelle.
+     * `null` nur bei Aufrufern, die das Feld nicht befüllen (Default) — der
+     * Parser liefert immer eine Instanz, auch ohne Zweitteam.
+     */
+    val teamwechsel: TeamwechselInfo? = null,
 ) {
     data class LabeledValue(val label: String, val value: String)
 

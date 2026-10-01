@@ -1,11 +1,15 @@
 package com.onlinesoccer.app.data.repository
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DashboardRepositoryParseTest {
     private val repo = DashboardRepository(okhttp3.OkHttpClient())
+
+    private fun dump(name: String): String =
+        File("src/test/resources/dumps/$name.html").readText()
 
     @Test
     fun berichtUrlVerwendetHeimGastZatUndSaison() {
@@ -126,5 +130,42 @@ class DashboardRepositoryParseTest {
     fun jugendHinweisIstLeerOhneWarnung() {
         val data = repo.parse(grundHtml)
         assertEquals(null, data.jugendHinweis)
+    }
+
+    // --- Zweitteam (1|2-Button) ---
+
+    @Test
+    fun teamwechselTeam1Aktiv() {
+        val data = repo.parse(dump("haupt_team1_aktiv"))
+        assertEquals(true, data.teamwechsel?.wechselMoeglich)
+        assertEquals("NK Kamen Sesvete", data.teamwechsel?.zweitTeamName)
+        // Der <br /> im Anker darf das Begrüßungs-/Liga-Parsing nicht verschieben.
+        assertEquals("SC Viktoria Ulm", data.teamName)
+        assertEquals(3449, data.teamId)
+    }
+
+    @Test
+    fun teamwechselTeam2Aktiv() {
+        val data = repo.parse(dump("haupt_team2_aktiv"))
+        assertEquals(true, data.teamwechsel?.wechselMoeglich)
+        assertEquals("SC Viktoria Ulm", data.teamwechsel?.zweitTeamName)
+        assertEquals("NK Kamen Sesvete", data.teamName)
+        assertEquals(1216, data.teamId)
+    }
+
+    @Test
+    fun teamwechselFehltOhneZweitteam() {
+        val data = repo.parse(dump("haupt_ohne_zweitteam"))
+        assertEquals(false, data.teamwechsel?.wechselMoeglich)
+        assertEquals(null, data.teamwechsel?.zweitTeamName)
+        assertEquals("SC Viktoria Ulm", data.teamName)
+    }
+
+    @Test
+    fun teamwechselLeererAnchorErkannt() {
+        // Anker ohne Text (GrundHtml) – Erkennung darf nicht am Linktext hängen.
+        val data = repo.parse(grundHtml)
+        assertEquals(true, data.teamwechsel?.wechselMoeglich)
+        assertEquals(null, data.teamwechsel?.zweitTeamName)
     }
 }

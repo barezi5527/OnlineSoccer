@@ -4,6 +4,7 @@ import com.onlinesoccer.app.core.network.OsApi
 import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.SessionGuard
 import com.onlinesoccer.app.data.model.DashboardData
+import com.onlinesoccer.app.data.model.TeamwechselInfo
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -117,6 +118,22 @@ class DashboardRepository @Inject constructor(
             ?.takeIf { it.contains("Jugendspieler", ignoreCase = true) && it.contains("verlassen", ignoreCase = true) }
             ?.trim()
 
+        // Zweitteam-Befund: Der einzige Toggle der Website ist der Anker
+        // `changetosecond` in der Begrüßungszelle. Erkennung läuft bewusst
+        // ausschließlich über das href, nie über den Linktext — Anker ohne
+        // Text kommen auf dem Server vor (siehe DashboardRepositoryParseTest).
+        val wechselAnker = doc.selectFirst("a[href*=\"changetosecond\"]")
+        val zweitTeamName = wechselAnker
+            ?.text()
+            ?.replace('\u00A0', ' ')
+            ?.replace(WEISSRAUM, " ")
+            ?.trim()
+            ?.let { WECHSELTEXT.find(it)?.groupValues?.get(1) }
+        val teamwechsel = TeamwechselInfo(
+            wechselMoeglich = wechselAnker != null,
+            zweitTeamName = zweitTeamName,
+        )
+
         fun stat(label: String): String? {
             val statsRow = doc.selectFirst("td:matchesOwn(^Logins\\s*$)")?.parent() ?: return null
             val labels = statsRow.children().map { it.ownText().trim() }
@@ -192,6 +209,7 @@ class DashboardRepository @Inject constructor(
             teamLogoUrl = teamLogoUrl,
             forumUrl = forumUrl,
             jugendHinweis = jugendHinweis,
+            teamwechsel = teamwechsel,
         )
     }
 
@@ -217,5 +235,10 @@ class DashboardRepository @Inject constructor(
     companion object {
         /** Frischhaltefenster des Dashboard-Caches in Millisekunden. */
         private const val FRISCH_MS = 30_000L
+
+        /** Anzeigename des Zielteams aus dem Linktext „Zu X wechseln". */
+        private val WECHSELTEXT = Regex("""^\s*Zu\s+(.+?)\s+wechseln\s*$""")
+
+        private val WEISSRAUM = Regex("""\s+""")
     }
 }
