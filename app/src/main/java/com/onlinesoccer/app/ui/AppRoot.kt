@@ -30,9 +30,13 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -46,6 +50,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -253,6 +259,8 @@ private fun MainScaffold(
     val currentRoute = backStackEntry?.destination?.route
     var dashboardRefreshTrigger by remember { mutableStateOf(0) }
     val ungeleseneNachrichten by appViewModel.ungeleseneNachrichten.collectAsStateWithLifecycle()
+    val teamwechsel by appViewModel.teamwechsel.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
     var letzteRoute by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(currentRoute) {
@@ -261,6 +269,17 @@ private fun MainScaffold(
         if (vorher == Routes.NACHRICHTEN && currentRoute != Routes.NACHRICHTEN) {
             appViewModel.aktualisiereUngelesene()
         }
+    }
+
+    // Teamwechsel-Meldung als Snackbar über dem NavHost, nicht als Dialog: der
+    // Wechsel ist ein mutierender Server-Call, und ab T26 springt die Ansicht
+    // danach auf das Dashboard zurück — eine seitenlokale Meldung wäre dann weg.
+    // SnackbarHostState überlebt die Navigation, ein Dialog würde den Nutzer
+    // zum Quittieren des Wechsels aufhalten.
+    LaunchedEffect(teamwechsel.meldung) {
+        val text = teamwechsel.meldung ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(text, duration = SnackbarDuration.Short)
+        appViewModel.teamwechselMeldungQuittiert()
     }
 
     fun parseSid(sid: String?): String? = sid?.takeIf { it.isNotBlank() }
@@ -321,6 +340,26 @@ private fun MainScaffold(
                             Text("Teaminformationen")
                         }
                     }
+                    // 1|2 = Teamwechsel zwischen Haupt- und Zweitteam. Angezeigt
+                    // wird der **Serverbefund**, nicht ein Wunsch — ohne Zweitteam
+                    // wird gar nichts gerendert (kein ausgegrautes Icon, keine
+                    // leere Leiste), in der Gastsitzung ebenfalls nicht.
+                    // Plan T26/T33: Nach erfolgreichem Toggle wird der Backstack
+                    // hier noch nicht zurückgesetzt.
+                    if (teamwechsel.wechselMoeglich && !demo) {
+                        val index = teamwechsel.aktiverIndex
+                        IconToggleButton(
+                            checked = index == 2,
+                            enabled = !teamwechsel.laeuft,
+                            onCheckedChange = { appViewModel.wechsleTeam() },
+                            modifier = Modifier.semantics {
+                                contentDescription =
+                                    "Team $index aktiv – zwischen Haupt- und Zweitteam wechseln"
+                            },
+                        ) {
+                            Text(index.toString())
+                        }
+                    }
                     IconButton(onClick = onThemeCycle) {
                         Icon(
                             imageVector = when {
@@ -363,6 +402,7 @@ private fun MainScaffold(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             ResponsiveNavigationBar(
                 currentRoute = currentRoute,

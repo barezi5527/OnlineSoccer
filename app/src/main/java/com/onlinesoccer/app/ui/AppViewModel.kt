@@ -199,6 +199,20 @@ class AppViewModel @Inject constructor(
     }
 
     /**
+     * Meldung quittieren, sobald die Snackbar sie angezeigt hat.
+     *
+     * Ohne das würde dieselbe Meldung bei jeder Rekombination — und nach einer
+     * Rotation erneut — wieder erscheinen. Das Leeren ist zugleich der Grund,
+     * warum zwei gleichlautende Meldungen hintereinander trotzdem wieder
+     * erscheinen: der Wert läuft zwischendurch auf `null`.
+     */
+    fun teamwechselMeldungQuittiert() {
+        if (_teamwechsel.value.meldung != null) {
+            _teamwechsel.value = _teamwechsel.value.copy(meldung = null)
+        }
+    }
+
+    /**
      * Wechselt zwischen Haupt- und Zweitteam — **ein** Klick, **ein**
      * Schreibvorgang, **ein** Refetch.
      *
