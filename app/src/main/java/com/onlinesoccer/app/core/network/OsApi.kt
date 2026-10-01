@@ -18,6 +18,9 @@ object OsApi {
     const val MAIN = "$BASE_URL/haupt.php"
     const val INDEX = "$BASE_URL/index.php"
 
+    /** Reiner Session-Toggle: jeder Aufruf schaltet um. Kein Ziel, kein 'false'. */
+    const val TEAMWECHSEL = "$BASE_URL/haupt.php?changetosecond=true"
+
     /**
      * Basis-Pfad eines Vereinswappens (`images/wappen/00000080…`).
      * Die Dateiendungen variieren je Verein (png/gif/jpg) – siehe [wappenUrls].
