@@ -219,7 +219,7 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.SPIELER -> "Spielerkarte"
         Routes.VEREIN -> "Verein"
         Routes.VEREIN_BEREICH -> "Verein"
-        Routes.TEAMINFO -> "Teaminformationen"
+        Routes.TEAMINFO -> ""
         Routes.TEAMINFO_CONTENT -> label?.takeIf { it.isNotBlank() }?.let { Uri.decode(it) } ?: "Teaminformationen"
         Routes.BERICHT -> "Spielbericht"
         Routes.ZAT_REPORT -> "ZAT-Report"
@@ -233,7 +233,7 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.TRANSFERS -> "Transfers"
         Routes.TRANSFER_LISTE -> "Transferliste"
         Routes.TRANSFER_MARKT -> "Transfermarkt"
-        Routes.VERSTEIGERUNGSMARKT -> "Versteigerungsmarkt"
+        Routes.VERSTEIGERUNGSMARKT -> "VM"
         Routes.VM_SETZEN -> "Auf den VM setzen"
         Routes.EIGENE_GEBOTE -> "Eigene Gebote"
         Routes.LEIH_UEBERSICHT -> "Leihspieler Übersicht"
@@ -241,7 +241,7 @@ private fun titelFuer(route: String?, demo: Boolean = false, art: String? = null
         Routes.LETZTE_AKTIONEN -> LetzteAktionenArt.vonRouteId(art.orEmpty())?.titel ?: "Letzte Transfers"
         else -> "Online Soccer"
     }
-    return if (demo) "$basis · Demo" else basis
+    return if (demo && basis.isNotBlank()) "$basis · Demo" else basis
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
