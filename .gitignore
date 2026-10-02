@@ -8,6 +8,27 @@ release.keystore
 *.jks
 keystore.properties
 
+# Schluessel und Zertifikate jeder Art - niemals ins Repo
+*.keystore
+*.p12
+*.pfx
+*.jceks
+*.asc
+*.gpg
+*.ppk
+id_rsa*
+*.key
+
+# API-Schluessel und Dienst-Konfiguration - niemals ins Repo
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+secrets.properties
+secrets.local.properties
+.env
+.env.*
+*.env
+
 # Lokale Analyse-Cookies
 .cookies/
 

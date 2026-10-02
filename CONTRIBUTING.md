@@ -38,8 +38,31 @@ Diese drei Befehle müssen sauber durchlaufen:
 ./gradlew :app:lintDebug             # statische Analyse
 ```
 
+**Das prüft die CI automatisch** – bei jedem Push und jedem Pull Request laufen
+diese Schritte auf GitHub. Ein roter Status blockiert den Merge. Der
+Lint-Bericht wird als Artefakt hochgeladen, sodass du ihn im PR herunterladen
+kannst.
+
+Die CI baut zusätzlich einen Release-Build **ohne Keystore**. Sie hat
+absichtlich keinen Zugriff auf Signiermaterial: `permissions` steht auf
+`contents: read`, es gibt keinen `secrets`-Block. Eine echte Signierung
+erfolgt nur lokal beim Maintainer.
+
 Wenn etwas nicht grün ist, komm trotzdem – aber sag im PR dazu, was noch
 nicht funktioniert.
+
+### Zugangsdaten gehören niemals ins Repo
+
+Vor jedem Commit prüft die CI automatisch, ob Secret-Dateien oder
+Secret-Muster im Versionsstand liegen. Der Lauf ist lokal reproduzierbar:
+
+```bash
+./.github/scripts/check-no-secrets.sh
+```
+
+Die `.gitignore` deckt Keystore, Zertifikate, `.env` und
+`google-services.json` ab. Eine eigene `keystore.properties` legst du nur lokal
+an – sie wird nie committet.
 
 ## Code-Stil
 

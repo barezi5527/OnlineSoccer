@@ -1,0 +1,100 @@
+name: CI
+
+# Prüft bei jedem Pull Request und bei jedem Push auf main:
+#   1. dass keine Zugangsdaten im Versionsstand liegen
+#   2. dass die 34 Testklassen grün sind
+#   3. dass Lint sauber ist
+#   4. dass Debug- und Release-Build ohne Keystore funktionieren
+#
+# Dieser Workflow verwendet bewusst KEINE Geheimnisse. Es gibt keinen
+# `secrets`-Block, und `permissions` steht auf contents: read. Ein Release-Build
+# signiert deshalb immer mit der Debug-Signatur – die echte Signierung passiert
+# ausschließlich lokal auf dem Rechner des Maintainers mit dessen Keystore.
+# Das ist Absicht: auf GitHub existiert kein Signiermaterial.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    name: Keine Zugangsdaten
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Auschecken
+        uses: actions/checkout@v4
+
+      - name: Zugangsdaten prüfen
+        run: .github/scripts/check-no-secrets.sh
+
+  verify:
+    name: Tests, Lint und Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Auschecken
+        uses: actions/checkout@v4
+
+      - name: JDK 21 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+
+      - name: Plattform API 35 und Build-Tools installieren
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+
+      - name: Toolchain prüfen
+        run: |
+          java -version
+          echo "ANDROID_HOME=$ANDROID_HOME"
+
+      - name: Zugangsdaten prüfen
+        run: .github/scripts/check-no-secrets.sh
+
+      - name: Tests und Lint
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug --console=plain
+
+      - name: Lint-Bericht hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Debug-Build
+        run: ./gradlew :app:assembleDebug --console=plain
+
+      # Beweist, dass ein Release-Build ohne Keystore und ohne jedes Geheimnis
+      # funktioniert. Signiert wird mit der Debug-Signatur.
+      - name: Release-Build ohne Keystore
+        run: ./gradlew :app:assembleRelease --console=plain
+
+      - name: Bestätigen, dass kein Keystore beteiligt war
+        run: |
+          if [ -f keystore.properties ] || [ -f release.keystore ]; then
+            echo "::error::Signiermaterial im Arbeitsbaum – darf auf GitHub nicht liegen."
+            exit 1
+          fi
+          echo "Kein Signiermaterial im Arbeitsbaum. Build ist debug-signiert."
