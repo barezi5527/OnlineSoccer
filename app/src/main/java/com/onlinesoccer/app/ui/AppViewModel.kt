@@ -12,6 +12,7 @@ import com.onlinesoccer.app.data.model.VertragZeile
 import com.onlinesoccer.app.data.repository.DashboardRepository
 import com.onlinesoccer.app.data.repository.PmRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
+import com.onlinesoccer.app.core.state.OffeneAenderung
 import com.onlinesoccer.app.data.repository.TeamwechselRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -126,6 +127,8 @@ class AppViewModel @Inject constructor(
     private val pmRepository: PmRepository,
     private val dashboardRepository: DashboardRepository,
     private val teamwechselRepository: TeamwechselRepository,
+    private val teamGeneration: com.onlinesoccer.app.core.state.TeamGeneration,
+    private val offeneAenderung: com.onlinesoccer.app.core.state.OffeneAenderung,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthUiState> = sessionManager.state
@@ -331,7 +334,8 @@ class AppViewModel @Inject constructor(
         // Nur ein bestätigter Wechsel löst die Navigation aus — bei einem Fehler
         // bleibt der Nutzer, wo er ist.
         if (ergebnis is TeamwechselErgebnis.Erfolgreich) {
-            _teamwechselAusgefuehrt.tryEmit(Unit)
+            teamGeneration.increment()
+            _teamwechselAusgefuehrt.emit(Unit)
         }
     }
 

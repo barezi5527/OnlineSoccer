@@ -2,6 +2,11 @@ package com.onlinesoccer.app.feature.zugabgabe
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.onlinesoccer.app.core.state.AenderungBereich
+import com.onlinesoccer.app.core.state.OffeneAenderung
+import com.onlinesoccer.app.core.state.TEAMWECHSEL_VERWORFEN
+import com.onlinesoccer.app.core.state.TeamGeneration
+import com.onlinesoccer.app.core.state.schreibvorgangErlaubt
 import com.onlinesoccer.app.data.model.Aufstellung
 import com.onlinesoccer.app.data.model.AufstellungSlot
 import com.onlinesoccer.app.data.model.ERSATZBANK_BUCHSTABEN
@@ -23,18 +28,54 @@ data class ZugabgabeUiState(
     val kaderSpeichernd: Boolean = false,
     val message: String? = null,
     val fehler: String? = null,
+    val dirty: Boolean = false,
 )
 
 @HiltViewModel
 class ZugabgabeViewModel @Inject constructor(
     private val repository: ZugabgabeRepository,
+    private val offeneAenderung: OffeneAenderung,
+    private val teamGeneration: TeamGeneration,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ZugabgabeUiState())
     val uiState: StateFlow<ZugabgabeUiState> = _uiState.asStateFlow()
 
+    /**
+     * Generation, unter der die **sichtbaren** Spieler geladen wurden.
+     *
+     * Nach einem Teamwechsel zeigen sie zum anderen Team; ein Speichern würde
+     * dann PIDs des alten Teams in das neue schreiben. Deshalb wird die geladene
+     * Generation bei jedem Ladevorgang neu gesetzt und vor jedem POST gegen die
+     * aktuelle geprueft (Plan T35).
+     */
+    private var geladeneGeneration = teamGeneration.current()
+
     init {
         ladeAufstellung()
+    }
+
+    override fun onCleared() {
+        // Sonst bliebe der 1|2-Button nach T26 (Backstack-Reset) dauerhaft im
+        // Bestaetigungsdialog, weil niemand den Eintrag mehr zuruecksetzt.
+        offeneAenderung.schliessen(AenderungBereich.ZUGABABE)
+        super.onCleared()
+    }
+
+    private fun setzeDirty(dirty: Boolean) {
+        _uiState.value = _uiState.value.copy(dirty = dirty)
+        if (dirty) offeneAenderung.oeffnen(AenderungBereich.ZUGABABE)
+        else offeneAenderung.schliessen(AenderungBereich.ZUGABABE)
+    }
+
+    /**
+     * Gate vor jedem Schreibvorgang. `null` = erlaubt, sonst die Ablehnung.
+     *
+     * Greift auch fuer Hintergrund-Coroutinen, fuer die es keine UI-Sperre gibt.
+     */
+    private fun gate(): String? {
+        if (schreibvorgangErlaubt(geladeneGeneration, teamGeneration.current())) return null
+        return TEAMWECHSEL_VERWORFEN
     }
 
     /** Setzt den im Header angezeigten Zugabgabe-Status direkt nach einem Checkza-Lauf. */
@@ -46,6 +87,8 @@ class ZugabgabeViewModel @Inject constructor(
     fun ladeAufstellung() {
         viewModelScope.launch {
             _uiState.value = ZugabgabeUiState(ladende = true)
+            setzeDirty(false)
+            geladeneGeneration = teamGeneration.current()
             _uiState.value = try {
                 val aufstellung = repository.ladeAufstellung()
                 ZugabgabeUiState(
@@ -77,6 +120,7 @@ class ZugabgabeViewModel @Inject constructor(
                 aufstellung = aufstellung.copy(spieler = neueSpieler),
                 message = null,
             )
+            setzeDirty(true)
             return
         }
         val neueSpieler = aufstellung.spieler.map { spieler ->
@@ -90,6 +134,7 @@ class ZugabgabeViewModel @Inject constructor(
             aufstellung = aufstellung.copy(spieler = neueSpieler),
             message = null,
         )
+        setzeDirty(true)
     }
 
     fun setzeAufTorwart(pid: Long) {
@@ -101,6 +146,7 @@ class ZugabgabeViewModel @Inject constructor(
                 aufstellung = aufstellung.copy(spieler = neueSpieler),
                 message = null,
             )
+            setzeDirty(true)
             return
         }
         val neueSpieler = aufstellung.spieler.map { spieler ->
@@ -114,6 +160,7 @@ class ZugabgabeViewModel @Inject constructor(
             aufstellung = aufstellung.copy(spieler = neueSpieler),
             message = null,
         )
+        setzeDirty(true)
     }
 
     /** Platziert den markierten Spieler auf einem Ersatzbank-Platz (U=0 … Z=5). */
@@ -130,6 +177,7 @@ class ZugabgabeViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(
                 aufstellung = aufstellung.copy(spieler = neueSpieler),
             )
+            setzeDirty(true)
             return
         }
         val neueSpieler = aufstellung.spieler.map { spieler ->
@@ -142,6 +190,7 @@ class ZugabgabeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             aufstellung = aufstellung.copy(spieler = neueSpieler),
         )
+        setzeDirty(true)
     }
 
     /** Entfernt einen Spieler lokal aus einer Position; gespeichert wird erst beim Submit. */
@@ -154,12 +203,17 @@ class ZugabgabeViewModel @Inject constructor(
             aufstellung = aufstellung.copy(spieler = neueSpieler),
             message = null,
         )
+        setzeDirty(true)
     }
 
     /** Bestätigte Speicherung der (bearbeiteten) Aufstellung als Zugabgabe. */
     fun speichere() {
         val aufstellung = _uiState.value.aufstellung ?: return
         viewModelScope.launch {
+            gate()?.let { abgelehnt ->
+                _uiState.value = _uiState.value.copy(message = abgelehnt)
+                return@launch
+            }
             _uiState.value = _uiState.value.copy(speichernd = true, message = null)
             _uiState.value = try {
                 val meldung = repository.speichereBeta(aufstellung)
@@ -170,12 +224,17 @@ class ZugabgabeViewModel @Inject constructor(
                     message = e.message ?: "Speichern fehlgeschlagen.",
                 )
             }
+            setzeDirty(false)
         }
     }
 
     /** Wendet die gewählte Formation (Taktikauswahl) an und lädt neu. Nur aus bestätigter Nutzerabsicht. */
     fun wendeTaktikAn(taktikId: String) {
         viewModelScope.launch {
+            gate()?.let { abgelehnt ->
+                _uiState.value = _uiState.value.copy(message = abgelehnt)
+                return@launch
+            }
             _uiState.value = _uiState.value.copy(taktikLadend = true, message = null)
             _uiState.value = try {
                 val aufstellung = repository.wendeTaktikAn(taktikId)
@@ -190,12 +249,20 @@ class ZugabgabeViewModel @Inject constructor(
                     message = e.message ?: "Taktik konnte nicht geladen werden.",
                 )
             }
+            // Uebernommene Taktik = ungespeicherte Aenderung: vor dem 1|2-Wechsel
+            // warnen, und `speichere()` darf sie nur unter derselben Generation
+            // schreiben.
+            setzeDirty(true)
         }
     }
 
     /** „Laden aus ZAT": übernimmt alle Einstellungen des gewählten ZAT. Nur aus bestätigter Nutzerabsicht. */
     fun wendeZatAn(zatId: String) {
         viewModelScope.launch {
+            gate()?.let { abgelehnt ->
+                _uiState.value = _uiState.value.copy(message = abgelehnt)
+                return@launch
+            }
             _uiState.value = _uiState.value.copy(zatLadend = true, message = null)
             _uiState.value = try {
                 val aufstellung = repository.wendeZatAn(zatId)
@@ -210,6 +277,7 @@ class ZugabgabeViewModel @Inject constructor(
                     message = e.message ?: "ZAT konnte nicht geladen werden.",
                 )
             }
+            setzeDirty(true)
         }
     }
 
@@ -250,6 +318,7 @@ class ZugabgabeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             aufstellung = aufstellung.copy(spieler = neueSpieler),
         )
+        setzeDirty(true)
     }
 
     /** Bestätigte Speicherung der Kader-Zuordnung (klassischer ra[]-Weg). */
@@ -263,6 +332,10 @@ class ZugabgabeViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
+            gate()?.let { abgelehnt ->
+                _uiState.value = _uiState.value.copy(message = abgelehnt)
+                return@launch
+            }
             _uiState.value = _uiState.value.copy(kaderSpeichernd = true, message = null)
             _uiState.value = try {
                 val neueAufstellung = repository.speichereKaderAufstellung(slots)
@@ -277,6 +350,7 @@ class ZugabgabeViewModel @Inject constructor(
                     message = e.message ?: "Aufstellung konnte nicht gespeichert werden.",
                 )
             }
+            setzeDirty(false)
         }
     }
 
@@ -297,6 +371,7 @@ class ZugabgabeViewModel @Inject constructor(
                     message = e.message ?: "Aufstellung konnte nicht gelöscht werden.",
                 )
             }
+            setzeDirty(false)
         }
     }
 }
