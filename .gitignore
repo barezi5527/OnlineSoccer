@@ -22,6 +22,9 @@ captures/
 .cxx/
 .kotlin/
 
+# Lokale Screenshot-Ablage (dokumentierte Fassung liegt in docs/screenshots/)
+/screenshot/
+
 # Lokale Arbeits-/Dokumentationsdateien im Repo-Root (nicht Teil der App)
 /elf.bmp
 /Elf.png
