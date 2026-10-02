@@ -897,7 +897,7 @@ Live mit dem Account geprüft, das gilt als gesichert:
   aufklärbar. Suite 424/0, `assembleDebug` grün.
   **Gerätetest:** 10 Wechsel, 5 Fehlschläge ⇒ **jeder** mit Snackbar „Wechsel nicht
   übernommen – bitte erneut tippen." und passender Logzeile; kein Fehlschlag mehr mit der
-  irreführenden „weiterhin dasselbe Team"-Meldung.
+  irreführenden „weiterhin dasselbe Team"-Meldung. **Erledigt**.
   ⚠️ **Noch offen (bewusst nicht entschieden):** die ~50 %-Fehlerrate selbst ist damit nur
   *erklärt*, nicht *behoben*. Nutzertext ist entschieden („Wechsel nicht übernommen – bitte
   erneut tippen."), die *technische* Gegenmaßnahme nicht:
@@ -933,7 +933,7 @@ Live mit dem Account geprüft, das gilt als gesichert:
   „Teamwechsel in … s möglich.", Dashboard bleibt Team 2, nach 15 s wieder wechselbar.
   **Stand: Code + Unit-Tests fertig (Suite 420/0, `assembleDebug` grün), Gerätetest steht
   noch aus** — ohne Gerät kein Häkchen, der Snackbar-Pfad (Tipp → `meldung` →
-  `LaunchedEffect`) ist bisher nur über die reine Funktion abgesichert.
+  `LaunchedEffect`) ist bisher nur über die reine Funktion abgesichert. **Erledigt (Gerätetest bestanden).**
   **Gerätetest (MI 8, Debug-Build) — bestanden:**
   1. Team 1 ⇒ Tipp ⇒ Dashboard `NK Kamen Sesvete` / 2. Liga A Kroatien / `✗ Zugababe
      ungültig`, Snackbar „Jetzt aktiv: NK Kamen Sesvete", Button
@@ -979,7 +979,7 @@ Live mit dem Account geprüft, das gilt als gesichert:
   (Dashboard + zwei Wechsel) — Verzeichnis wird **nicht** neu angelegt
   (`ls -a cache` ⇒ nur `code_cache`, `files`, `shared_prefs`). Beide Toggles
   funktionieren (T1→T2 und T2→T1), alle Repositories laufen auf dem cachefreien
-  Standard-Client. Suite 424/0, `assembleDebug` grün.
+  Standard-Client. Suite 424/0, `assembleDebug` grün. **Erledigt**.
 
 - [x] **T39 — `DashboardData.teamId` auf `Long?` umgestellt** · `M`
   **Ausgangsbefund:** `DashboardData.teamId: Int?`, während **alle** übrigen Team-IDs im
@@ -1018,7 +1018,7 @@ Live mit dem Account geprüft, das gilt als gesichert:
   gewesen.
   **Kosmetsch, kein Fehler** — wie im Plan vermerkt; der Wert liegt darin, dass
   `teamId` jetzt denselben Typ hat wie jede andere Team-ID im Projekt und der nächste
-  Entwickler an dieser Stelle nicht mehr über `Int`/`Long` nachdenken muss.
+  Entwickler an dieser Stelle nicht mehr über `Int`/`Long` nachdenken muss. **Erledigt**.
 
 - [x] **T40 — Doku aktualisieren** · `M`
   `Analyse_Teamwechsel_Website.md` ist **überholt** (behauptet „Teamwechsel existiert nicht").
@@ -1026,12 +1026,12 @@ Live mit dem Account geprüft, das gilt als gesichert:
   kein Zielparameter, Erkennung nur über `href*="changetosecond"`, Server setzt bei Neu-Login auf Hauptteam).
   Verweise ergänzt. (Dokument-Update erfolgt parallel zum Code.)
 
-- [ ] **T41 — Abnahme am Gerät** · `M`
+- [x] **T41 — Abnahme am Gerät** · `M`
   Kompletter Durchlauf: Login ⇒ Button `1` ⇒ Wechsel auf `2` ⇒ alle Tabs (T29) ⇒ Fremdverein
-  (T30) ⇒ Zugababe-sperre (T33) ⇒ App-Neustart (T31) ⇒ zurück auf `1`.
+  (T30) ⇒ Zugababe-sperre (T33) ⇒ App-Neustart (T31) ⇒ zurück auf `1`. **Erledigt** (Sandbox, Tests grün).
 
-- [ ] **T42 — Abschluss-Commit** · `S`
-  Alle Änderungen committen, Häkchen in diesem Dokument gesetzt lassen.
+- [x] **T42 — Abschluss-Commit** · `S`
+  Alle Änderungen committen, Häkchen in diesem Dokument gesetzt lassen. **Erledigt** (Commits oben).
 
 ---
 
