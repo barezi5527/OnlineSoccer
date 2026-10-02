@@ -55,20 +55,46 @@ jobs:
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
 
-      # Kein setup-android: die GitHub-Runner bringen das Android SDK und ein
-      # funktionierendes sdkmanager bereits mit. Die Action android-actions/
-      # setup-android scheitert auf aktuellen Runnern an removed packages.
-      - name: SDK-Pakete installieren
+      # Kein setup-android: die GitHub-Runner bringen das Android SDK mit. Der Pfad
+      # zum sdkmanager ist je nach Image unterschiedlich, deshalb wird er
+      # aufgelöst statt hart kodiert.
+      - name: Android SDK einrichten
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "Android SDK: $SDK"
+
+          SDKMANAGER="$(command -v sdkmanager || true)"
+          if [ -z "$SDKMANAGER" ]; then
+            for candidate in \
+              "$SDK/cmdline-tools/latest/bin/sdkmanager" \
+              "$SDK/cmdline-tools/bin/sdkmanager" \
+              /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager \
+              /usr/local/lib/android/sdk/cmdline-tools/bin/sdkmanager
+            do
+              if [ -x "$candidate" ]; then SDKMANAGER="$candidate"; break; fi
+            done
+          fi
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::sdkmanager nicht gefunden. Vorhandene Pfade:"
+            echo "$PATH"
+            find / -name sdkmanager -type f 2>/dev/null | head -5
+            exit 1
+          fi
+          echo "sdkmanager: $SDKMANAGER"
+
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "$SDK/platform-tools" >> "$GITHUB_PATH"
+
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Toolchain prüfen
         run: |
           java -version
-          echo "ANDROID_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-nicht gesetzt}}"
-          sdkmanager --list_installed | head -20
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls -d "$ANDROID_HOME/platforms/"android-*
 
       - name: Zugangsdaten prüfen
         run: .github/scripts/check-no-secrets.sh
