@@ -6,6 +6,7 @@ import com.onlinesoccer.app.core.auth.AuthUiState
 import com.onlinesoccer.app.core.auth.LoginResult
 import com.onlinesoccer.app.core.auth.SessionManager
 import com.onlinesoccer.app.core.storage.TokenStorage
+import com.onlinesoccer.app.data.model.TeamIds
 import com.onlinesoccer.app.data.model.TeamwechselErgebnis
 import com.onlinesoccer.app.data.model.VertragZeile
 import com.onlinesoccer.app.data.repository.DashboardRepository
@@ -16,8 +17,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -43,8 +47,8 @@ internal fun vertraegeKurzVorAuslauf(
  * Zustand des 1|2-Buttons.
  *
  * [aktiverIndex] ist **immer** aus dem Serverbefund abgeleitet und wird nie
- * persistiert: ein stiller Re-Login setzt die PHP-Session auf das Hauptteam
- * zurück, ein gespeicherter Index wäre nach jedem Kaltstart falsch.
+ * persistiert: der Serverstand ist die Wahrheit, und er überlebt einen
+ * Kaltstart — nach einem Neustart kann der Button daher „2" zeigen.
  */
 internal data class TeamwechselUiState(
     /** Der Server kennt einen `changetosecond`-Anker, d. h. es gibt ein Zweitteam. */
@@ -55,26 +59,25 @@ internal data class TeamwechselUiState(
     val teamId: Long? = null,
     /** Anzeigename des gerade aktiven Teams, aus dem Dashboard-Befund. */
     val teamName: String? = null,
-    /**
-     * Team-ID des Zweitteams, aus `showteam.php` **beim Anmelden** ermittelt.
+/**
+     * Team-ID des Zweitteams.
      *
-     * ⚠️ `parseTeamIds` ist rollenbezogen: steht das Zweitteam aktiv, meldet die
-     * Seite „Mein Hauptteam" und liefert 3449. Der Wert darf deshalb **nicht**
-     * nach einem Wechsel neu gelesen werden, sonst springt [aktiverIndex] auf 1
-     * zurück, obwohl Team 2 aktiv ist.
+     * Aus `showteam.php?s=0` ermittelt und dabei **rollenkorrekt** umgerechnet
+     * (siehe `ladeTeamIds()`): unabhängig davon, ob gerade das Haupt- oder das
+     * Zweitteam aktiv ist, steht hier dasselbe Team. Deshalb ist der Wert auch
+     * nach einem Kaltstart mit aktivem Team 2 gültig.
      */
     val zweitTeamId: Long? = null,
     /** Ein Wechsel läuft gerade — der Button ist dann deaktiviert. */
     val laeuft: Boolean = false,
-    /** Kurzmeldung für die Snackbar (Erfolg nennt den neuen Teamnamen). */
+    /** Kurzmeldung für die Snackbar (Erfolg nennt den Teamnamen aus dem Refetch). */
     val meldung: String? = null,
 ) {
     /**
      * 1 = Hauptteam, 2 = Zweitteam.
      *
-     * Default 1, weil der Login serverseitig immer auf dem Hauptteam landet.
-     * Ohne bekannte Zweitteam-ID gibt es nur „1" — ohne Zweitteam wird der
-     * Button gar nicht gerendert.
+     * Default 1: solange kein Zweitteam bekannt ist, gibt es nur „1" — ohne
+     * Zweitteam wird der Button gar nicht gerendert.
      */
     val aktiverIndex: Int get() = if (zweitTeamId != null && teamId == zweitTeamId) 2 else 1
 }
@@ -92,6 +95,27 @@ internal fun teamwechselMeldung(ergebnis: TeamwechselErgebnis): String = when (e
     TeamwechselErgebnis.Unveraendert ->
         "Der Server meldet weiterhin dasselbe Team – es wurde nicht gewechselt."
     is TeamwechselErgebnis.Fehler -> ergebnis.text
+}
+
+/**
+ * Bestimmt aus dem Befund von `showteam.php?s=0` die ID des **festen**
+ * Zweitteams — also des Teams, das im 1|2-Button konsequent „2" bleibt.
+ *
+ * `showteam.php` ist rollenrelativ: die Seite zeigt das gerade aktive Team, und
+ * der Partner-Anker heißt entsprechend „Mein Zweitteam" oder „Mein Hauptteam".
+ * Das Zweitteam ist deshalb der Partner — außer der Server nennt ihn
+ * „Mein Hauptteam", dann ist das eigene Team das Zweitteam.
+ *
+ * Ohne diese Umrechnung zeigte der Button nach einem Kaltstart auf Team 2
+ * dauerhaft „1". Ein Kaltstart ist dabei **kein** Ruhezustand: greift das
+ * Cookie noch, wird nicht neu angemeldet und der Server bleibt auf Team 2.
+ */
+internal fun zweitTeamIdAus(ids: TeamIds?): Long? = when {
+    ids == null -> null
+    ids.teamId == null || ids.partnerTeamId == null -> null
+    ids.teamId == ids.partnerTeamId -> null
+    ids.partnerIstHauptteam -> ids.teamId
+    else -> ids.partnerTeamId
 }
 
 @HiltViewModel
@@ -144,6 +168,21 @@ class AppViewModel @Inject constructor(
     private val _teamwechsel = MutableStateFlow(TeamwechselUiState())
     internal val teamwechsel: StateFlow<TeamwechselUiState> = _teamwechsel.asStateFlow()
 
+    private val _teamwechselAusgefuehrt = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Einmal-Signal „der Wechsel ist bestätigt" für die Navigation der UI.
+     *
+     * Bewusst **kein** State-Feld: `teamId` ändert sich auch beim Anmelden, ein
+     * beobachteter State würde dort eine unnötige Navigation auslösen.
+     *
+     * `MutableSharedFlow` mit `replay = 0` und **nicht** als Kanal: wer gerade
+     * nicht zuhört, soll das Signal nicht später bekommen — sonst würde es nach
+     * einer Rotation noch einmal eine Navigation auslösen. Solange die TopAppBar
+     * sichtbar ist (der Button liegt dort), ist ein Empfänger immer da.
+     */
+    val teamwechselAusgefuehrt: SharedFlow<Unit> = _teamwechselAusgefuehrt.asSharedFlow()
+
     init {
         viewModelScope.launch {
             sessionManager.restore()
@@ -178,16 +217,16 @@ class AppViewModel @Inject constructor(
 
     private suspend fun ladeTeamIds() {
         val ids = runCatching { teamRepository.ladeTeamIds() }.getOrNull()
-        val zweitId = ids?.zweitTeamId
+        val zweitId = zweitTeamIdAus(ids)
         _zweitTeamId.value = zweitId
         _teamwechsel.value = _teamwechsel.value.copy(
             zweitTeamId = zweitId,
             wechselMoeglich = zweitId != null,
-            // Beim Anmelden steht der Server garantiert auf dem Hauptteam (ein
-            // stiller Re-Login setzt zurück), `hauptTeamId` ist hier also der
-            // 1:1-Befund für das aktive Team — und damit zugleich der
-            // Vorzustand, den `wechsleTeam()` für den ersten Vergleich braucht.
-            teamId = ids?.hauptTeamId,
+            // Das eigene Team der Seite ist das gerade aktive Team — und damit
+            // der 1:1-Befund, den `wechsleTeam()` für den Vergleich vor und nach
+            // dem Toggle braucht. Das gilt auch für einen Kaltstart, bei dem der
+            // Server bereits auf Team 2 steht.
+            teamId = ids?.teamId,
             teamName = null,
         )
     }
@@ -286,6 +325,14 @@ class AppViewModel @Inject constructor(
             zweitTeamName = refreshed?.teamwechsel?.zweitTeamName ?: neu.zweitTeamName,
             meldung = teamwechselMeldung(ergebnis),
         )
+
+        // Erst **nach** dem Zustandsschreiben: die UI navigiert daraufhin neu
+        // auf, und der neue ViewModel liest den bereits aktualisierten Cache.
+        // Nur ein bestätigter Wechsel löst die Navigation aus — bei einem Fehler
+        // bleibt der Nutzer, wo er ist.
+        if (ergebnis is TeamwechselErgebnis.Erfolgreich) {
+            _teamwechselAusgefuehrt.tryEmit(Unit)
+        }
     }
 
     /** Pollt periodisch die Anzahl ungelesener PMs für den Briefumschlag-Badge. */

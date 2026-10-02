@@ -1308,46 +1308,59 @@ class TeamRepository @Inject constructor(
         }
 
     /**
-     * Lädt die Team-IDs (Haupt-/Zweitteam) aus `showteam.php?s=0`.
-     * Einmalig nach dem Login für den 1|2-Button; nicht gecacht, weil die
-     * Server-Session die Wahrheit ist (siehe Plan-Regel 1).
+     * Lädt das Teampaar aus `showteam.php?s=0`.
+     * Nach dem Login und bei jedem Kaltstart für den 1|2-Button; nicht
+     * gecacht, weil die Server-Session die Wahrheit ist (siehe Plan-Regel 1).
      */
     suspend fun ladeTeamIds(): TeamIds? = withContext(Dispatchers.IO) {
         safeGet("${OsApi.BASE_URL}/showteam.php?s=0")?.let { parseTeamIds(it) }
     }
 
     /**
-     * Ermittelt die IDs von Haupt- und Zweitteam aus `showteam.php?s=0`.
+     * Ermittelt eigenes und Partnerteam aus `showteam.php?s=0`.
      *
      * Nötig, um den aktiven Index des 1|2-Buttons zu bestimmen: `haupt.php`
      * nennt nur das gerade aktive Team, nicht die Partner-ID.
      *
      * Beide Zugriffe sind sprachneutral:
-     * - **Hauptteam** über `javascript:tabellenplatz(<id>)` — der Menüpunkt
-     *   „Tabellenplätze" der eigenen Mannschaft.
-     * - **Zweitteam** über `st.php?c=<id>` mit Ankertext „Mein Zweitteam" bzw.
+     * - **Eigenes/aktives Team** über `javascript:tabellenplatz(<id>)` — der
+     *   Menüpunkt „Tabellenplätze" der eigenen Mannschaft.
+     * - **Partner** über `st.php?c=<id>` mit Ankertext „Mein Zweitteam" bzw.
      *   „Mein Hauptteam". Auf dieser Seite gibt es `st.php?c=`-Links auch für
      *   Fremdvereine, deshalb wird **nur** über den Ankertext gefiltert, nicht
      *   über das bloße Vorkommen des Musters.
      *
-     * Ohne Zweitteam ⇒ `zweitTeamId == null`.
+     * ⚠️ Der Ankertext ist die **einzige** Rolleninformation der ganzen Seite:
+     * Er sagt, ob der Partner das Haupt- oder das Zweitteam ist. Steht Team 2
+     * aktiv, liefert die Seite `(eigenes=1216, Partner=3449, partnerIstHauptteam
+     * = true)` — wer daraus ohne das Flag „Zweitteam = 3449" macht, zeigt
+     * dauerhaft die falsche Zahl im 1|2-Button.
+     *
+     * Ohne Zweitteam ⇒ `partnerTeamId == null`.
      */
     internal fun parseTeamIds(html: String): TeamIds? {
         val doc = Jsoup.parse(html)
-        val hauptTeamId = doc.selectFirst("a[href*='tabellenplatz(']")
+        val teamId = doc.selectFirst("a[href*='tabellenplatz(']")
             ?.attr("href")
             ?.let { Regex("""tabellenplatz\((\d+)\)""").find(it)?.groupValues?.get(1)?.toLongOrNull() }
         // `ownText()` statt `text()`: der Link ist in einen writePM-Anker
         // verschachtelt, `text()` würde den Fremdtext mitziehen.
-        val zweitTeamId = doc.select("a[href*=st.php?c=]")
+        val partnerAnker = doc.select("a[href*=st.php?c=]")
             .firstOrNull { anker ->
                 val text = anker.ownText().trim()
                 text.equals("Mein Zweitteam", ignoreCase = true) ||
                     text.equals("Mein Hauptteam", ignoreCase = true)
             }
+        val partnerTeamId = partnerAnker
             ?.attr("href")
             ?.let { Regex("""[?&]c=(\d+)""").find(it)?.groupValues?.get(1)?.toLongOrNull() }
-        return TeamIds(hauptTeamId = hauptTeamId, zweitTeamId = zweitTeamId)
+        val partnerIstHauptteam =
+            partnerAnker?.ownText()?.trim()?.equals("Mein Hauptteam", ignoreCase = true) == true
+        return TeamIds(
+            teamId = teamId,
+            partnerTeamId = partnerTeamId,
+            partnerIstHauptteam = partnerIstHauptteam,
+        )
     }
 
     /** Saisonplan, optional für eine gewählte Saison. */

@@ -9,14 +9,30 @@ data class TeamInfoMenuEintrag(
 )
 
 /**
- * IDs von Haupt- und Zweitteam, aus `showteam.php?s=0` ermittelt.
+ * Das Teampaar einer Anmeldung, aus `showteam.php?s=0` ermittelt.
  *
- * `zweitTeamId == null` ⇒ der Account besitzt kein Zweitteam, der 1|2-Button
+ * ⚠️ **Die Felder sind bewusst rollenfrei benannt.** Die Seite zeigt immer das
+ * gerade aktive Team — dieses kann das Haupt- **oder** das Zweitteam sein. Der
+ * „andere"-Anker heißt deshalb je nach Sitzungsstand „Mein Zweitteam" *oder*
+ * „Mein Hauptteam". Wer [teamId] einfach als „Hauptteam" und [partnerTeamId]
+ * als „Zweitteam" liest, bekommt bei aktivem Team 2 die Rollen vertauscht — genau
+ * der Fehler, der den 1|2-Button nach einem Kaltstart die falsche Zahl zeigen
+ * ließ. [partnerIstHauptteam] hält fest, welchen der beiden Anker der Server
+ * geliefert hat; nur damit lässt sich das feste Zweitteam bestimmen.
+ *
+ * `partnerTeamId == null` ⇒ der Account besitzt kein Zweitteam, der 1|2-Button
  * bleibt dann komplett unsichtbar (kein ausgegrautes Icon).
  */
 data class TeamIds(
-    val hauptTeamId: Long? = null,
-    val zweitTeamId: Long? = null,
+    /** Das gerade aktive Team (aus `tabellenplatz(id)`). */
+    val teamId: Long? = null,
+    /** Das andere Team der Anmeldung („Mein Zweitteam" / „Mein Hauptteam"). */
+    val partnerTeamId: Long? = null,
+    /**
+     * `true`, wenn der Partner-Anker „Mein Hauptteam" heißt — dann ist das
+     * eigene [teamId] das Zweitteam.
+     */
+    val partnerIstHauptteam: Boolean = false,
 )
 
 /** Zeile des Saisonplans (`showteam.php?s=6`). */

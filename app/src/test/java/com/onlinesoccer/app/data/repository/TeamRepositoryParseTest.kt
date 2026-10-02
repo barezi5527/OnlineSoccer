@@ -349,26 +349,30 @@ class TeamRepositoryParseTest {
     fun teamIds_stammenAusTabellenplatzUndZweitteamLink() {
         val ids = repo.parseTeamIds(dump("showteam_mit_zweitteam"))
 
-        assertEquals(3449L, ids?.hauptTeamId)
-        assertEquals(1216L, ids?.zweitTeamId)
+        assertEquals(3449L, ids?.teamId)
+        assertEquals(1216L, ids?.partnerTeamId)
+        assertEquals(false, ids?.partnerIstHauptteam)
     }
 
     @Test
     fun teamIds_wechselnDieRollenWennTeam2AktivIst() {
         // Auf Team 2 zeigt „tabellenplatz" auf 1216 und der Link heißt
         // „Mein Hauptteam" (3449) — die Erkennung folgt dem Text, nicht der ID.
+        // Nur so lässt sich das feste Zweitteam (1216) zurückrechnen.
         val ids = repo.parseTeamIds(dump("showteam_mit_hauptteam_link"))
 
-        assertEquals(1216L, ids?.hauptTeamId)
-        assertEquals(3449L, ids?.zweitTeamId)
+        assertEquals(1216L, ids?.teamId)
+        assertEquals(3449L, ids?.partnerTeamId)
+        assertEquals(true, ids?.partnerIstHauptteam)
     }
 
     @Test
     fun teamIds_sindNullOhneZweitteam() {
         val ids = repo.parseTeamIds(dump("showteam_s0"))
 
-        assertEquals(3449L, ids?.hauptTeamId)
-        assertEquals(null, ids?.zweitTeamId)
+        assertEquals(3449L, ids?.teamId)
+        assertEquals(null, ids?.partnerTeamId)
+        assertEquals(false, ids?.partnerIstHauptteam)
     }
 
     @Test
@@ -380,7 +384,26 @@ class TeamRepositoryParseTest {
             )
         val ids = repo.parseTeamIds(html)
 
-        assertEquals(3449L, ids?.hauptTeamId)
-        assertEquals(null, ids?.zweitTeamId)
+        assertEquals(3449L, ids?.teamId)
+        assertEquals(null, ids?.partnerTeamId)
+    }
+
+    /**
+     * Das feste Zweitteam muss unabhängig davon, welches Team aktiv ist, immer
+     * 1216 ergeben — das ist die Grundlage für den Index im 1|2-Button.
+     */
+    @Test
+    fun teamIds_festesZweitteamIstInBeidenRollenlagenGleich() {
+        fun zweitTeamId(html: String): Long? {
+            val ids = repo.parseTeamIds(html) ?: return null
+            return when {
+                ids.teamId == null || ids.partnerTeamId == null -> null
+                ids.partnerIstHauptteam -> ids.teamId
+                else -> ids.partnerTeamId
+            }
+        }
+
+        assertEquals(1216L, zweitTeamId(dump("showteam_mit_zweitteam")))
+        assertEquals(1216L, zweitTeamId(dump("showteam_mit_hauptteam_link")))
     }
 }

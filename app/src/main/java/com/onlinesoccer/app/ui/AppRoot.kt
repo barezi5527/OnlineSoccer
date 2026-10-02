@@ -282,6 +282,25 @@ private fun MainScaffold(
         appViewModel.teamwechselMeldungQuittiert()
     }
 
+    // Nach bestätigtem Teamwechsel: Backstack bis zur Start-Destination
+    // zurücksetzen, damit kein ViewModel Team-1-Daten behält. `inclusive = true`
+    // ist dabei entscheidend — nur so wird die Start-Destination selbst
+    // entfernt und alle `NavBackStackEntry` samt `hiltViewModel()` sterben
+    // (TeamViewModel, ZugabgabeViewModel, BewerbeViewModel, TaktikViewModel …).
+    // Der Tab-Wechsel unten nutzt `popUpTo` **ohne** `inclusive` und würde sie
+    // am Leben lassen; deshalb ist das hier eine eigene Navigation.
+    // Kein `saveState`/`restoreState`: gespeicherte Tab-Zustände gehören zum
+    // alten Team.
+    LaunchedEffect(appViewModel) {
+        appViewModel.teamwechselAusgefuehrt.collect {
+            dashboardRefreshTrigger = 0
+            navController.navigate(Routes.DASHBOARD) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     fun parseSid(sid: String?): String? = sid?.takeIf { it.isNotBlank() }
 
     fun buildSpielerRoute(pid: Long, teamId: Long?, quelle: String = ""): String =
