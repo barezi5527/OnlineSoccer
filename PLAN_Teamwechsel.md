@@ -813,7 +813,7 @@ Live mit dem Account geprüft, das gilt als gesichert:
   wechseln? Nicht gespeicherte Änderungen gehen verloren." mit „Abbrechen" und „Trotzdem
   wechseln". „Abbrechen" ⇒ Dialog zu, **weiter Team 1**, Bildschirm unverändert.
   „Trotzdem wechseln" ⇒ Wechsel auf Team 2, Backstack-Reset aufs Dashboard, Sperre
-  („Teamwechsel in 2 s möglich") — danach zurück auf Team 1.
+  („Teamwechsel in 2 s möglich") — danach zurück auf Team 1. **Erledigt** (Dialog + State + Tests).
 
 - [x] **T34 — Toggle bei offener Taktik sperren** · `M`
   Gleiche Behandlung, anderer Bereich: `TaktikViewModel` registriert über
@@ -846,7 +846,7 @@ Live mit dem Account geprüft, das gilt als gesichert:
   Team-1-Inhalt im Team-2-Request landen; sie hätten nur Nutzer-Aktionen blockiert, die
   nach einem bewussten Wechsel völlig legitim sind. Diese Trennung ist eine
   **Bewertung**, keine Messung — sie steht hier, damit sie jemand prüfen kann.
-  **Warum zusätzlich zur UI-Sperre:** die UI-Sperre greift nicht für Hintergrund-Coroutines.
+  **Warum zusätzlich zur UI-Sperre:** die UI-Sperre greift nicht   für Hintergrund-Coroutines. **Erledigt** (Zugabgabe, Taktik, TransferStatus gegatet).
 
 - [x] **T36 — Gate-Tests** · `M`
   `core/state/TeamGenerationTest.kt` (war vorhanden): gleiche Generation erlaubt,
@@ -859,10 +859,10 @@ Live mit dem Account geprüft, das gilt als gesichert:
   Flackern, kein Durchlassen); `laeuft` und `gesperrt` schlagen beide den Dialog
   (Reihenfolge der Prüfung). Ein erster Entwurf behauptete, ein offener Dialog müsse den
   Start blockieren — der Test fiel zu Recht um: bei leerem `offeneBereiche` darf er es
-  nicht, sonst wäre die App durch einen unerklärten Zustand dauerhaft gesperrt.
+  nicht, sonst wäre die App durch einen unerklärten Zustand dauerhaft gesperrt. **Erledigt** (6 Tests ergänzt).
 
 - [x] **T37 — Block 6 grün** · `S`
-  431 Tests / 0 Fehler, `:app:assembleDebug` grün, Gerätetest siehe T33/T34.
+  431 Tests / 0 Fehler, `:app:assembleDebug` grün, Gerätetest siehe T33/T34. **Erledigt**.
 
 ---
 
