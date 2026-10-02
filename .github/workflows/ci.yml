@@ -55,18 +55,20 @@ jobs:
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Android SDK einrichten
-        uses: android-actions/setup-android@v3
-
-      - name: Plattform API 35 und Build-Tools installieren
+      # Kein setup-android: die GitHub-Runner bringen das Android SDK und ein
+      # funktionierendes sdkmanager bereits mit. Die Action android-actions/
+      # setup-android scheitert auf aktuellen Runnern an removed packages.
+      - name: SDK-Pakete installieren
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          set -euo pipefail
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Toolchain prüfen
         run: |
           java -version
-          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-nicht gesetzt}}"
+          sdkmanager --list_installed | head -20
 
       - name: Zugangsdaten prüfen
         run: .github/scripts/check-no-secrets.sh
