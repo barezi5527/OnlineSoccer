@@ -47,7 +47,7 @@ class SpielberichtViewModel @Inject constructor(
                 val bericht = repository.ladeBericht(sid, url)
                     ?: error("Spielbericht konnte nicht geladen werden.")
                 val teamId = runCatching {
-                    dashboardRepository.fetchDashboard(forceRefresh = true).teamId?.toLong()?.takeIf { it > 0L }
+                    dashboardRepository.fetchDashboard(forceRefresh = true).teamId?.takeIf { it > 0L }
                 }.getOrNull()
                 val gespeichert = teamId?.let {
                     runCatching { stadionnameStore.lesen(it) }.getOrNull()

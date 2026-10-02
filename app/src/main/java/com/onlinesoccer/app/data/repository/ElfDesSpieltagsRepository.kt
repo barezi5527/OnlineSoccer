@@ -147,7 +147,7 @@ class ElfDesSpieltagsRepository @Inject constructor(
     }
 
     private suspend fun ladeEigeneTeamId(): Long? = try {
-        dashboardRepository.fetchDashboard().teamId?.toLong()
+        dashboardRepository.fetchDashboard().teamId
     } catch (e: Exception) {
         null
     }

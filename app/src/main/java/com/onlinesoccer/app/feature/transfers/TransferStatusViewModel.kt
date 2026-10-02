@@ -2,6 +2,9 @@ package com.onlinesoccer.app.feature.transfers
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.onlinesoccer.app.core.state.TEAMWECHSEL_VERWORFEN
+import com.onlinesoccer.app.core.state.TeamGeneration
+import com.onlinesoccer.app.core.state.schreibvorgangErlaubt
 import com.onlinesoccer.app.data.model.TransferStatus
 import com.onlinesoccer.app.data.model.TransferStatusErgebnis
 import com.onlinesoccer.app.data.model.TransferStatusZeile
@@ -36,6 +39,7 @@ sealed interface StatusDialogState {
 @HiltViewModel
 class TransferStatusViewModel @Inject constructor(
     private val repository: ServerRepository,
+    private val teamGeneration: TeamGeneration,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransferStatusUiState())
@@ -44,6 +48,21 @@ class TransferStatusViewModel @Inject constructor(
     private val _dialog = MutableStateFlow<StatusDialogState>(StatusDialogState.Verborgen)
     val dialog: StateFlow<StatusDialogState> = _dialog.asStateFlow()
 
+    /**
+     * Generation, unter der die Statusliste geladen wurde.
+     *
+     * `tstatus.php` schreibt **die ganze Liste** der eigenen Spieler zurück — und der
+     * POST enthält genau diese Liste. Nach einem Teamwechsel wäre das eine Liste von
+     * Team-1-Spielern, die dem Server als Team-2-Liste ginge. Deshalb der Gate-Vorab
+     * (Plan T35).
+     */
+    private var geladeneGeneration = teamGeneration.current()
+
+    private fun gate(): String? {
+        if (schreibvorgangErlaubt(geladeneGeneration, teamGeneration.current())) return null
+        return TEAMWECHSEL_VERWORFEN
+    }
+
     init {
         lade()
     }
@@ -51,6 +70,7 @@ class TransferStatusViewModel @Inject constructor(
     fun lade() {
         _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
         viewModelScope.launch {
+            geladeneGeneration = teamGeneration.current()
             _uiState.value = try {
                 val ergebnis = repository.transferStatus()
                 _uiState.value.copy(ladend = false, ergebnis = ergebnis)
@@ -84,6 +104,11 @@ class TransferStatusViewModel @Inject constructor(
         }
         _uiState.value = _uiState.value.copy(speichernd = true)
         viewModelScope.launch {
+            gate()?.let { abgelehnt ->
+                _uiState.value = _uiState.value.copy(speichernd = false)
+                _dialog.value = StatusDialogState.Ergebnis(false, abgelehnt)
+                return@launch
+            }
             try {
                 val antwort = repository.transferStatusSpeichern(zeilen)
                 afterSpeichern(antwort.erfolg, antwort.meldung)

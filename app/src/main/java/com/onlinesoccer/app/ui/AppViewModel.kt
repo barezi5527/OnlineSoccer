@@ -13,10 +13,12 @@ import com.onlinesoccer.app.data.repository.DashboardRepository
 import com.onlinesoccer.app.data.repository.PmRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
 import com.onlinesoccer.app.core.state.OffeneAenderung
+import com.onlinesoccer.app.core.state.bestaetigungstext
 import com.onlinesoccer.app.data.repository.TeamwechselRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -32,6 +35,9 @@ internal const val VERTRAGS_WARNUNG_ZAT = 2
 
 /** Abstand, in dem der Briefumschlag-Badge nach ungelesenen PMs fragt. */
 internal const val UNGELESENE_POLL_INTERVALL_MS = 60_000L
+
+/** Sekunden, in denen nach einem bestätigten Wechsel kein weiterer Toggle erlaubt ist. */
+internal const val WECHSEL_SPERRE_SEKUNDEN = 15
 
 /**
  * Spieler, deren Vertrag höchstens [schwelle] ZAT Restlaufzeit hat.
@@ -71,6 +77,33 @@ internal data class TeamwechselUiState(
     val zweitTeamId: Long? = null,
     /** Ein Wechsel läuft gerade — der Button ist dann deaktiviert. */
     val laeuft: Boolean = false,
+    /**
+     * Bildschirme mit **ungespeicherten** Änderungen, gemeldet von `OffeneAenderung`.
+     *
+     * Nur der Anzeigewert, keine eigene Wahrheit: der Singleton ist die Quelle, sonst
+     * könnten Zustand und Registrierung auseinanderlaufen. Solange der Satz nicht leer
+     * ist, blockiert [wechselAktion] den Wechsel und verlangt eine Bestätigung — T26
+     * verwirft den Backstack samt ViewModel, die Änderungen wären sonst spurlos weg.
+     */
+    val offeneBereiche: Set<String> = emptySet(),
+    /**
+     * Text des **offenen** Bestätigungsdialogs; gesetzt ausschließlich durch einen
+     * Tipp auf den 1|2-Button. Getrennt von [offeneBereiche], damit der Dialog nicht
+     * schon beim Öffnen eines Screens erscheint, sondern erst auf den Tipp.
+     */
+    val bestaetigung: String? = null,
+    /**
+     * Restzeit der Wechselsperre in Sekunden.
+     *
+     * Nach einem **bestätigten** Wechsel, damit ein zu schneller zweiter Tipp den blinden
+     * Session-Toggle nicht sofort zurückschaltet: `haupt.php?changetosecond=true` hat kein
+     * Ziel, jeder Request schaltet um. Nach `Unveraendert`/`Fehler` wird **nicht** gesperrt —
+     * dort war ja kein Wechsel, und ein Retry muss möglich bleiben.
+     *
+     * Nicht persistiert (Regel 1): eine Sperre überlebt keinen Neustart, ein gespeicherter
+     * Zähler wäre nach dem Kaltstart systematisch falsch.
+     */
+    val sperrRestSekunden: Int = 0,
     /** Kurzmeldung für die Snackbar (Erfolg nennt den Teamnamen aus dem Refetch). */
     val meldung: String? = null,
 ) {
@@ -81,6 +114,9 @@ internal data class TeamwechselUiState(
      * Zweitteam wird der Button gar nicht gerendert.
      */
     val aktiverIndex: Int get() = if (zweitTeamId != null && teamId == zweitTeamId) 2 else 1
+
+    /** Wechselsperre aktiv — ein Tipp meldet nur noch die Restzeit. */
+    val gesperrt: Boolean get() = sperrRestSekunden > 0
 }
 
 /**
@@ -97,6 +133,57 @@ internal fun teamwechselMeldung(ergebnis: TeamwechselErgebnis): String = when (e
         "Der Server meldet weiterhin dasselbe Team – es wurde nicht gewechselt."
     is TeamwechselErgebnis.Fehler -> ergebnis.text
 }
+
+/**
+ * Reaktion auf einen Tipp auf den 1|2-Button.
+ *
+ * Als reine Funktion getrennt von [AppViewModel.wechsleTeam], damit **alle drei**
+ * Ausgänge ohne Netz und ohne Coroutines testbar sind — der Sperrzweig schreibt
+ * eine Meldung, aber keinen Request.
+ */
+internal sealed interface WechselAktion {
+    /** Der Wechsel darf starten. */
+    data object Starten : WechselAktion
+
+    /** Ein Wechsel läuft bereits (Single-Flight) — der Tipp wird ignoriert. */
+    data object Lauft : WechselAktion
+
+    /** Wechselsperre aktiv — der Tipp kostet nichts, kostet aber Zeit. */
+    data class Gesperrt(val restSekunden: Int) : WechselAktion
+
+    /** Ungespeicherte Änderungen offen — erst der Dialog, dann wird geschaltet. */
+    data class Bestaetigen(val text: String) : WechselAktion
+}
+
+/**
+ * `laeuft` vor `gesperrt` vor `offeneBereiche`: solange ein Wechsel läuft, gibt es
+ * nichts zu bestätigen; solange die Wechselsperre läuft, kann ohnehin nicht geschaltet
+ * werden — ein Dialog, der ins Leere führte, wäre schlechter als die Restzeit-Meldung.
+ *
+ * Der Bestätigungstext kommt aus [bestaetigungstext], damit Dialog und Zustand
+ * dieselbe Quelle haben und nicht auseinanderdriften können.
+ */
+internal fun wechselAktion(stand: TeamwechselUiState): WechselAktion {
+    val offenText = stand.offeneBereiche.takeIf { it.isNotEmpty() }
+        ?.let { bestaetigungstext(it) }
+    return when {
+        stand.laeuft -> WechselAktion.Lauft
+        stand.gesperrt -> WechselAktion.Gesperrt(stand.sperrRestSekunden)
+        offenText != null -> WechselAktion.Bestaetigen(offenText)
+        else -> WechselAktion.Starten
+    }
+}
+
+/**
+ * Meldung bei zu schnellem Wechselversuch — nennt die **tatsächliche** Restzeit,
+ * nicht die volle Sperrdauer. Untergrenze 1 s: bei 0 ist die Sperre bereits vorbei
+ * und der Aufrufer kommt gar nicht hierher.
+ */
+internal fun teamwechselSperrMeldung(restSekunden: Int): String =
+    "Teamwechsel in ${restSekunden.coerceAtLeast(1)} s möglich."
+
+/** Ein Takt des Countdowns — endet bei 0, damit [TeamwechselUiState.gesperrt] aufhört. */
+internal fun restzeitNachTakt(restSekunden: Int): Int = (restSekunden - 1).coerceAtLeast(0)
 
 /**
  * Bestimmt aus dem Befund von `showteam.php?s=0` die ID des **festen**
@@ -128,7 +215,7 @@ class AppViewModel @Inject constructor(
     private val dashboardRepository: DashboardRepository,
     private val teamwechselRepository: TeamwechselRepository,
     private val teamGeneration: com.onlinesoccer.app.core.state.TeamGeneration,
-    private val offeneAenderung: com.onlinesoccer.app.core.state.OffeneAenderung,
+    private val offeneAenderung: OffeneAenderung,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthUiState> = sessionManager.state
@@ -187,6 +274,23 @@ class AppViewModel @Inject constructor(
     val teamwechselAusgefuehrt: SharedFlow<Unit> = _teamwechselAusgefuehrt.asSharedFlow()
 
     init {
+        // Offene, ungespeicherte Änderungen aus den Bildschirmen (T33/T34). Der
+        // TopAppBar-Button sieht deren ViewModel nicht — der Singleton ist die einzige
+        // Stelle, die beide Seiten kennt (siehe `OffeneAenderung`).
+        viewModelScope.launch {
+            offeneAenderung.offen.collect { offen ->
+                _teamwechsel.update { stand ->
+                    // Ein bereits offener Dialog bleibt stehen, solange es etwas zu
+                    // bestätigen gibt: das Text-Update würde ihn sonst springen lassen.
+                    // Wird nichts mehr offen, schließt er — es gibt nichts zu bestätigen.
+                    if (stand.bestaetigung == null || offen.isEmpty()) {
+                        stand.copy(offeneBereiche = offen, bestaetigung = null)
+                    } else {
+                        stand
+                    }
+                }
+            }
+        }
         viewModelScope.launch {
             sessionManager.restore()
             if (sessionManager.state.value == AuthUiState.SignedIn) {
@@ -236,6 +340,8 @@ class AppViewModel @Inject constructor(
 
     /** Gast-/Abmeldezustand: kein Zweitteam, der 1|2-Button bleibt unsichtbar. */
     private fun teamwechselZuruecksetzen() {
+        sperrTakt?.cancel()
+        sperrTakt = null
         _zweitTeamId.value = null
         _teamwechsel.value = TeamwechselUiState()
     }
@@ -248,6 +354,13 @@ class AppViewModel @Inject constructor(
      * warum zwei gleichlautende Meldungen hintereinander trotzdem wieder
      * erscheinen: der Wert läuft zwischendurch auf `null`.
      */
+    /** Dialogschließen des 1|2-Buttons: der Wechsel findet nicht statt. */
+    fun teamwechselBestaetigungAbgebrochen() {
+        if (_teamwechsel.value.bestaetigung != null) {
+            _teamwechsel.value = _teamwechsel.value.copy(bestaetigung = null)
+        }
+    }
+
     fun teamwechselMeldungQuittiert() {
         if (_teamwechsel.value.meldung != null) {
             _teamwechsel.value = _teamwechsel.value.copy(meldung = null)
@@ -262,13 +375,40 @@ class AppViewModel @Inject constructor(
      * ihn bestätigt hat. Der Backstack-Reset und das Neu-Binden der
      * ViewModel-Caches passieren in der UI (Plan T26/T27), dieser Pfad liefert
      * nur den Serverstand.
+     *
+     * Vier Ausgänge, decided by [wechselAktion]: Start, laufender Wechsel (still),
+     * Wechselsperre (mit Restzeit-Meldung, **ohne** Request) und offene Änderungen
+     * (mit Bestätigungsdialog, ebenfalls **ohne** Request).
+     *
+     * [bestaetigt] setzt ausschließlich der Dialog selbst: [WechselAktion.Bestaetigen]
+     * ist der einzige Ausgang, bei dem der Aufrufer ein zweites Mal drankommen darf.
      */
-    fun wechsleTeam() {
-        // Regel 6: `laeuft` wird vor dem `launch` gesetzt — zwei Klicks in
-        // derselben Frame passieren sonst beide die Prüfung. Zusätzlich
-        // dedupliziert `TeamwechselRepository` den Toggle selbst.
-        if (_teamwechsel.value.laeuft) return
-        _teamwechsel.value = _teamwechsel.value.copy(laeuft = true, meldung = null)
+    fun wechsleTeam(bestaetigt: Boolean = false) {
+        val stand = _teamwechsel.value
+        when (val aktion = wechselAktion(stand)) {
+            // Regel 6: `laeuft` wird vor dem `launch` gesetzt — zwei Klicks in
+            // derselben Frame passieren sonst beide die Prüfung. Zusätzlich
+            // dedupliziert `TeamwechselRepository` den Toggle selbst.
+            WechselAktion.Lauft -> return
+            // Wechselsperre: kein Request. Der Button bleibt anfassbar
+            // (`enabled` bleibt im gesperrten Zustand true), sonst gäbe es gar
+            // keine Erklärung — Compose feuert bei `enabled = false` kein onClick.
+            is WechselAktion.Gesperrt -> {
+                _teamwechsel.value = stand.copy(
+                    meldung = teamwechselSperrMeldung(stand.sperrRestSekunden),
+                )
+                return
+            }
+            // T33/T34: Der erste Tipp schaltet **nicht**, er stellt nur den Dialog.
+            is WechselAktion.Bestaetigen -> {
+                if (!bestaetigt) {
+                    _teamwechsel.value = stand.copy(bestaetigung = aktion.text)
+                    return
+                }
+            }
+            WechselAktion.Starten -> Unit
+        }
+        _teamwechsel.value = stand.copy(laeuft = true, meldung = null, bestaetigung = null)
         viewModelScope.launch {
             try {
                 fuehreWechselAus()
@@ -310,11 +450,14 @@ class AppViewModel @Inject constructor(
         //    Quelle, die Toggle-Antwort die unabhängige zweite — sie greift, wenn
         //    der Refetch ausfiel. ⚠️ Nicht `refreshed.teamwechsel.zweitTeamName`:
         //    das ist das Team, in das man jetzt wechseln *könnte*.
-        val nachher = refreshed?.teamId?.toLong()?.let { it to refreshed.teamName }
+        val nachher = refreshed?.teamId?.let { it to refreshed.teamName }
             ?: antwort?.let { teamwechselRepository.aktivesTeamAusHtml(it) }
 
         // 6) Bewertung: „Erfolg" heißt, der Server meldet jetzt ein anderes Team.
-        val ergebnis = teamwechselRepository.werteAus(vorher, nachher)
+        // ⚠️ `antwort` wandert mit in die Bewertung: `null` heißt „der Auftrag kam
+        // nicht an" (Timeout/Abbruch) und wird als Fehler gemeldet statt als
+        // „weiterhin dasselbe Team" — sonst tappt der Nutzer im Blindflug erneut.
+        val ergebnis = teamwechselRepository.werteAus(vorher, nachher, antwort)
 
         // Auf den aktuellen Stand schreiben, nicht auf [stand]: zwischen Toggle
         // und Refetch suspendiert der Pfad, da kann ein Logout dazwischenliegen.
@@ -334,8 +477,35 @@ class AppViewModel @Inject constructor(
         // Nur ein bestätigter Wechsel löst die Navigation aus — bei einem Fehler
         // bleibt der Nutzer, wo er ist.
         if (ergebnis is TeamwechselErgebnis.Erfolgreich) {
+            // Sperre vor der Navigation: der Tipp, der sie ausgelöst hat, ist
+            // optisch noch derselbe Button, und ein Doppeltipp darf nicht
+            // zurücktoggeln.
+            starteWechselsperre()
             teamGeneration.increment()
             _teamwechselAusgefuehrt.emit(Unit)
+        }
+    }
+
+    /** Ticker der Wechselsperre — läuft nur während der Sperre, Abbruch beim Abmelden. */
+    private var sperrTakt: Job? = null
+
+    /**
+     * Startet die Wechselsperre (T38a) und zählt die Restzeit sekündlich herunter.
+     *
+     * Der Zähler schreibt nur [TeamwechselUiState.sperrRestSekunden], **nie**
+     * `meldung`: die Snackbar hängt am Meldungstext (`LaunchedEffect(meldung)`) und
+     * würde bei sekündlichem Wechsel im Sekundentakt neu auslösen.
+     */
+    private fun starteWechselsperre() {
+        sperrTakt?.cancel()
+        _teamwechsel.value = _teamwechsel.value.copy(sperrRestSekunden = WECHSEL_SPERRE_SEKUNDEN)
+        sperrTakt = viewModelScope.launch {
+            var rest = WECHSEL_SPERRE_SEKUNDEN
+            while (isActive && rest > 0) {
+                delay(1_000L)
+                rest = restzeitNachTakt(rest)
+                _teamwechsel.value = _teamwechsel.value.copy(sperrRestSekunden = rest)
+            }
         }
     }
 

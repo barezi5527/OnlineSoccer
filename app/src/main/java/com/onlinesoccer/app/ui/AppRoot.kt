@@ -47,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -359,22 +360,33 @@ private fun MainScaffold(
                             Text("Teaminformationen")
                         }
                     }
-                    // 1|2 = Teamwechsel zwischen Haupt- und Zweitteam. Angezeigt
+// 1|2 = Teamwechsel zwischen Haupt- und Zweitteam. Angezeigt
                     // wird der **Serverbefund**, nicht ein Wunsch — ohne Zweitteam
-                    // wird gar nichts gerendert (kein ausgegrautes Icon, keine
+                    // wird gar nicht gerendert (kein ausgegrautes Icon, keine
                     // leere Leiste), in der Gastsitzung ebenfalls nicht.
                     // Plan T26/T33: Nach erfolgreichem Toggle wird der Backstack
                     // hier noch nicht zurückgesetzt.
                     if (teamwechsel.wechselMoeglich && !demo) {
                         val index = teamwechsel.aktiverIndex
+                        val gesperrt = teamwechsel.gesperrt
                         IconToggleButton(
                             checked = index == 2,
+                            // ⚠️ Während der Wechselsperre (T38a) bleibt der Button
+                            // anfassbar: bei `enabled = false` feuert Compose kein
+                            // onClick und die Restzeit-Meldung käme nie an. Gesperrt
+                            // wird im ViewModel, hier nur optisch.
                             enabled = !teamwechsel.laeuft,
                             onCheckedChange = { appViewModel.wechsleTeam() },
-                            modifier = Modifier.semantics {
-                                contentDescription =
-                                    "Team $index aktiv – zwischen Haupt- und Zweitteam wechseln"
-                            },
+                            modifier = Modifier
+                                .alpha(if (gesperrt) 0.45f else 1f)
+                                .semantics {
+                                    contentDescription = if (gesperrt) {
+                                        "Team $index aktiv – Teamwechsel in " +
+                                            "${teamwechsel.sperrRestSekunden} s möglich"
+                                    } else {
+                                        "Team $index aktiv – zwischen Haupt- und Zweitteam wechseln"
+                                    }
+                                },
                         ) {
                             Text(index.toString())
                         }
@@ -875,6 +887,20 @@ private fun MainScaffold(
                 SeiteScreen(onClose = { navController.popBackStack() })
             }
         }
+    }
+
+    // T33/T34: Offene, ungespeicherte Änderungen. Der Dialog liegt hier und **nicht**
+    // im Screen: der auslösende Button ist die TopAppBar, die den Bildschirm nicht kennt.
+    // Er steht bewusst über dem Scaffold, damit er auch dann sichtbar bleibt, wenn der
+    // Backstack-Reset (T26) die Ansicht wechselt — und der Dialog wird ohnehin erst
+    // **nach** dem Reset geschlossen, weil [onWechseln] den Wechsel erst startet.
+    val bestaetigung = teamwechsel.bestaetigung
+    if (bestaetigung != null) {
+        TeamwechselBestaetigungDialog(
+            text = bestaetigung,
+            onWechseln = { appViewModel.wechsleTeam(bestaetigt = true) },
+            onAbbrechen = appViewModel::teamwechselBestaetigungAbgebrochen,
+        )
     }
 }
 

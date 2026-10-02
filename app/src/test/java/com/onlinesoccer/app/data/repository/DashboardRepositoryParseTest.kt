@@ -86,7 +86,7 @@ class DashboardRepositoryParseTest {
         assertEquals("Friendly Auswärts:", next?.art)
         assertEquals(false, next?.heim)
         assertEquals("Bonner SpVgg", next?.gegner)
-        assertEquals(1050, next?.gegnerId)
+        assertEquals(1050L, next?.gegnerId)
         assertEquals("http://os.ongapo.com/forum/index.php?page=Board&boardID=40", data.forumUrl)
     }
 
@@ -101,7 +101,7 @@ class DashboardRepositoryParseTest {
     @Test
     fun wappenLiefertTeamIdUndLogoUrl() {
         val data = repo.parse(grundHtml)
-        assertEquals(80, data.teamId)
+        assertEquals(80L, data.teamId)
         assertTrue(data.teamLogoUrl?.endsWith("images/wappen/00000080.gif") == true)
     }
 
@@ -141,7 +141,7 @@ class DashboardRepositoryParseTest {
         assertEquals("NK Kamen Sesvete", data.teamwechsel?.zweitTeamName)
         // Der <br /> im Anker darf das Begrüßungs-/Liga-Parsing nicht verschieben.
         assertEquals("SC Viktoria Ulm", data.teamName)
-        assertEquals(3449, data.teamId)
+        assertEquals(3449L, data.teamId)
     }
 
     @Test
@@ -150,7 +150,7 @@ class DashboardRepositoryParseTest {
         assertEquals(true, data.teamwechsel?.wechselMoeglich)
         assertEquals("SC Viktoria Ulm", data.teamwechsel?.zweitTeamName)
         assertEquals("NK Kamen Sesvete", data.teamName)
-        assertEquals(1216, data.teamId)
+        assertEquals(1216L, data.teamId)
     }
 
     @Test

@@ -28,7 +28,7 @@ class LivegameRepository @Inject constructor(
     private val client: OkHttpClient,
 ) {
 
-    suspend fun ladeSpiel(teamId: Int, zat: Int): LivegameData = withContext(Dispatchers.IO) {
+    suspend fun ladeSpiel(teamId: Long, zat: Int): LivegameData = withContext(Dispatchers.IO) {
         val url = OsApi.BASE_URL.toHttpUrl().newBuilder()
             .addPathSegments("livegame/php/data.php")
             .addQueryParameter("action", "gamedata")

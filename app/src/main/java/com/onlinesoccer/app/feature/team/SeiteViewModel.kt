@@ -99,7 +99,7 @@ class SeiteViewModel @Inject constructor(
 
     private suspend fun ladeStadionname(): StadionnameUiState {
         val teamId = runCatching {
-            dashboardRepository.fetchDashboard(forceRefresh = true).teamId?.toLong()?.takeIf { it > 0L }
+            dashboardRepository.fetchDashboard(forceRefresh = true).teamId?.takeIf { it > 0L }
         }.getOrNull()
         val serverName = runCatching { repository.ladeTeaminfo().stadionname }.getOrNull()
         val gespeichert = teamId?.let {

@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.data.repository
 
+import android.util.Log
 import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.OsApi
 import com.onlinesoccer.app.core.network.SessionGuard
@@ -63,18 +64,32 @@ class TeamwechselRepository @Inject constructor(
      *
      * Der Aufrufer bestimmt den Zeitpunkt; [teamwechselDurchfuehren] ruft ihn
      * unmittelbar auf.
+     *
+     * `null` bedeutet „der Auftrag kam nicht an" — und das ist einer der Gründe,
+     * warum hier geloggt wird (die einzige Logstelle der App): ein gescheiterter
+     * Request ist auf dem Gerät sonst nicht von einem wirkungslosen Toggle zu
+     * unterscheiden (Gerätetest T38a), und `Logcat` ist der einzige Ort, an dem
+     * sich das ohne Debugger nachsehen lässt.
      */
     suspend fun holeToggleHtml(): String? = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(OsApi.TEAMWECHSEL).build()
         try {
             client.newCall(request).execute().use { response ->
-                val bytes = response.body?.bytes() ?: return@withContext null
+                val bytes = response.body?.bytes() ?: run {
+                    Log.w(TAG, "Toggle: leere Antwort (HTTP ${response.code})")
+                    return@withContext null
+                }
                 // Abgelaufene Session ⇒ keine verwertbare Antwort. Ohne diese
                 // Prüfung würde die Login-Ansicht als „Wechsel ok" gelesen.
-                if (!SessionGuard.isPersonalView(bytes)) return@withContext null
+                if (!SessionGuard.isPersonalView(bytes)) {
+                    Log.w(TAG, "Toggle: Antwort ist keine persönliche Ansicht (HTTP ${response.code})")
+                    return@withContext null
+                }
                 HtmlTools.serverText(bytes)
             }
         } catch (e: IOException) {
+            // Bewusst kein zweiter Versuch: genau das wäre ein Rück-Toggle (Regel 3).
+            Log.w(TAG, "Toggle abgebrochen: ${e.javaClass.simpleName}: ${e.message}")
             null
         }
     }
@@ -113,30 +128,55 @@ class TeamwechselRepository @Inject constructor(
      * T11 komplett testbar.
      *
      * @param vorher Identität vor dem Toggle, @param nachher danach (je `Long?` zu `Name?`).
+     * @param antwort Rohtext der Toggle-Antwort oder `null` = der Request ist gescheitert
+     *   (Timeout, Verbindungsabbruch, H2-Stream-Abbruch, keine persönliche Ansicht).
      */
     internal fun werteAus(
         vorher: Pair<Long?, String?>?,
         nachher: Pair<Long?, String?>?,
+        antwort: String?,
     ): TeamwechselErgebnis = when {
         // Kein verwertbarer Vorzustand (z. B. Cache verjagt): der Serverbefund
         // allein trägt die Meldung.
         vorher == null || nachher == null ->
-            TeamwechselErgebnis.Fehler("Teamwechsel nicht bestätigt – bitte erneut versuchen.")
+            TeamwechselErgebnis.Fehler(NICHT_BESTAETIGT)
+        // Ein **Unterschied** belegt den Wechsel — auch dann, wenn die
+        // Toggle-Antwort nicht lesbar war (Response nach der Serveraktion
+        // verloren): der Refetch ist die Server-Wahrheit, nicht der HTTP-Status.
         // ID-Vergleich ist der belastbare Nachweis.
+        vorher.first != null && nachher.first != null && vorher.first != nachher.first ->
+            TeamwechselErgebnis.Erfolgreich(nachher.first, nachher.second)
+        // Ohne IDs bleibt der Vergleich der Namen.
+        vorher.second != null && nachher.second != null && vorher.second != nachher.second ->
+            TeamwechselErgebnis.Erfolgreich(null, nachher.second)
+        // Der Server zeigt weiterhin dasselbe Team. **War der Request gescheitert,
+        // ist das keine Rätselfrage, sondern die Folge** — der Auftrag kam nicht
+        // an. Genau dieser Fall wurde als „Der Server meldet weiterhin dasselbe
+        // Team" gemeldet (Gerätetest T38a): sachlich richtig, aber ohne jede
+        // Erklärung, und der Nutzer probierte es stur erneut.
+        // ⚠️ Der Text nennt bewusst **keine** Anzahl nötiger Tipps: die
+        // Fehlerrate ist ein Defekt, keine Bedienregel — eine Zahl wäre eine
+        // Zusage, die bei jeder Änderung falsch wird.
+        antwort == null ->
+            TeamwechselErgebnis.Fehler(TOGGLE_NICHT_ERREICHT)
         vorher.first != null && nachher.first != null ->
-            if (vorher.first != nachher.first) {
-                TeamwechselErgebnis.Erfolgreich(nachher.first, nachher.second)
-            } else {
-                TeamwechselErgebnis.Unveraendert
-            }
-        // Ohne IDs bleibt der Vergleich der Namen. Gleicher oder unbekannter
-        // Name ⇒ kein Beleg für einen Wechsel, also **kein** Erfolgsreport.
+            TeamwechselErgebnis.Unveraendert
         vorher.second != null && nachher.second != null ->
-            if (vorher.second != nachher.second) {
-                TeamwechselErgebnis.Erfolgreich(null, nachher.second)
-            } else {
-                TeamwechselErgebnis.Unveraendert
-            }
-        else -> TeamwechselErgebnis.Fehler("Teamwechsel nicht bestätigt – bitte erneut versuchen.")
+            TeamwechselErgebnis.Unveraendert
+        // Weder IDs noch Namen vergleichbar: nichts belegt einen Wechsel, also
+        // auch kein Erfolgsreport.
+        else -> TeamwechselErgebnis.Fehler(NICHT_BESTAETIGT)
+    }
+
+    private companion object {
+        /** Log-Tag der einzigen Logstelle der App. */
+        const val TAG = "Teamwechsel"
+
+        /**
+         * Fehlermeldungen. **Kein** Retry und kein zweiter Toggle: genau das wäre
+         * ein Rückwechsel (Regel 3).
+         */
+        const val TOGGLE_NICHT_ERREICHT = "Wechsel nicht übernommen – bitte erneut tippen."
+        const val NICHT_BESTAETIGT = "Teamwechsel nicht bestätigt – bitte erneut versuchen."
     }
 }

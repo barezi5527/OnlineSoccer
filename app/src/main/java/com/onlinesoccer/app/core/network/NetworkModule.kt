@@ -1,16 +1,12 @@
 package com.onlinesoccer.app.core.network
 
-import android.content.Context
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
-import okhttp3.Cache
 import okhttp3.OkHttpClient
 
 /**
@@ -28,18 +24,23 @@ annotation class ToggleClient
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    @Provides
-    @Singleton
-    fun provideHttpCacheDir(@ApplicationContext context: Context): File =
-        File(context.cacheDir, "http_cache")
-
     /**
-     * Standard-Client für alle lesenden Abrufe (inkl. 10-MB-Diskcache).
+     * Standard-Client für alle lesenden Abrufe — **ohne** HTTP-Cache.
+     *
+     * ⚠️ Es gab hier bis T38 einen 10-MB-Diskcache. Der Server sendet auf **allen**
+     * teamunabhängigen URLs (`haupt.php`, `showteam.php?s=N`, `zugabgabe.php`, `ka.php`,
+     * auch `changetosecond`) durchgehend `Cache-Control: no-store, no-cache,
+     * must-revalidate` + `Pragma: no-cache` — live an allen vier geprüft (T38). Ein
+     * OkHttp-Cache kann solche Antworten weder speichern noch ausliefern, der Cache
+     * brachte also **keinen** Nutzen, legte aber Sitzungsdaten unverschlüsselt auf
+     * Platte und war bei gerade diesen URLs die einzige Stelle, die Team 1 für Team 2
+     * ausliefern **könnte**, falls sich die Header je ändern. Jetzt: keine Cache-
+     * Konfiguration, damit die Frage nicht erneut aufkommt.
      */
     @Provides
     @Singleton
-    fun provideOkHttpClient(cookieStore: OsCookieStore, cacheDir: File): OkHttpClient =
-        buildOkHttpClient(cookieStore = cookieStore, cacheDir = cacheDir)
+    fun provideOkHttpClient(cookieStore: OsCookieStore): OkHttpClient =
+        buildOkHttpClient(cookieStore = cookieStore)
 
     /**
      * Client für den Teamwechsel-Toggle.
@@ -49,7 +50,7 @@ object NetworkModule {
      * Verbindungsabbruch ein zweites Mal schicken, das ist ein **zweiter**
      * Toggle, also ein stiller Rückwechsel. Und **kein Cache**: die Antwort
      * von `haupt.php` ist der einzige Beleg für den neuen Teamzustand, sie
-     * darf nicht aus dem Diskcache kommen.
+     * darf nicht aus einem Cache kommen.
      */
     @Provides
     @Singleton
@@ -57,13 +58,11 @@ object NetworkModule {
     fun provideToggleClient(cookieStore: OsCookieStore): OkHttpClient =
         buildOkHttpClient(
             cookieStore = cookieStore,
-            cacheDir = null,
             retryOnConnectionFailure = false,
         )
 
     private fun buildOkHttpClient(
         cookieStore: OsCookieStore,
-        cacheDir: File?,
         retryOnConnectionFailure: Boolean = true,
     ): OkHttpClient =
         OkHttpClient.Builder()
@@ -71,7 +70,6 @@ object NetworkModule {
             .followSslRedirects(true)
             .cookieJar(cookieStore)
             .retryOnConnectionFailure(retryOnConnectionFailure)
-            .apply { cacheDir?.let { cache(Cache(it, 10L * 1024 * 1024)) } }
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .header("User-Agent", OsApi.USER_AGENT)

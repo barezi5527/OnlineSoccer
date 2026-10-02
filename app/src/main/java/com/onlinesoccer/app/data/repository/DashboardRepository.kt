@@ -100,7 +100,7 @@ class DashboardRepository @Inject constructor(
         } ?: bueroSegmente.getOrNull(1)
 
         val wappen = doc.selectFirst("img[src*=images/wappen]")?.attr("src")
-        val teamId = wappen?.let { Regex("(\\d+)\\.").find(it)?.groupValues?.get(1)?.toIntOrNull() }
+        val teamId = wappen?.let { Regex("(\\d+)\\.").find(it)?.groupValues?.get(1)?.toLongOrNull() }
         val teamLogoUrl = wappen?.let { if (it.startsWith("http")) it else "${OsApi.BASE_URL}/${it.trimStart('/')}" }
         val forumUrl = doc.select("a").firstOrNull {
             val text = it.text().trim()
@@ -158,7 +158,7 @@ class DashboardRepository @Inject constructor(
             val gegner = third.selectFirst("a[href*=teaminfo]")?.text()?.trim()
             val gegnerId = third.selectFirst("a[href*=teaminfo]")
                 ?.attr("href")
-                ?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toIntOrNull() }
+                ?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
             val berichtHref = third.selectFirst("a[href*=os_bericht]")?.attr("href")
             val berichtUrl = berichtHref?.let { parseBerichtUrl(it) }
             val gepaartZat = third.selectFirst("a[href*=spielpreview]")

@@ -2,7 +2,7 @@ package com.onlinesoccer.app.data.model
 
 /** Persönliche Kernwerte vom Dashboard der Hauptseite. */
 data class DashboardData(
-    val teamId: Int?,
+    val teamId: Long?,
     val teamName: String?,
     val liga: String?,
     val logins: String?,
@@ -35,7 +35,7 @@ data class DashboardData(
         val art: String?,
         val heim: Boolean,
         val gegner: String?,
-        val gegnerId: Int?,
+        val gegnerId: Long?,
         val berichtUrl: String? = null,
         val gepaartZat: Int?,
         val saison: Int? = null,

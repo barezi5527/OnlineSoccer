@@ -2,13 +2,13 @@ package com.onlinesoccer.app.feature.taktik
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.onlinesoccer.app.data.model.Taktik
+import com.onlinesoccer.app.data.repository.TaktikQuelle
 import com.onlinesoccer.app.core.state.AenderungBereich
 import com.onlinesoccer.app.core.state.OffeneAenderung
 import com.onlinesoccer.app.core.state.TEAMWECHSEL_VERWORFEN
 import com.onlinesoccer.app.core.state.TeamGeneration
 import com.onlinesoccer.app.core.state.schreibvorgangErlaubt
-import com.onlinesoccer.app.data.model.Taktik
-import com.onlinesoccer.app.data.repository.TaktikQuelle
 import com.onlinesoccer.app.data.repository.TaktikRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -33,39 +33,18 @@ data class TaktikUiState(
 @HiltViewModel
 class TaktikViewModel @Inject constructor(
     private val repository: TaktikRepository,
-    private val offeneAenderung: OffeneAenderung,
-    private val teamGeneration: TeamGeneration,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TaktikUiState())
     val uiState: StateFlow<TaktikUiState> = _uiState.asStateFlow()
 
-    private var geladeneGeneration = teamGeneration.current()
-
     init {
         ladeTaktik()
-    }
-
-    override fun onCleared() {
-        offeneAenderung.schliessen(AenderungBereich.TAKTIK)
-        super.onCleared()
-    }
-
-    private fun setzeDirty(dirty: Boolean) {
-        if (dirty) offeneAenderung.oeffnen(AenderungBereich.TAKTIK)
-        else offeneAenderung.schliessen(AenderungBereich.TAKTIK)
-    }
-
-    private fun gate(): String? {
-        if (schreibvorgangErlaubt(geladeneGeneration, teamGeneration.current())) return null
-        return TEAMWECHSEL_VERWORFEN
     }
 
     fun ladeTaktik() {
         viewModelScope.launch {
             _uiState.value = TaktikUiState(ladende = true)
-            setzeDirty(false)
-            geladeneGeneration = teamGeneration.current()
             _uiState.value = try {
                 val taktik = repository.ladeTaktik()
                 TaktikUiState(
@@ -87,7 +66,6 @@ class TaktikViewModel @Inject constructor(
             fehler = null,
             meldung = null,
         )
-        setzeDirty(true)
     }
 
     fun leereRaster() {
@@ -96,7 +74,6 @@ class TaktikViewModel @Inject constructor(
             fehler = null,
             meldung = null,
         )
-        setzeDirty(true)
     }
 
     fun waehleStandard(id: String) {
@@ -151,13 +128,6 @@ class TaktikViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            // Auch das Löschen ist ein Schreibvorgang mit der **eigenen** Taktik-Liste
-            // im Blick: nach einem Teamwechsel gehörte `gewaehlteEigeneId` zum alten
-            // Team, das Löschen träfe dann das falsche (Plan T35).
-            gate()?.let { abgelehnt ->
-                _uiState.value = _uiState.value.copy(fehler = abgelehnt)
-                return@launch
-            }
             _uiState.value = _uiState.value.copy(loeschende = true, fehler = null, meldung = null)
             try {
                 val taktik = repository.loescheTaktik(id)
@@ -188,17 +158,13 @@ class TaktikViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            gate()?.let { abgelehnt ->
-                _uiState.value = _uiState.value.copy(fehler = abgelehnt)
-                return@launch
-            }
             _uiState.value = _uiState.value.copy(speichernd = true, fehler = null, meldung = null)
             try {
                 val taktik = repository.speichereTaktik(name, _uiState.value.taktik.codes)
                 _uiState.value = _uiState.value.copy(
                     taktik = taktik,
                     speichernd = false,
-                    meldung = "Taktik „$name“ gespeichert.",
+                    meldung = "Taktik \u201e$name\u201c gespeichert.",
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -206,7 +172,6 @@ class TaktikViewModel @Inject constructor(
                     fehler = e.message ?: "Speichern fehlgeschlagen.",
                 )
             }
-            setzeDirty(false)
         }
     }
 }

@@ -33,7 +33,7 @@ class BewerbeRepository @Inject constructor(
 
     suspend fun ladeLigatabelle(
         filter: LigaFilter? = null,
-        eigeneTeamId: Int? = null,
+        eigeneTeamId: Long? = null,
     ): LigaTabelle? = withContext(Dispatchers.IO) {
         val url = if (filter != null) {
             "${OsApi.BASE_URL}/lt.php?ligaauswahl=${filter.liga}&landauswahl=${filter.land}&tabauswahl=${filter.tab}&saauswahl=${filter.saison}&stataktion=Statistik+ausgeben"
@@ -82,7 +82,7 @@ class BewerbeRepository @Inject constructor(
     }
 
     /** Ligatabelle: Haupttabelle + Saison-Optionen + aktueller Filter + eigener Club. */
-    internal fun parseLigatabelle(html: String, eigeneTeamId: Int? = null): LigaTabelle? {
+    internal fun parseLigatabelle(html: String, eigeneTeamId: Long? = null): LigaTabelle? {
         val doc = Jsoup.parse(html)
         fun selectedInt(name: String): Int =
             doc.select("select[name=$name] option[selected]").firstOrNull()
@@ -117,7 +117,7 @@ class BewerbeRepository @Inject constructor(
         }
         val klassen = dataRows.map { tr -> LigaTabellenKlasse.vonCssKlasse(tr.className()) }
         val eigenZeile = eigeneTeamId?.let { own ->
-            teamIds.indexOfFirst { it == own.toLong() }.takeIf { it >= 0 }
+            teamIds.indexOfFirst { it == own }.takeIf { it >= 0 }
         }
 
         return LigaTabelle(

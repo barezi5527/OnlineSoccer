@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.ui
 
+import com.onlinesoccer.app.core.state.AenderungBereich
 import com.onlinesoccer.app.data.model.TeamIds
 import com.onlinesoccer.app.data.model.TeamwechselErgebnis
 import org.junit.Assert.assertEquals
@@ -136,5 +137,165 @@ class AppViewModelTeamwechselTest {
                 TeamwechselErgebnis.Fehler("Teamwechsel nicht bestätigt – bitte erneut versuchen.")
             ),
         )
+    }
+
+    // --- T38a: Wechselsperre -------------------------------------------------
+
+    @Test
+    fun ohneSperreIstDerWechselFreigegeben() {
+        val stand = zustand(teamId = 1216, zweitTeamId = 1216)
+
+        assertFalse(stand.gesperrt)
+        assertEquals(WechselAktion.Starten, wechselAktion(stand))
+    }
+
+    @Test
+    fun sperrzeitSperrtDenNaechstenWechsel() {
+        val stand = zustand(teamId = 1216, zweitTeamId = 1216).copy(sperrRestSekunden = 12)
+
+        assertTrue(stand.gesperrt)
+        assertEquals(WechselAktion.Gesperrt(12), wechselAktion(stand))
+    }
+
+    @Test
+    fun abgelaufeneSperrzeitIstKeineSperre() {
+        val stand = zustand(teamId = 1216, zweitTeamId = 1216).copy(sperrRestSekunden = 0)
+
+        assertFalse(stand.gesperrt)
+        assertEquals(WechselAktion.Starten, wechselAktion(stand))
+    }
+
+    @Test
+    fun laufenderWechselSchlaegtDieSperre() {
+        // Sonst meldete ein Tipp mitten im Wechsel „in 15 s möglich", obwohl
+        // gerade der Wechsel läuft, der die Sperre überhaupt erst auslöst.
+        val stand = zustand(teamId = 1216, zweitTeamId = 1216).copy(
+            laeuft = true,
+            sperrRestSekunden = WECHSEL_SPERRE_SEKUNDEN,
+        )
+
+        assertEquals(WechselAktion.Lauft, wechselAktion(stand))
+    }
+
+    @Test
+    fun sperrMeldungNenntDieRestzeit() {
+        assertEquals("Teamwechsel in 24 s möglich.", teamwechselSperrMeldung(24))
+        assertEquals("Teamwechsel in 1 s möglich.", teamwechselSperrMeldung(1))
+        // Untergrenze 1: bei 0 ist die Sperre vorbei, „in 0 s" wäre Unsinn.
+        assertEquals("Teamwechsel in 1 s möglich.", teamwechselSperrMeldung(0))
+    }
+
+    @Test
+    fun countdownZaehltHerunterUndEndetBeiNull() {
+        assertEquals(14, restzeitNachTakt(WECHSEL_SPERRE_SEKUNDEN))
+        assertEquals(1, restzeitNachTakt(2))
+        assertEquals(0, restzeitNachTakt(1))
+        assertEquals(0, restzeitNachTakt(0))
+    }
+
+    @Test
+    fun nachDerSperreIstDerWechselWiederFreigegeben() {
+        // Der ganze Zweck der Sperre: 15 Takte später ist der Weg zurück offen.
+        var stand = zustand(teamId = 1216, zweitTeamId = 1216)
+            .copy(sperrRestSekunden = WECHSEL_SPERRE_SEKUNDEN)
+
+        repeat(WECHSEL_SPERRE_SEKUNDEN) {
+            stand = stand.copy(sperrRestSekunden = restzeitNachTakt(stand.sperrRestSekunden))
+        }
+
+        assertFalse(stand.gesperrt)
+        assertEquals(WechselAktion.Starten, wechselAktion(stand))
+    }
+
+    // ---------- T33/T34: offene, ungespeicherte Änderungen ----------
+
+    @Test
+    fun offeneAenderungBlockiertDenWechselBisZurBestaetigung() {
+        val stand = zustand(teamId = 3449, zweitTeamId = 1216)
+            .copy(offeneBereiche = setOf(AenderungBereich.ZUGABABE))
+
+        val aktion = wechselAktion(stand)
+        assertTrue(aktion is WechselAktion.Bestaetigen)
+        // Der Dialog benennt Bereich **und** Folge — sonst klickt der Nutzer ahnungslos
+        // auf „Ja" und wundert sich später über den Verlust.
+        val text = (aktion as WechselAktion.Bestaetigen).text
+        assertTrue(text.contains("Zugababe"))
+        assertTrue(text.contains("wirklich wechseln"))
+        assertTrue(text.contains("Nicht gespeicherte Änderungen gehen verloren"))
+    }
+
+    @Test
+    fun zweiOffeneBereicheNennenBeide() {
+        val stand = zustand(teamId = 3449, zweitTeamId = 1216).copy(
+            offeneBereiche = setOf(AenderungBereich.ZUGABABE, AenderungBereich.TAKTIK),
+        )
+
+        val text = (wechselAktion(stand) as WechselAktion.Bestaetigen).text
+        assertTrue(text.contains("Zugababe"))
+        assertTrue(text.contains("Taktik"))
+    }
+
+    @Test
+    fun ohneOffeneAenderungStartetDerWechselDirekt() {
+        // Gegenprobe zum vorigen Test: derselbe Zustand ohne `offeneBereiche` schaltet
+        // ohne Umweg — der Dialog darf nicht aus einem Leerstand heraus erscheinen.
+        val stand = zustand(teamId = 3449, zweitTeamId = 1216)
+
+        assertEquals(WechselAktion.Starten, wechselAktion(stand))
+    }
+
+    @Test
+    fun offenerDialogBleibtStabilUndSpringtNicht() {
+        // Solange die Änderung offen ist, liefert jede Prüfung denselben Dialog:
+        // der erste Tipp stellt ihn, der Bestätigungs-Tipp startet den Wechsel. Ein
+        // Zustand, der zwischen zwei Prüfungen umschaltet, würde den Dialog flackern
+        // lassen oder — schlimmer — den Wechsel ohne Rückfrage durchlassen.
+        val stand = zustand(teamId = 3449, zweitTeamId = 1216)
+            .copy(offeneBereiche = setOf(AenderungBereich.TAKTIK))
+
+        val erste = wechselAktion(stand)
+        val zweite = wechselAktion(stand)
+        assertEquals(erste, zweite)
+        assertEquals(
+            (erste as WechselAktion.Bestaetigen).text,
+            (zweite as WechselAktion.Bestaetigen).text,
+        )
+    }
+
+    @Test
+    fun dialogOhneOffeneAenderungVerriegeltDenWechselNicht() {
+        // Verteidigungsfall: `bestaetigung != null` bei leerem `offeneBereiche` kann der
+        // Collector nicht erzeugen (er setzt beides zusammen) — träte sie trotzdem ein,
+        // darf sie den Wechsel **nicht** blockieren, sonst wäre die App nach einem
+        // unerklärten Dialogzustand dauerhaft teamwechsel-gesperrt.
+        val stand = zustand(teamId = 3449, zweitTeamId = 1216)
+            .copy(bestaetigung = "Zugababe offen — wirklich wechseln? Nicht gespeicherte Änderungen gehen verloren.")
+
+        assertEquals(WechselAktion.Starten, wechselAktion(stand))
+    }
+
+    @Test
+    fun laufenderWechselSchlaegtOffeneAenderung() {
+        // `laeuft` zuerst: während ein Wechsel läuft, gibt es nichts zu bestätigen.
+        val stand = zustand(teamId = 3449, zweitTeamId = 1216).copy(
+            laeuft = true,
+            offeneBereiche = setOf(AenderungBereich.ZUGABABE),
+        )
+
+        assertEquals(WechselAktion.Lauft, wechselAktion(stand))
+    }
+
+    @Test
+    fun wechselsperreSchlaegtOffeneAenderung() {
+        // Auch die Sperre zuerst: sie kann ohnehin nicht schalten. Ein Dialog, der ins
+        // Leere führte, wäre schlimmer als die Restzeit-Meldung.
+        val stand = zustand(teamId = 3449, zweitTeamId = 1216).copy(
+            sperrRestSekunden = 9,
+            offeneBereiche = setOf(AenderungBereich.ZUGABABE),
+        )
+
+        val aktion = wechselAktion(stand)
+        assertTrue(aktion is WechselAktion.Gesperrt)
+        assertEquals(9, (aktion as WechselAktion.Gesperrt).restSekunden)
     }
 }

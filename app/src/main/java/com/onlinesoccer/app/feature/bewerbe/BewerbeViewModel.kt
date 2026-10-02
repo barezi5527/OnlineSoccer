@@ -36,7 +36,7 @@ class BewerbeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BewerbeUiState())
     val uiState: StateFlow<BewerbeUiState> = _uiState.asStateFlow()
 
-    private var eigeneTeamId: Int? = null
+    private var eigeneTeamId: Long? = null
     private var pokalJob: Job? = null
     private var pokalVersucht = false
 
@@ -68,7 +68,7 @@ class BewerbeViewModel @Inject constructor(
     private var pokalSaison: Int? = null
     private var pokalRunde: Int? = null
 
-    private suspend fun eigeneTeamIdBestimmen(): Int? {
+    private suspend fun eigeneTeamIdBestimmen(): Long? {
         eigeneTeamId?.let { return it }
         return try {
             dashboardRepository.fetchDashboard().teamId.also { eigeneTeamId = it }
@@ -216,7 +216,7 @@ class BewerbeViewModel @Inject constructor(
                 }?.let { s ->
                     if (teamId == null) s
                     else s.copy(spiele = s.spiele.map { spiel ->
-                        val own = teamId.toLong()
+                        val own = teamId
                         if (spiel.heimId == own || spiel.gastId == own) spiel.copy(eigenerVerein = true) else spiel
                     })
                 }
@@ -303,7 +303,7 @@ class BewerbeViewModel @Inject constructor(
                     spieltagSaison = geladen.saison.takeIf { it > 0 } ?: spieltagSaison
                     val markiert = if (teamId == null) geladen
                     else geladen.copy(spiele = geladen.spiele.map { spiel ->
-                        val own = teamId.toLong()
+                        val own = teamId
                         if (spiel.heimId == own || spiel.gastId == own) spiel.copy(eigenerVerein = true) else spiel
                     })
                     _uiState.value.copy(ladend = false, spieltag = markiert, fehler = null)

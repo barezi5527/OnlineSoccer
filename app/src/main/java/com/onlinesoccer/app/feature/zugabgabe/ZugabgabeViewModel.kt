@@ -357,6 +357,13 @@ class ZugabgabeViewModel @Inject constructor(
     /** Löscht die klassische Kader-Aufstellung nach bestätigter Nutzeraktion. */
     fun loescheKader() {
         viewModelScope.launch {
+            // Auch das Löschen schreibt in die Aufstellung des **aktiven** Teams —
+            // ohne Gate würde es nach einem Wechsel die Aufstellung des neuen Teams
+            // leeren (Plan T35).
+            gate()?.let { abgelehnt ->
+                _uiState.value = _uiState.value.copy(message = abgelehnt)
+                return@launch
+            }
             _uiState.value = _uiState.value.copy(kaderSpeichernd = true, message = null)
             _uiState.value = try {
                 val neueAufstellung = repository.loescheKaderAufstellung()
