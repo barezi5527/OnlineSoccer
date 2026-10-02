@@ -43,8 +43,9 @@ captures/
 .cxx/
 .kotlin/
 
-# Lokale Screenshot-Ablage (dokumentierte Fassung liegt in docs/screenshots/)
+# Lokale Screenshot-Ablagen - nicht Teil des Quellcodes
 /screenshot/
+/docs/screenshots/
 
 # Lokale Arbeits-/Dokumentationsdateien im Repo-Root (nicht Teil der App)
 /elf.bmp
@@ -56,3 +57,5 @@ captures/
 /Screenshot Website *.png
 /App AufstellungScreenshot*.jpg
 /Forumstext_OnlineSoccer_App.txt
+/Todo *.txt
+/farben spielerpositionen.txt
