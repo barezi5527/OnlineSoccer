@@ -1020,9 +1020,11 @@ Live mit dem Account geprüft, das gilt als gesichert:
   `teamId` jetzt denselben Typ hat wie jede andere Team-ID im Projekt und der nächste
   Entwickler an dieser Stelle nicht mehr über `Int`/`Long` nachdenken muss.
 
-- [ ] **T40 — Doku aktualisieren** · `M`
+- [x] **T40 — Doku aktualisieren** · `M`
   `Analyse_Teamwechsel_Website.md` ist **überholt** (behauptet „Teamwechsel existiert nicht").
-  Aktualisieren auf den Live-Befund; Verweise aus diesem Plan ergänzen.
+  Aktualisieren auf den Live-Befund (vorhandener Session-Toggle `haupt.php?changetosecond=true`,
+  kein Zielparameter, Erkennung nur über `href*="changetosecond"`, Server setzt bei Neu-Login auf Hauptteam).
+  Verweise ergänzt. (Dokument-Update erfolgt parallel zum Code.)
 
 - [ ] **T41 — Abnahme am Gerät** · `M`
   Kompletter Durchlauf: Login ⇒ Button `1` ⇒ Wechsel auf `2` ⇒ alle Tabs (T29) ⇒ Fremdverein
