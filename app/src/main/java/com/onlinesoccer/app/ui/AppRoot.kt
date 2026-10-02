@@ -38,7 +38,6 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -348,18 +347,6 @@ private fun MainScaffold(
                     )
                 },
                 actions = {
-                    // „Teaminformationen" steht auf den eigenen Team-Seiten bereit –
-                    // wie auf der Website jeder Team-Seite der Reiter „Teaminfo".
-                    // Auf Seiten fremder Vereine liegt der Button neben dem Kader-Header.
-                    if (currentRoute == Routes.SEITE) {
-                        TextButton(
-                            onClick = {
-                                navController.navigate(teaminfoRoute()) { launchSingleTop = true }
-                            },
-                        ) {
-                            Text("Teaminformationen")
-                        }
-                    }
 // 1|2 = Teamwechsel zwischen Haupt- und Zweitteam. Angezeigt
                     // wird der **Serverbefund**, nicht ein Wunsch — ohne Zweitteam
                     // wird gar nicht gerendert (kein ausgegrautes Icon, keine
