@@ -115,6 +115,7 @@ class TeamRepository @Inject constructor(
         val iOpti = spalte("Opt.Skill")
         val iSonder = header.indexOfFirst { it.trim().equals("S", ignoreCase = true) }
         val iSperre = spalte("Sperre")
+        val iVerletzung = spalte("Verl.")
 
         return rows.drop(1).mapNotNull { tr ->
             val nameEl = tr.selectFirst("td a[href*='sp.php']") ?: return@mapNotNull null
@@ -144,6 +145,7 @@ class TeamRepository @Inject constructor(
                     emptyList()
                 },
                 sperre = zellen.getOrNull(iSperre)?.text()?.trim().orEmpty(),
+                verletzung = zellen.getOrNull(iVerletzung)?.text()?.trim().orEmpty(),
             )
         }
     }

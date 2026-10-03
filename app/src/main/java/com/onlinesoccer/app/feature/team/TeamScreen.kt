@@ -45,6 +45,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.core.ui.theme.PositionsBadge
 import com.onlinesoccer.app.core.ui.theme.trikotFarbe
+import com.onlinesoccer.app.data.model.BerichtEreignisTyp
 import com.onlinesoccer.app.data.model.KaderSpieler
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
 import com.onlinesoccer.app.data.model.SpielerPosition
@@ -66,6 +69,7 @@ import com.onlinesoccer.app.feature.taktik.TaktikEditor
 import com.onlinesoccer.app.feature.taktik.TaktikViewModel
 import com.onlinesoccer.app.feature.team.friendly.FreundschaftScreen
 import com.onlinesoccer.app.ui.HubTabs
+import com.onlinesoccer.app.ui.components.kartenNameFarbe
 
 private enum class TeamBereich { MANNSCHAFT, TAKTIK, FREUNDSCHAFT, TEAMINFORMATIONEN }
 
@@ -282,7 +286,7 @@ fun SpielerZeile(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (spieler.sonderFaehigkeiten.isNotEmpty() || spieler.gesperrt) {
+                if (spieler.sonderFaehigkeiten.isNotEmpty() || spieler.gesperrt || spieler.verletzt) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -294,6 +298,17 @@ fun SpielerZeile(
                             Spacer(Modifier.width(4.dp))
                         }
                         Spacer(Modifier.weight(1f))
+                        if (spieler.verletzt) {
+                            VerletztStatus(spieler.verletzungsKuerzel)
+                        }
+                        if (spieler.verletzt && spieler.gesperrt) {
+                            Text(
+                                ", ",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                         if (spieler.gesperrt) {
                             SperreStatus(spieler.sperre)
                         }
@@ -344,6 +359,30 @@ private fun SperreStatus(sperre: String) {
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.tertiary,
     )
+}
+
+/**
+ * Verletzung als Kürzel wie die Sperre (z. B. „1V“ = 1 ZAT verletzt), links von
+ * [SperreStatus]. Die Farbe entspricht der Verletzungsfarbe im Spielverlauf.
+ */
+@Composable
+private fun VerletztStatus(kuerzel: String) {
+    val farbe = kartenNameFarbe(BerichtEreignisTyp.VERLETZUNG)
+    Box(
+        Modifier
+            .background(farbe.copy(alpha = 0.16f), RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .semantics {
+                contentDescription = "Verletzt: $kuerzel"
+            },
+    ) {
+        Text(
+            kuerzel,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = farbe,
+        )
+    }
 }
 
 @Composable

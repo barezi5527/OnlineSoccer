@@ -27,7 +27,7 @@ Legende Zugriff ohne Login: ✅ = öffentlich / Demo-Daten · 🔒 = geschützt 
 - Livegame-Konferenz (animierte Spielwiedergabe)
 
 ### Team / Kader
-- Teamübersicht (Kader, Nr., Name, Alter, Pos, „Auf“-Status, Land, Jugend? U, Moral, Fitness, Skillschnitt, Opt.Skill, Sonderstatus K/G, Sperre, Verleihstatus, Tore/TS) – `showteam.php?s=0` / `st.php?c=<tid>` ✅
+- Teamübersicht (Kader, Nr., Name, Alter, Pos, „Auf“-Status, Land, Jugend? U, Moral, Fitness, Skillschnitt, Opt.Skill, Sonderstatus K/G, Sperre, Verletzung, Verleihstatus, Tore/TS) – `showteam.php?s=0` / `st.php?c=<tid>` ✅
 - Vertragsdaten (Gehalt, Vertragslaufzeit, Marktwert, Geburtstag) – `s=1` ✅
 - Einzelwerte (alle 18 Skill-Werte je Spieler) – `s=2` ✅
 - Statistik Saison / Gesamt (Spiele/Tore/Vorlagen/Score/Gelb/Rot je LI/LP/IP/FS) – `s=3`/`s=4` ✅
@@ -334,7 +334,7 @@ Siehe Abschnitt I: Credentials und Session nur im Android Keystore / EncryptedSh
 ### Kernentitäten
 - **Manager/User:** E-Mail (Login), In-Game-Name, Rechte, verknüpfte(s) Team(s), Gaststatus.
 - **Team:** ID `c=`, Name, Wappen (`images/wappen/{id}.png`, Fallback `00000000.png`), Land/Flagge, Liga (1–7), Stadion (Name, Kapazität, Sitz/Steh, überdacht, Rasenheizung, Anzeigetafel), Marktwert-Summe, Gehalt-Summe, Fairplay-Werte, Tabellenplatz, Saisonhistorie, Transfer-/Leihhistorie.
-- **Spieler:** ID `s=`, Name, Alter, „Geburtstag“ (in ZAT-Einheiten), Nationalität (ISO2, Flagge `images/flaggen/XX.gif`), Position (TOR/ABW/DMI/MIT/OMI/STU), Rückennummer, Monatsgehalt, Vertragslaufzeit (Monate), Marktwert, Skillschnitt, Opt.Skill, 18 Skills (+ 6 Torwahr-Skills bei TW), Moral, Fitness, Sperre (z. B. „3P“, „1I“), Verletzt, Leihstatus, Kapitäns-/Sonderstatus (K/G), Saison-/Karrierestatistik (Spiele/Tore/Vorlagen/Score/Gelb/Rot nach LI/LP/IP/FS), Transfer-/Leih-/Spielerhistorie, Gesicht (`faceprev.php?sid=`).
+- **Spieler:** ID `s=`, Name, Alter, „Geburtstag“ (in ZAT-Einheiten), Nationalität (ISO2, Flagge `images/flaggen/XX.gif`), Position (TOR/ABW/DMI/MIT/OMI/STU), Rückennummer, Monatsgehalt, Vertragslaufzeit (Monate), Marktwert, Skillschnitt, Opt.Skill, 18 Skills (+ 6 Torwahr-Skills bei TW), Moral, Fitness, Sperre (Spalte „Sperre“, z. B. „3P“, „1I“), Verletzung (Spalte „Verl.“; Zahl in ZAT, von der App als „1V“ gekürzt, „0“ = nicht verletzt), Leihstatus, Kapitäns-/Sonderstatus (K/G), Saison-/Karrierestatistik (Spiele/Tore/Vorlagen/Score/Gelb/Rot nach LI/LP/IP/FS), Transfer-/Leih-/Spielerhistorie, Gesicht (`faceprev.php?sid=`).
   - Skill-Kürzel: SCH (Schießen), BAK (Bälleroberung), KOB (Körperkontakt), ZWK (Zweikampf), DEC (Defensive), GES (Geschwindigkeit), FUQ (Führungsqualität), ERF (Erfahrung), AGG (Aggressivität), PAS (Passen), AUS (Ausdauer), UEB (Übersicht), WID (Willenskraft), SEL (Selbstvertrauen), DIS (Disziplin), ZUV (Zuverlässigkeit), EIN (Einschätzung); TW: Abstoss, Stellungsspiel, Fangsicherheit, Strafraumbeh., Spiel auf der Linie, Reflexe; hinzu Führungsfertigkeit/Einstellung je nach Ansicht.
 - **Positionen:** 1=TOR, 2=ABW, 3=DMI, 4=MIT, 5=OMI, 6=STU (zahlreiche Filter nutzen diese Codes).
 

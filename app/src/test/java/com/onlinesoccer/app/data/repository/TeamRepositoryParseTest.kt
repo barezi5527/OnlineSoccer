@@ -1,6 +1,8 @@
 package com.onlinesoccer.app.data.repository
 
+import com.onlinesoccer.app.data.model.KaderSpieler
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
+import com.onlinesoccer.app.data.model.SpielerPosition
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -89,12 +91,131 @@ class TeamRepositoryParseTest {
         val kader = repo.parseKader(dump("kader"))
 
         // Flavio Zurlinden hat FIT=0; die Website zeigt in der Sperre-Spalte keinen
-        // Hinweis (Sperre „0“, kein abbr/title) – die App darf daher keinen
-        // Verletzt-Status ableiten.
+        // Hinweis (Sperre „0“, kein abbr/title) und in der Verl.-Spalte ebenfalls „0“ –
+        // die App darf daher keinen Verletzt-Status ableiten.
         val flavio = kader.first { it.pid == 115904L } // Flavio Zurlinden, FIT=0
         assertEquals(0, flavio.fit)
         assertEquals("0", flavio.sperre)
         assertFalse("Flavio nicht gesperrt", flavio.gesperrt)
+        assertEquals("0", flavio.verletzung)
+        assertFalse("FIT=0 allein ist keine Verletzung", flavio.verletzt)
+    }
+
+    @Test
+    fun kader_spalteVerletzung_liefertVerletzteSpieler() {
+        val kader = repo.parseKader(dump("showteam_s0_verletzt"))
+
+        val zuyev = kader.first { it.pid == 131349L } // Alexey Zuyev, FIT=0
+        assertEquals("1", zuyev.verletzung)
+        assertTrue("„1“ = verletzt", zuyev.verletzt)
+        assertEquals("1V", zuyev.verletzungsKuerzel)
+        assertFalse("Zuyev ist nicht gesperrt", zuyev.gesperrt)
+
+        val pihel = kader.first { it.pid == 116286L } // Janar Pihel, FIT=0
+        assertEquals("1", pihel.verletzung)
+        assertTrue("„1“ = verletzt", pihel.verletzt)
+        assertEquals("1V", pihel.verletzungsKuerzel)
+    }
+
+    @Test
+    fun kader_ohneVerletzung_istNichtVerletzt() {
+        val kader = repo.parseKader(dump("showteam_s0_verletzt"))
+
+        val lars = kader.first { it.pid == 97944L } // Lars Vincez, FIT=76
+        assertEquals("0", lars.verletzung)
+        assertFalse("Lars Vincez nicht verletzt", lars.verletzt)
+        assertEquals("ohne Verletzung kein Kürzel", "0", lars.verletzungsKuerzel)
+
+        // Gesperrt, aber nicht verletzt: Harald Philippi („2P“).
+        val philipp = kader.first { it.pid == 169711L }
+        assertTrue("Harald Philippi gesperrt", philipp.gesperrt)
+        assertEquals("0", philipp.verletzung)
+        assertFalse("gesperrt ist nicht verletzt", philipp.verletzt)
+    }
+
+    @Test
+    fun kader_verletzungUndSperre_kommenAusGetrenntenSpalten() {
+        val html = """
+            <table id="team">
+              <tr><td>#</td><td>Nr.</td><td>Name</td><td>Alter</td><td>Pos</td>
+                  <td>MOR</td><td>FIT</td><td>Skillschnitt</td><td>Opt.Skill</td><td>S</td>
+                  <td>Sperre</td><td>Verl.</td></tr>
+              <tr>
+                <td>1</td><td>10</td><td><a href="sp.php?s=999">Test</a></td><td>25</td><td>MIT</td>
+                <td>99</td><td>0</td><td>70</td><td>85</td>
+                <td></td><td><abbr title="2 Pokalspiele">2P</abbr></td><td>3</td>
+              </tr>
+            </table>
+        """.trimIndent()
+
+        val spieler = repo.parseKader(html).single()
+
+        assertEquals("2P", spieler.sperre)
+        assertTrue("gesperrt", spieler.gesperrt)
+        assertEquals("3", spieler.verletzung)
+        assertTrue("verletzt", spieler.verletzt)
+        assertEquals("3V", spieler.verletzungsKuerzel)
+    }
+
+    @Test
+    fun verletzungsKuerzel_nurZahlenBekommenDasV() {
+        // Die Website liefert in „Verl.“ nur die Zahl; ein nichtnumerischer Wert
+        // darf nicht durch ein angehängtes „V" verfälscht werden.
+        fun kuerzel(verletzung: String) =
+            KaderSpieler(
+                pid = 1L, name = "X", nummer = "1", alter = 25,
+                position = SpielerPosition.MIT, skill = 0.0, opti = 0.0,
+                fit = 0, mor = 0, verletzung = verletzung,
+            ).verletzungsKuerzel
+
+        assertEquals("1V", kuerzel("1"))
+        assertEquals("28V", kuerzel("28"))
+        assertEquals("0", kuerzel("0"))
+        assertEquals("", kuerzel(""))
+        assertEquals("2 Wochen", kuerzel("2 Wochen"))
+    }
+
+    @Test
+    fun fremderKader_verletzung_wirdNichtAusDerTsSpalteGelesen() {
+        // Beim fremden Verein fehlen MOR/FIT, dadurch rutscht die Verl.-Spalte im
+        // Vergleich zum eigenen Kader nach vorn. Oliver Weidmann steht mit 28 in
+        // TS (letzte Spalte) und ist nicht verletzt – Verl. ist hier „0“.
+        val fremd = repo.parseFremdesTeam(dump("st902_verletzt"), 902L)
+
+        val weidmann = fremd.kader.first { it.pid == 122237L }
+        assertEquals("Oliver Weidmann", weidmann.name)
+        assertEquals("0", weidmann.verletzung)
+        assertFalse("TS=28 ist keine Verletzung", weidmann.verletzt)
+        assertEquals("0", weidmann.sperre)
+        assertFalse("nicht gesperrt", weidmann.gesperrt)
+
+        assertTrue("kein Spieler des fremden Kaders ist verletzt", fremd.kader.none { it.verletzt })
+    }
+
+    @Test
+    fun fremderKader_verletzung_ohneMorUndFitSpalte() {
+        // Aufbau wie `st.php?c=<id>`: kein MOR, kein FIT – die Verl.-Spalte steht
+        // direkt hinter der Sperre.
+        val html = """
+            <table id="team">
+              <tr><td>#</td><td>Nr.</td><td>Name</td><td>Alter</td><td>Pos</td>
+                  <td>Auf</td><td></td><td>Land</td><td>U</td>
+                  <td>Skillschnitt</td><td>Opt.Skill</td><td>S</td><td>Sperre</td><td>Verl.</td></tr>
+              <tr>
+                <td>1</td><td>10</td><td><a href="sp.php?s=999">Test</a></td><td>25</td><td>MIT</td>
+                <td>MIT</td><td></td><td>SUI</td><td></td>
+                <td>56.71</td><td>89.33</td><td>S</td><td>0</td><td>28</td>
+              </tr>
+            </table>
+        """.trimIndent()
+
+        val spieler = repo.parseKader(html).single()
+
+        assertEquals("56.71", spieler.skill.toString())
+        assertEquals("0", spieler.sperre)
+        assertEquals("28", spieler.verletzung)
+        assertTrue("verletzt", spieler.verletzt)
+        assertEquals("28V", spieler.verletzungsKuerzel)
     }
 
     @Test
