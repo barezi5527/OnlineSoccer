@@ -47,6 +47,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
@@ -789,23 +790,25 @@ private fun TabelleMitFixerKopfzeile(
     Card(modifier.fillMaxWidth()) {
         val horizontalScroll = rememberScrollState()
         Box(Modifier.fillMaxSize()) {
-            Column(
+            Box(
                 Modifier
                     .fillMaxSize()
                     .padding(top = 44.dp, bottom = 4.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .clipToBounds(),
             ) {
-                tabellen.forEachIndexed { tabelleIndex, tabelle ->
-                    TabellenZeilen(
-                        spalten = spalten,
-                        zeilen = tabelle.zeilen,
-                        teamIds = tabelle.teamIds,
-                        onTeamClick = onTeamClick,
-                        zeilenHintergrund = { index ->
-                            zeilenFarben[tabelleIndex].getOrNull(index) ?: Color.Transparent
-                        },
-                        horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } },
-                    )
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    tabellen.forEachIndexed { tabelleIndex, tabelle ->
+                        TabellenZeilen(
+                            spalten = spalten,
+                            zeilen = tabelle.zeilen,
+                            teamIds = tabelle.teamIds,
+                            onTeamClick = onTeamClick,
+                            zeilenHintergrund = { index ->
+                                zeilenFarben[tabelleIndex].getOrNull(index) ?: Color.Transparent
+                            },
+                            horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } },
+                        )
+                    }
                 }
             }
             Box(
