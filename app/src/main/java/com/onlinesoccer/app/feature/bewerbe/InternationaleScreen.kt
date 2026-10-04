@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -47,7 +48,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
@@ -771,6 +771,7 @@ private fun Tabelle(
  * (Gruppenphase, Rangliste), deshalb genügt eine Kopfzeile.
  */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun TabelleMitFixerKopfzeile(
     tabellen: List<WertTabelle>,
     onTeamClick: (Long) -> Unit,
@@ -789,14 +790,23 @@ private fun TabelleMitFixerKopfzeile(
 
     Card(modifier.fillMaxWidth()) {
         val horizontalScroll = rememberScrollState()
-        Box(Modifier.fillMaxSize()) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .padding(top = 44.dp, bottom = 4.dp)
-                    .clipToBounds(),
-            ) {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
+        LazyColumn(Modifier.fillMaxSize()) {
+            stickyHeader {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .zIndex(2f)
+                        .background(MaterialTheme.colorScheme.surface),
+                ) {
+                    TabellenKopfzeile(
+                        spalten,
+                        horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } },
+                    )
+                }
+            }
+            item {
+                Column(Modifier.padding(bottom = 4.dp)) {
                     tabellen.forEachIndexed { tabelleIndex, tabelle ->
                         TabellenZeilen(
                             spalten = spalten,
@@ -810,18 +820,6 @@ private fun TabelleMitFixerKopfzeile(
                         )
                     }
                 }
-            }
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .zIndex(2f)
-                    .background(MaterialTheme.colorScheme.surface),
-            ) {
-                TabellenKopfzeile(
-                    spalten,
-                    horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } },
-                )
             }
         }
     }
