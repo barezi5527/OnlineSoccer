@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -40,28 +41,62 @@ internal fun TabellenRaster(
     zeilenHintergrund: (Int) -> Color = { Color.Transparent },
 ) {
     if (spalten.isEmpty()) return
-    val fuelltBreite = spalten.all { it.gewicht != null }
+    val festeSpalten = spalten.filter { it.fest }
+    val scrollSpalten = spalten.filter { !it.fest }
     val horizontalScroll = rememberScrollState()
     val verticalScroll = rememberScrollState()
 
     Column(modifier) {
-        Column(
+        Row(
             Modifier
                 .fillMaxWidth()
-                .then(if (eigeneHoehenRollleiste) Modifier.weight(1f) else Modifier)
-                .then(if (fuelltBreite) Modifier else Modifier.horizontalScroll(horizontalScroll)),
+                .then(if (eigeneHoehenRollleiste) Modifier.weight(1f) else Modifier),
         ) {
-            TabellenKopfzeile(spalten)
+            if (festeSpalten.isNotEmpty()) {
+                Column(Modifier.wrapContentWidth()) {
+                    TabellenKopfzeile(festeSpalten)
+                    Column(
+                        Modifier.then(
+                            if (eigeneHoehenRollleiste) {
+                                Modifier.weight(1f).verticalScroll(verticalScroll)
+                            } else {
+                                Modifier.verticalScroll(verticalScroll)
+                            },
+                        ),
+                    ) {
+                        TabellenZeilen(
+                            festeSpalten,
+                            zeilen,
+                            teamIds,
+                            onTeamClick,
+                            zeilenHintergrund,
+                        )
+                    }
+                }
+            }
             Column(
-                Modifier.then(
-                    if (eigeneHoehenRollleiste) {
-                        Modifier.weight(1f).verticalScroll(verticalScroll)
-                    } else {
-                        Modifier
-                    },
-                ),
+                Modifier
+                    .weight(1f)
+                    .horizontalScroll(horizontalScroll),
             ) {
-                TabellenZeilen(spalten, zeilen, teamIds, onTeamClick, zeilenHintergrund)
+                TabellenKopfzeile(scrollSpalten)
+                Column(
+                    Modifier.then(
+                        if (eigeneHoehenRollleiste) {
+                            Modifier.weight(1f).verticalScroll(verticalScroll)
+                        } else {
+                            Modifier
+                        },
+                    ),
+                ) {
+                    TabellenZeilen(
+                        scrollSpalten,
+                        zeilen,
+                        teamIds,
+                        onTeamClick,
+                        zeilenHintergrund,
+                    )
+                }
             }
         }
     }
@@ -155,19 +190,32 @@ internal fun rankingTabellenSpalten(header: List<String>): List<TabellenSpalte>?
             team = istClub,
             breite = when {
                 istPlatz -> 44.dp
-                kopf.equals("Lnd", ignoreCase = true) -> 92.dp
+                kopf.equals("Lnd", ignoreCase = true) -> 68.dp
                 istClub -> 150.dp
-                istSumme -> 76.dp
-                else -> 56.dp
+                istSumme -> 64.dp
+                else -> 64.dp
             },
-            gewicht = when {
-                istPlatz -> 0.8f
-                kopf.equals("Lnd", ignoreCase = true) -> 1.6f
-                istClub -> 3.0f
-                istSumme -> 1.4f
-                else -> 1.0f
-            },
-            wert = { getOrNull(stelle) ?: "–" },
+            gewicht = null,
+            wert = { getOrNull(stelle)?.let { v ->
+                val t = v.replace(' ', ' ').trim()
+                if (t.isEmpty()) return@let "–"
+                var s2 = t
+                val dot = s2.lastIndexOf('.')
+                if (dot >= 0) {
+                    val f = s2.substring(dot + 1).trimEnd('0')
+                    val i = s2.substring(0, dot)
+                    s2 = if (f.isEmpty()) i else "$i.$f"
+                } else {
+                    val c = s2.lastIndexOf(',')
+                    if (c >= 0) {
+                        val f = s2.substring(c + 1).trimEnd('0')
+                        val i = s2.substring(0, c)
+                        s2 = if (f.isEmpty()) i else "$i.$f"
+                    }
+                }
+                s2
+            } ?: "–" },
+            fest = istClub,
         )
     }
 }

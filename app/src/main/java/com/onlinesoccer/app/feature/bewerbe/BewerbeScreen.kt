@@ -425,6 +425,7 @@ internal data class TabellenSpalte(
     val breite: androidx.compose.ui.unit.Dp,
     val wert: List<String>.() -> String,
     val gewicht: Float? = null,
+    val fest: Boolean = false,
 )
 
 /**

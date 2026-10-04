@@ -138,7 +138,7 @@ class InternationaleRepository @Inject constructor(
                     add(zellen.getOrElse(2) { "" })
                 }
                 add(summe3(zellen.lastOrNull().orEmpty()))
-                saisonen.indices.forEach { stelle -> add(zellen.getOrElse(saisonIndex(stelle)) { "" }) }
+                saisonen.indices.forEach { stelle -> add(normalizeZahl(zellen.getOrElse(saisonIndex(stelle)) { "" })) }
             }
         }
         return com.onlinesoccer.app.data.model.WertTabelle(
@@ -311,11 +311,28 @@ class InternationaleRepository @Inject constructor(
      * unangetastet (`30.08`), damit Saison- und Summenspalte einer Zeile gleich
      * aussehen.
      */
-    private fun summe3(text: String): String {
-        val punkt = text.lastIndexOf('.')
-        if (punkt < 0 || text.length - punkt - 1 <= 3) return text
-        return text.substring(0, punkt + 4)
+    private fun normalizeZahl(text: String): String {
+        val t = text.replace('\u00A0', ' ').trim()
+        if (t.isEmpty()) return t
+        val dot = t.lastIndexOf('.')
+        if (dot >= 0) {
+            if (t.length - dot - 1 > 3) {
+                return t.substring(0, dot + 4)
+            }
+            val frac = t.substring(dot + 1).trimEnd('0')
+            val intp = t.substring(0, dot)
+            return if (frac.isEmpty()) intp else "$intp.$frac"
+        }
+        val comma = t.lastIndexOf(',')
+        if (comma >= 0) {
+            val frac = t.substring(comma + 1).trimEnd('0')
+            val intp = t.substring(0, comma)
+            return if (frac.isEmpty()) intp else "$intp.$frac"
+        }
+        return t
     }
+
+    private fun summe3(text: String): String = normalizeZahl(text)
 
     /**
      * Teilnehmerliste (`intTeilnehmer`): `<h2>`-Wettbewerbsüberschrift gefolgt von
