@@ -18,6 +18,7 @@ import com.onlinesoccer.app.data.repository.TeamRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -72,7 +73,41 @@ class TeamViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(TeamUiState())
     val uiState: StateFlow<TeamUiState> = _uiState.asStateFlow()
-    private var ladeJob: Job? = null
+
+    /**
+     * Ladebereiche des Team-Screens. Je Bereich läuft höchstens ein Vorgang, verschiedene
+     * Bereiche sind voneinander unabhängig – ein Tab-Wechsel bricht nicht mehr den Ladevorgang
+     * eines anderen Bereichs ab (zuvor teilten sich alle Bereiche ein einziges `ladeJob`).
+     */
+    private enum class LadeBereich {
+        KADER, VERTRAEGE, STAERKEN, STATISTIK, TEAMINFO, SAISONPLAN,
+        VEREINSHISTORIE, TRANSFERHISTORIE, LEIHHISTORIE, SAISONHISTORIE, TABELLENPLATZ,
+    }
+
+    private val ladeJobs = mutableMapOf<LadeBereich, Job>()
+
+    /** Anzahl der aktuell laufenden Ladevorgänge über alle Bereiche. */
+    private var laufendeLadungen = 0
+
+    /**
+     * Bricht einen laufenden Vorgang im selben [bereich] ab und startet [block] neu.
+     *
+     * `ladend` wird über [laufendeLadungen] gezählt: da Bereiche nun parallel laufen können,
+     * darf der schnellere Bereich den Ladeindikator nicht abschalten, während ein anderer
+     * noch lädt. Das `finally` überschreibt deshalb das `ladend = false` im Rumpf.
+     */
+    private fun lade(bereich: LadeBereich, block: suspend CoroutineScope.() -> Unit) {
+        ladeJobs[bereich]?.cancel()
+        ladeJobs[bereich] = viewModelScope.launch {
+            laufendeLadungen++
+            try {
+                block()
+            } finally {
+                laufendeLadungen--
+                _uiState.value = _uiState.value.copy(ladend = laufendeLadungen > 0)
+            }
+        }
+    }
 
     init {
         ladeSaison()
@@ -86,8 +121,7 @@ class TeamViewModel @Inject constructor(
     }
 
     fun ladeKader(teamId: Long? = null) {
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.KADER) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, kader = repository.ladeKader(teamId))
@@ -112,8 +146,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeVertraege(teamId: Long? = null) {
         if (_uiState.value.vertraege != null) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.VERTRAEGE) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, vertraege = repository.ladeVertraege(teamId))
@@ -127,8 +160,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeStaerken(teamId: Long? = null) {
         if (_uiState.value.staerken != null) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.STAERKEN) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, staerken = repository.ladeStaerken(teamId))
@@ -142,8 +174,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeStatistik(gesamt: Boolean, teamId: Long? = null) {
         if (_uiState.value.statistik != null && _uiState.value.statistikGesamt == gesamt) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.STATISTIK) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null, statistikGesamt = gesamt)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, statistik = repository.ladeStatistik(gesamt, teamId))
@@ -157,8 +188,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeTeaminfo(teamId: Long? = null) {
         if (_uiState.value.teaminfo != null) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.TEAMINFO) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, teaminfo = repository.ladeTeaminfo(teamId))
@@ -171,8 +201,7 @@ class TeamViewModel @Inject constructor(
     }
 
     fun ladeSaisonplan(saison: Int? = null, teamId: Long? = null) {
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.SAISONPLAN) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, saisonplan = repository.ladeSaisonplan(saison, teamId))
@@ -186,8 +215,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeVereinshistorie(teamId: Long? = null) {
         if (_uiState.value.vereinshistorie != null) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.VEREINSHISTORIE) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, vereinshistorie = repository.ladeVereinshistorie(teamId))
@@ -201,8 +229,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeTransferhistorie(teamId: Long? = null) {
         if (_uiState.value.transferhistorie != null) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.TRANSFERHISTORIE) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, transferhistorie = repository.ladeTransferhistorie(teamId))
@@ -216,8 +243,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeLeihhistorie(teamId: Long? = null) {
         if (_uiState.value.leihhistorie != null) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.LEIHHISTORIE) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, leihhistorie = repository.ladeLeihhistorie(teamId))
@@ -231,8 +257,7 @@ class TeamViewModel @Inject constructor(
 
     fun ladeSaisonhistorie(teamId: Long? = null) {
         if (_uiState.value.saisonhistorie != null) return
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.SAISONHISTORIE) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, saisonhistorie = repository.ladeSaisonhistorie(teamId))
@@ -245,8 +270,7 @@ class TeamViewModel @Inject constructor(
     }
 
     fun ladeTabellenplatzBild(teamId: Long) {
-        ladeJob?.cancel()
-        ladeJob = viewModelScope.launch {
+        lade(LadeBereich.TABELLENPLATZ) {
             _uiState.value = _uiState.value.copy(ladend = true, fehler = null, tabellenplatzTeamId = teamId)
             _uiState.value = try {
                 _uiState.value.copy(
