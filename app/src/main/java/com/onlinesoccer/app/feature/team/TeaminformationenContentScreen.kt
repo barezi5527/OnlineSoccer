@@ -37,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -638,13 +639,19 @@ private fun LeihhistorieAnsicht(
 /** Tabellenplätze (`tp`): Bild, horizontal & vertikal scrollbar. */
 @Composable
 private fun TabellenplatzAnsicht(pngBytes: ByteArray?) {
-    if (pngBytes == null || pngBytes.isEmpty()) {
-        Text("Kein Tabellenplatz-Bild gefunden.", Modifier.padding(24.dp))
-        return
+    // Das `remember` steht bewusst vor dem frühen Return: würde die Dekodierung erst
+    // danach erfolgen, hinge die Zahl der Memo-Slots von `pngBytes` ab (Kompositions-
+    // verstoß). So wird das ByteArray genau einmal dekodiert.
+    val bitmap = remember(pngBytes) {
+        pngBytes?.takeIf { it.isNotEmpty() }
+            ?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
     }
-    val bitmap = BitmapFactory.decodeByteArray(pngBytes, 0, pngBytes.size)
     if (bitmap == null) {
-        Text("Das Tabellenplatz-Bild konnte nicht gelesen werden.", Modifier.padding(24.dp))
+        Text(
+            if (pngBytes == null || pngBytes.isEmpty()) "Kein Tabellenplatz-Bild gefunden."
+            else "Das Tabellenplatz-Bild konnte nicht gelesen werden.",
+            Modifier.padding(24.dp),
+        )
         return
     }
     Box(
