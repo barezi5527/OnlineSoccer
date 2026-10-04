@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.ScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +25,8 @@ import androidx.compose.ui.unit.dp
 /**
  * Tabellenraster der Ligatabelle: feste Kopfzeile, linksbündige Teamspalte mit
  * Kaderaufruf, zentrierte Zahlen. Spalten mit Gewicht füllen die verfügbare
- * Breite, feste Breiten führen zu waagerechtem Scrollen.
+ * Breite, feste Breiten führen zu waagerechtem Scrollen. Markierte Spalten bleiben
+ * links fixiert; bei Ranglisten sind dies Platz, Land und Club.
  *
  * @param eigeneHoehenRollleiste true, wenn der Aufrufer eine begrenzte Höhe vorgibt
  *   (z. B. `Modifier.weight(1f)`), damit die Kopfzeile sichtbar bleibt.
@@ -41,62 +42,33 @@ internal fun TabellenRaster(
     zeilenHintergrund: (Int) -> Color = { Color.Transparent },
 ) {
     if (spalten.isEmpty()) return
-    val festeSpalten = spalten.filter { it.fest }
-    val scrollSpalten = spalten.filter { !it.fest }
+    val hatFixierteSpalten = spalten.any { it.fest }
+    val fuelltBreite = spalten.all { it.gewicht != null }
     val horizontalScroll = rememberScrollState()
     val verticalScroll = rememberScrollState()
 
     Column(modifier) {
-        Row(
+        Column(
             Modifier
                 .fillMaxWidth()
-                .then(if (eigeneHoehenRollleiste) Modifier.weight(1f) else Modifier),
+                .then(if (eigeneHoehenRollleiste) Modifier.weight(1f) else Modifier)
+                .then(if (!hatFixierteSpalten && !fuelltBreite) Modifier.horizontalScroll(horizontalScroll) else Modifier),
         ) {
-            if (festeSpalten.isNotEmpty()) {
-                Column(Modifier.wrapContentWidth()) {
-                    TabellenKopfzeile(festeSpalten)
-                    Column(
-                        Modifier.then(
-                            if (eigeneHoehenRollleiste) {
-                                Modifier.weight(1f).verticalScroll(verticalScroll)
-                            } else {
-                                Modifier.verticalScroll(verticalScroll)
-                            },
-                        ),
-                    ) {
-                        TabellenZeilen(
-                            festeSpalten,
-                            zeilen,
-                            teamIds,
-                            onTeamClick,
-                            zeilenHintergrund,
-                        )
-                    }
-                }
-            }
+            TabellenKopfzeile(spalten, horizontalScroll = horizontalScroll.takeIf { hatFixierteSpalten })
             Column(
-                Modifier
-                    .weight(1f)
-                    .horizontalScroll(horizontalScroll),
+                Modifier.then(
+                    if (eigeneHoehenRollleiste) Modifier.weight(1f).verticalScroll(verticalScroll)
+                    else Modifier,
+                ),
             ) {
-                TabellenKopfzeile(scrollSpalten)
-                Column(
-                    Modifier.then(
-                        if (eigeneHoehenRollleiste) {
-                            Modifier.weight(1f).verticalScroll(verticalScroll)
-                        } else {
-                            Modifier
-                        },
-                    ),
-                ) {
-                    TabellenZeilen(
-                        scrollSpalten,
-                        zeilen,
-                        teamIds,
-                        onTeamClick,
-                        zeilenHintergrund,
-                    )
-                }
+                TabellenZeilen(
+                    spalten,
+                    zeilen,
+                    teamIds,
+                    onTeamClick,
+                    zeilenHintergrund,
+                    horizontalScroll = horizontalScroll.takeIf { hatFixierteSpalten },
+                )
             }
         }
     }
@@ -111,9 +83,9 @@ internal fun TabellenRaster(
 internal fun TabellenKopfzeile(
     spalten: List<TabellenSpalte>,
     modifier: Modifier = Modifier,
+    horizontalScroll: ScrollState? = null,
 ) {
-    Row(modifier.fillMaxWidth()) {
-        spalten.forEach { spalte ->
+    RasterZeile(spalten, modifier, horizontalScroll) { spalte ->
             Text(
                 spalte.kopf,
                 modifier = spaltenBreite(spalte).padding(horizontal = 6.dp, vertical = 4.dp),
@@ -123,7 +95,6 @@ internal fun TabellenKopfzeile(
                 overflow = TextOverflow.Ellipsis,
                 textAlign = if (spalte.team) TextAlign.Start else TextAlign.Center,
             )
-        }
     }
 }
 
@@ -139,16 +110,12 @@ internal fun TabellenZeilen(
     onTeamClick: (Long) -> Unit = {},
     zeilenHintergrund: (Int) -> Color = { Color.Transparent },
     modifier: Modifier = Modifier,
+    horizontalScroll: ScrollState? = null,
 ) {
     Column(modifier) {
         zeilen.forEachIndexed { index, zeile ->
             val teamId = teamIds.getOrNull(index)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .background(zeilenHintergrund(index)),
-            ) {
-                spalten.forEach { spalte ->
+            RasterZeile(spalten, Modifier.background(zeilenHintergrund(index)), horizontalScroll) { spalte ->
                     val klickbar = spalte.team && teamId != null
                     Text(
                         spalte.wert(zeile),
@@ -161,8 +128,30 @@ internal fun TabellenZeilen(
                         overflow = TextOverflow.Ellipsis,
                         textAlign = if (spalte.team) TextAlign.Start else TextAlign.Center,
                     )
-                }
             }
+        }
+    }
+}
+
+@Composable
+private fun RasterZeile(
+    spalten: List<TabellenSpalte>,
+    modifier: Modifier,
+    horizontalScroll: ScrollState?,
+    zelle: @Composable RowScope.(TabellenSpalte) -> Unit,
+) {
+    val ersterScrollIndex = spalten.indexOfFirst { !it.fest }
+        .let { if (it < 0) spalten.size else it }
+    val festeSpalten = spalten.take(ersterScrollIndex)
+    val scrollSpalten = spalten.drop(ersterScrollIndex)
+    Row(modifier.fillMaxWidth()) {
+        festeSpalten.forEach { zelle(it) }
+        if (horizontalScroll != null && scrollSpalten.isNotEmpty()) {
+            Row(Modifier.weight(1f).horizontalScroll(horizontalScroll)) {
+                scrollSpalten.forEach { zelle(it) }
+            }
+        } else {
+            scrollSpalten.forEach { zelle(it) }
         }
     }
 }
@@ -180,6 +169,7 @@ private fun RowScope.spaltenBreite(spalte: TabellenSpalte): Modifier =
  */
 internal fun rankingTabellenSpalten(header: List<String>): List<TabellenSpalte>? {
     if (header.none { it.equals("Lnd", ignoreCase = true) }) return null
+    val istClubRanking = header.any { it.equals("Club", ignoreCase = true) }
     return header.mapIndexed { stelle, kopf ->
         val istPlatz = kopf.equals("#", ignoreCase = true)
         val istClub = kopf.equals("Club", ignoreCase = true)
@@ -213,9 +203,9 @@ internal fun rankingTabellenSpalten(header: List<String>): List<TabellenSpalte>?
                         s2 = if (f.isEmpty()) i else "$i.$f"
                     }
                 }
-                s2
+                if (istClubRanking && !istPlatz && !istClub) s2.replace(".", "") else s2
             } ?: "–" },
-            fest = istClub,
+            fest = istPlatz || kopf.equals("Lnd", ignoreCase = true) || istClub,
         )
     }
 }

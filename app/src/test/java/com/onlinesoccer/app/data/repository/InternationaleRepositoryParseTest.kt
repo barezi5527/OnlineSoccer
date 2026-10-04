@@ -257,6 +257,10 @@ class InternationaleRepositoryParseTest {
         val spalten = rankingTabellenSpalten(tabelle.header)!!
         assertEquals(listOf("#", "Lnd", "Club", "Sum", "S23", "S22", "S21"), spalten.map { it.kopf })
         assertEquals("Club", spalten.single { it.team }.kopf)
+        assertTrue(spalten.take(3).all { it.fest })
+        assertTrue(spalten.drop(3).none { it.fest })
+        assertEquals("14136", spalten[3].wert(tabelle.zeilen.first()))
+        assertEquals("8833", spalten[4].wert(tabelle.zeilen.first()))
         assertEquals("Ungarn", spalten[1].wert(tabelle.zeilen.first()))
     }
 

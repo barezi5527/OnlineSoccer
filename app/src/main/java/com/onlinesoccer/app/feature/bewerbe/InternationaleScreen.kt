@@ -729,9 +729,9 @@ private fun Auswahl(
 
 /**
  * Tabellenansicht mit der Spaltenvorlage der Ligatabelle: Gruppenphasen zeigen
- * `#`, Team, Sp., Tore, Diff. und Pkt., Ranglisten nur Platz, Team und Summe.
- * Weitere Spalten der Website werden bewusst weggelassen, damit die Tabelle in
- * die Breite passt. Ein Tipp auf das Team öffnet den Kader wie in der Ligatabelle.
+ * `#`, Team, Sp., Tore, Diff. und Pkt.; Ranglisten übernehmen ihre Saisons. Die
+ * Ranglisten bleiben ab Club horizontal scrollbar, während Platz, Land und Club
+ * fixiert bleiben. Ein Tipp auf einen Club öffnet den Kader wie in der Ligatabelle.
  * Die Zeilen sind nach der Bedeutung der Platzierung eingefärbt (Website: `top`,
  * `middle`, `bottom`), die Legende steht darunter.
  */
@@ -786,8 +786,9 @@ private fun TabelleMitFixerKopfzeile(
     }
 
     Card(modifier.fillMaxWidth()) {
+        val horizontalScroll = rememberScrollState()
         Column(Modifier.padding(vertical = 4.dp)) {
-            TabellenKopfzeile(spalten)
+            TabellenKopfzeile(spalten, horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } })
             Column(
                 Modifier
                     .weight(1f)
@@ -802,6 +803,7 @@ private fun TabelleMitFixerKopfzeile(
                         zeilenHintergrund = { index ->
                             zeilenFarben[tabelleIndex].getOrNull(index) ?: Color.Transparent
                         },
+                        horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } },
                     )
                 }
             }
