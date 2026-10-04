@@ -310,6 +310,7 @@ class ZugabgabeViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(
                 aufstellung = aufstellung.copy(spieler = neueSpieler),
             )
+            setzeDirty(true)
             return
         }
         val neueSpieler = aufstellung.spieler.map { spieler ->
