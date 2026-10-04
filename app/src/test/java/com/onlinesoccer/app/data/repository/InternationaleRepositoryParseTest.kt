@@ -247,7 +247,7 @@ class InternationaleRepositoryParseTest {
 
         assertEquals(listOf("#", "Lnd", "Club", "Sum", "S23", "S22", "S21"), tabelle.header)
         assertEquals(
-            listOf("1.", "Ungarn", "Banyas Budapest", "14.136", "8.833", "7.955", "0"),
+            listOf("1.", "HUN", "Banyas Budapest", "14.136", "8.833", "7.955", "0"),
             tabelle.zeilen.first(),
         )
         assertEquals(listOf(286L, 244L, 311L), tabelle.teamIds)
@@ -261,7 +261,7 @@ class InternationaleRepositoryParseTest {
         assertTrue(spalten.drop(3).none { it.fest })
         assertEquals("14136", spalten[3].wert(tabelle.zeilen.first()))
         assertEquals("8833", spalten[4].wert(tabelle.zeilen.first()))
-        assertEquals("Ungarn", spalten[1].wert(tabelle.zeilen.first()))
+        assertEquals("HUN", spalten[1].wert(tabelle.zeilen.first()))
     }
 
     @Test
@@ -271,14 +271,14 @@ class InternationaleRepositoryParseTest {
             .single()
 
         assertEquals(listOf("#", "Lnd", "Sum", "S23", "S22", "S21"), tabelle.header)
-        assertEquals(listOf("1.", "Spanien", "30.08", "9.75", "10.45", "9.88"), tabelle.zeilen.first())
+        assertEquals(listOf("1.", "ESP", "30.08", "9.75", "10.45", "9.88"), tabelle.zeilen.first())
         assertEquals(3, tabelle.zeilen.size)
         assertTrue("Länder haben keine Vereins-ID", tabelle.teamIds.isEmpty())
 
         val spalten = rankingTabellenSpalten(tabelle.header)!!
         assertEquals(listOf("#", "Lnd", "Sum", "S23", "S22", "S21"), spalten.map { it.kopf })
         assertTrue(spalten.none { it.team })
-        assertEquals("Spanien", spalten[1].wert(tabelle.zeilen.first()))
+        assertEquals("ESP", spalten[1].wert(tabelle.zeilen.first()))
     }
 
     @Test

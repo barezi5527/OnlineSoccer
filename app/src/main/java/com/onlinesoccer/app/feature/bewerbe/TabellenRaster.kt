@@ -93,7 +93,11 @@ internal fun TabellenKopfzeile(
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                textAlign = if (spalte.team) TextAlign.Start else TextAlign.Center,
+            textAlign = if (spalte.team || spalte.kopf.equals("Lnd", ignoreCase = true)) {
+                TextAlign.Start
+            } else {
+                TextAlign.End
+            },
             )
     }
 }
@@ -126,7 +130,11 @@ internal fun TabellenZeilen(
                         fontWeight = if (spalte.team) FontWeight.Medium else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = if (spalte.team) TextAlign.Start else TextAlign.Center,
+                        textAlign = if (spalte.team || spalte.kopf.equals("Lnd", ignoreCase = true)) {
+                            TextAlign.Start
+                        } else {
+                            TextAlign.End
+                        },
                     )
             }
         }

@@ -135,7 +135,7 @@ class InternationaleRepository @Inject constructor(
                     add(landBezeichnung(row))
                     add(zellen.getOrElse(2) { "" })
                 } else {
-                    add(zellen.getOrElse(2) { "" })
+                    add(landBezeichnung(row).ifEmpty { zellen.getOrElse(2) { "" } })
                 }
                 add(summe3(zellen.lastOrNull().orEmpty()))
                 saisonen.indices.forEach { stelle -> add(normalizeZahl(zellen.getOrElse(saisonIndex(stelle)) { "" })) }
@@ -377,15 +377,14 @@ class InternationaleRepository @Inject constructor(
         return gruppen
     }
 
-    /** Land der Zeile: der Alt-Text der Flagge („Ungarn"), sonst deren Dateicode („HUN“). */
+    /** Länderkürzel der Zeile aus dem Dateinamen der Flagge (`.../HUN.gif`). */
     private fun landBezeichnung(row: org.jsoup.nodes.Element): String {
         val flagge = row.selectFirst("td img[src*='flaggen/']") ?: return ""
-        return flagge.attr("alt").trim().ifEmpty {
-            flagge.attr("src")
-                .substringAfterLast('/')
-                .substringBeforeLast('.')
-                .uppercase()
-        }
+        return flagge.attr("src")
+            .substringAfterLast('/')
+            .substringBeforeLast('.')
+            .uppercase()
+            .ifEmpty { flagge.attr("alt").trim() }
     }
 
     private fun options(doc: org.jsoup.nodes.Document, name: String): List<InternationaleOption> =
