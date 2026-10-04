@@ -72,6 +72,34 @@ class ZeilenAktionenTest {
     }
 
     @Test
+    fun trainerEinstellFormularWirdAuchMitRelativemPfadUndSubmitTextErkannt() {
+        val form = AktionForm(
+            ziel = "trainer.php/",
+            felder = listOf(
+                com.onlinesoccer.app.data.model.AktionFeld("trainer", typ = AktionFeldTyp.VERSTECKT, standard = "2"),
+                com.onlinesoccer.app.data.model.AktionFeld("skill"),
+                com.onlinesoccer.app.data.model.AktionFeld("dauer"),
+            ),
+            buttons = listOf(AktionsButton(name = null, text = "Einstellen als Trainer 2")),
+        )
+
+        assertTrue(istTrainerEinstellFormular(form, form.felder))
+    }
+
+    @Test
+    fun trainerFeuerFormularWirdAlsEigeneAktionErkannt() {
+        val form = AktionForm(
+            ziel = "https://os.ongapo.com/trainer.php",
+            felder = listOf(
+                com.onlinesoccer.app.data.model.AktionFeld("trainer", typ = AktionFeldTyp.VERSTECKT, standard = "1"),
+            ),
+            buttons = listOf(AktionsButton(name = "feuern", text = "Trainer 1 feuern")),
+        )
+
+        assertTrue(istTrainerFeuerFormular(form, form.felder))
+    }
+
+    @Test
     fun zeilenAktionen_keyValidiertJugendRadioOption() {
         val form = AktionForm(
             ziel = "https://os.ongapo.com/ju.php",

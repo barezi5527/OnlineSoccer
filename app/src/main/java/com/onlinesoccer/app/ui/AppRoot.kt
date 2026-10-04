@@ -873,10 +873,24 @@ private fun MainScaffold(
                 )
             }
             composable(Routes.SEITE) {
-                SeiteScreen(onClose = { navController.popBackStack() })
+                SeiteScreen(
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
             composable(Routes.SERVER_SEITE) {
-                SeiteScreen(onClose = { navController.popBackStack() })
+                SeiteScreen(
+                    onClose = { navController.popBackStack() },
+                    onSpielerClick = { pid ->
+                        navController.navigate(buildSpielerRoute(pid, null)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
         }
     }

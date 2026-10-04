@@ -9,6 +9,8 @@ data class UebersichtZeile(
     val aktionSchluessel: String? = null,
     /** Text der verfügbaren Aktion im ⋮-Menü der Karte. */
     val aktionTitel: String? = null,
+    /** Spieler-ID, falls in dieser Zeile ein Spieler verlinkt ist (ermöglicht Karten-Klick). */
+    val spielerPid: Long? = null,
 )
 
 /** Ein Abschnitt einer Übersichtsseite (Titel + Einzelwerte/Merkpunkte/Karten + evtl. Formulare). */
@@ -33,6 +35,12 @@ data class AktionForm(
     val zeilen: List<AktionZeile> = emptyList(),
     val buttons: List<AktionsButton> = emptyList(),
     val titel: String? = null,
+)
+
+/** Serverseitiger Kostenhinweis samt Formularfeldern für die Schlussbestätigung. */
+data class TrainerAktionVorschau(
+    val meldung: String,
+    val felder: List<Pair<String, String>>,
 )
 
 /** Eine Datenzeile des Formulars mit eigenen Eingabefeldern (z. B. `gehalt[pid]`-Radios). */

@@ -346,6 +346,60 @@ class TeamSeitenParseTest {
         assertTrue("Skillwerte vorhanden", skill.optionen.size >= 10)
         val dauer = erste.felder.first { it.name == "dauer" }
         assertEquals("96", dauer.optionen.last().wert)
+        assertEquals("6", dauer.standard)
+    }
+
+    @Test
+    fun trainer_parstFeuernUndEinstellenAusJeweiligerZeile() {
+        val ansicht = repo.parseTrainer(dump("trainer_mit_feuern"), "https://os.ongapo.com/trainer.php")
+
+        val stab = ansicht.abschnitte.first { it.titel == "Trainerstab" }
+        assertEquals(listOf("Feuern", "Trainer einstellen"), stab.zeilen.map { it.aktionTitel })
+        assertEquals(2, stab.aktionen.size)
+
+        val feuern = stab.aktionen.first()
+        assertEquals("1", feuern.felder.single().standard)
+        assertEquals("feuern", feuern.buttons.single().name)
+        assertEquals("Trainer 1 feuern", feuern.buttons.single().text)
+
+        val einstellen = stab.aktionen.last()
+        assertEquals("2", einstellen.felder.first().standard)
+        assertEquals("6", einstellen.felder.first { it.name == "dauer" }.standard)
+    }
+
+    @Test
+    fun trainer_liestServerKostenhinweisBeimEinstellen() {
+        val vorschau = repo.parseTrainerAktionVorschau(
+            dump("trainer_einstell_bestaetigung"),
+            listOf("trainer" to "2", "skill" to "62.5", "dauer" to "6", "einstellen" to "einstellen als Trainer 2"),
+        )
+
+        assertEquals(
+            "Ein Trainer mit dem Skill Trainer 02 würde dich über 6 ZATs 38.307 Euro pro Abrechnung kosten.",
+            vorschau?.meldung,
+        )
+        assertEquals(
+            listOf("dauer" to "6", "skill" to "62.5", "trainer" to "2", "te" to "einstellen"),
+            vorschau?.felder,
+        )
+        assertEquals(
+            null,
+            repo.parseTrainerAktionVorschau(
+                dump("trainer"),
+                listOf("trainer" to "2", "skill" to "62.5", "dauer" to "6", "einstellen" to "einstellen als Trainer 2"),
+            ),
+        )
+    }
+
+    @Test
+    fun trainer_liestServerAbfindungUndFeuerbestaetigung() {
+        val vorschau = repo.parseTrainerAktionVorschau(
+            dump("trainer_feuer_bestaetigung"),
+            listOf("trainer" to "2", "feuern" to "Trainer 2 feuern"),
+        )
+
+        assertEquals("Es kostet dich 12.345 Euro den Trainer zu feuern.", vorschau?.meldung)
+        assertEquals(listOf("trainer" to "2", "tf" to "Feuern!"), vorschau?.felder)
     }
 
     @Test

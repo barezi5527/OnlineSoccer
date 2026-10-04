@@ -7,6 +7,7 @@ import com.onlinesoccer.app.core.storage.StadionnameStore
 import com.onlinesoccer.app.data.model.AktionForm
 import com.onlinesoccer.app.data.model.SeitenAnsicht
 import com.onlinesoccer.app.data.model.StadionnameLogik
+import com.onlinesoccer.app.data.model.TrainerAktionVorschau
 import com.onlinesoccer.app.data.repository.BewerbeRepository
 import com.onlinesoccer.app.data.repository.DashboardRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
@@ -45,6 +46,15 @@ data class SeiteUiState(
     /** Aktuelle Saison (Server-Standard) – steuert den Rasenmuster-Wechsel. */
     val saison: Int = 0,
     val stadionname: StadionnameUiState? = null,
+    val trainerVorschau: TrainerAktionVorschauUi? = null,
+)
+
+data class TrainerAktionVorschauUi(
+    val trainerNr: String,
+    val aktionName: String,
+    val ladend: Boolean = false,
+    val vorschau: TrainerAktionVorschau? = null,
+    val fehler: String? = null,
 )
 
 @HiltViewModel
@@ -61,6 +71,7 @@ class SeiteViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(SeiteUiState())
     val uiState: StateFlow<SeiteUiState> = _uiState.asStateFlow()
+    private var trainerVorschauAnfrage = 0
 
     init {
         lade()
@@ -196,6 +207,8 @@ class SeiteViewModel @Inject constructor(
 
     /** Sendet ein ausgefülltes Formular und lädt die Seite danach frisch. */
     fun sendeAktion(ziel: String, felder: List<Pair<String, String>>) {
+        trainerVorschauAnfrage++
+        _uiState.value = _uiState.value.copy(trainerVorschau = null)
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(sendend = true, aktioFehler = null)
             val ok = repository.fuehreAktionAus(ziel, felder)
@@ -211,6 +224,41 @@ class SeiteViewModel @Inject constructor(
         }
     }
 
+    /** Holt den unverbindlichen Abfindungs-/Kostenhinweis der Website. */
+    fun ladeTrainerVorschau(ziel: String, felder: List<Pair<String, String>>) {
+        val trainerNr = felder.firstOrNull { it.first == "trainer" }?.second ?: return
+        val aktionName = felder.firstOrNull { it.first == "einstellen" || it.first == "feuern" }?.first ?: return
+        val anfrage = ++trainerVorschauAnfrage
+        _uiState.value = _uiState.value.copy(
+            trainerVorschau = TrainerAktionVorschauUi(
+                trainerNr = trainerNr,
+                aktionName = aktionName,
+                ladend = true,
+            ),
+        )
+        viewModelScope.launch {
+            val vorschau = repository.ladeTrainerAktionVorschau(ziel, felder)
+            if (anfrage != trainerVorschauAnfrage) return@launch
+            _uiState.value = _uiState.value.copy(
+                trainerVorschau = TrainerAktionVorschauUi(
+                    trainerNr = trainerNr,
+                    aktionName = aktionName,
+                    vorschau = vorschau,
+                    fehler = if (vorschau == null) {
+                        "Der Kostenhinweis der Website konnte nicht geladen werden. Es wurde nichts ausgeführt."
+                    } else {
+                        null
+                    },
+                ),
+            )
+        }
+    }
+
+    fun trainerVorschauZuruecksetzen() {
+        trainerVorschauAnfrage++
+        _uiState.value = _uiState.value.copy(trainerVorschau = null)
+    }
+
     /** Öffnet ein separates Formular (z. B. das Scouting-Gebot einer Angebotszeile). */
     fun ladeFormular(ziel: String) {
         viewModelScope.launch {
@@ -221,4 +269,7 @@ class SeiteViewModel @Inject constructor(
     fun schliesseDialog() {
         _uiState.value = _uiState.value.copy(dialogFormular = null)
     }
+
+    /** Klick auf einen Spieler (öffnet die Spielerkarte). Wird vom UI übergeben. */
+    val onSpielerClick: (Long) -> Unit = { /* wird vom Screen per Parameter über Navigation gelöst */ }
 }

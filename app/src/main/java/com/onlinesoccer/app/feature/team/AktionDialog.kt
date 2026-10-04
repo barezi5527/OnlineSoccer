@@ -1,6 +1,7 @@
 package com.onlinesoccer.app.feature.team
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -87,6 +88,32 @@ fun zeilenAktionen(
     }
 }
 
+/** Erkennt das Trainer-Einstellformular auch bei relativen URLs/abweichendem Submit-Text. */
+internal fun istTrainerEinstellFormular(form: AktionForm, felder: List<AktionFeld>): Boolean {
+    val pfad = form.ziel.substringBefore('?').trimEnd('/')
+    val trainerZiel = pfad.endsWith("trainer.php", ignoreCase = true)
+    val trainerFelder = listOf("trainer", "skill", "dauer").all { name ->
+        felder.any { it.name.equals(name, ignoreCase = true) }
+    }
+    val einstellenButton = form.buttons.any { button ->
+        button.name.equals("einstellen", ignoreCase = true) ||
+            button.text.startsWith("einstellen als Trainer", ignoreCase = true)
+    }
+    return trainerZiel && trainerFelder && einstellenButton
+}
+
+/** Erkennt den serverseitigen Submit des Feuern-Formulars. */
+internal fun istTrainerFeuerFormular(form: AktionForm, felder: List<AktionFeld>): Boolean {
+    val pfad = form.ziel.substringBefore('?').trimEnd('/')
+    val trainerZiel = pfad.endsWith("trainer.php", ignoreCase = true)
+    val trainerFeld = felder.any { it.name.equals("trainer", ignoreCase = true) }
+    val feuernButton = form.buttons.any { button ->
+        button.name.equals("feuern", ignoreCase = true) ||
+            button.text.contains("Trainer", ignoreCase = true) && button.text.contains("feuern", ignoreCase = true)
+    }
+    return trainerZiel && trainerFeld && feuernButton
+}
+
 /**
  * Karte einer Übersichtszeile. Zeigt rechts ein ⋮-Menü, sobald für die Zeile
  * Aktionen verfügbar sind; die Auswahl öffnet den Bestätigungs-/Formulardialog.
@@ -98,16 +125,24 @@ fun AktionsFaehigeKarte(
     verfuegbareAktionen: List<ZeilenAktion>,
     onSende: (String, List<Pair<String, String>>) -> Unit,
     onFormularOeffnen: (String) -> Unit,
+    onSpielerClick: (Long) -> Unit = {},
+    trainerVorschau: TrainerAktionVorschauUi? = null,
+    onTrainerVorschauLaden: (String, List<Pair<String, String>>) -> Unit = { _, _ -> },
+    onTrainerVorschauZuruecksetzen: () -> Unit = {},
 ) {
     var menuOffen by remember { mutableStateOf(false) }
     var gewaehlteAktion by remember { mutableStateOf<ZeilenAktion?>(null) }
 
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth()) {
+            val spielerPid = zeile.spielerPid ?: zeile.aktionSchluessel?.toLongOrNull()
             Column(
                 Modifier
                     .weight(1f)
-                    .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
+                    .padding(start = 12.dp, top = 12.dp, bottom = 12.dp)
+                    .then(
+                        if (spielerPid != null) Modifier.clickable { onSpielerClick(spielerPid) } else Modifier,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
@@ -164,6 +199,7 @@ fun AktionsFaehigeKarte(
                                 text = { Text(aktion.titel) },
                                 onClick = {
                                     menuOffen = false
+                                    onTrainerVorschauZuruecksetzen()
                                     if (aktion.aktionZeile?.ziel != null) {
                                         onFormularOeffnen(aktion.aktionZeile.ziel)
                                     } else {
@@ -183,7 +219,13 @@ fun AktionsFaehigeKarte(
             aktion = aktion,
             zeilenName = zeile.ueberschrift,
             zeilenSchluessel = zeile.aktionSchluessel,
-            onDismiss = { gewaehlteAktion = null },
+            trainerVorschau = trainerVorschau,
+            onTrainerVorschauLaden = onTrainerVorschauLaden,
+            onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
+            onDismiss = {
+                gewaehlteAktion = null
+                onTrainerVorschauZuruecksetzen()
+            },
             onSende = onSende,
         )
     }
@@ -195,6 +237,9 @@ private fun ZeilenAktionDialog(
     aktion: ZeilenAktion,
     zeilenName: String,
     zeilenSchluessel: String?,
+    trainerVorschau: TrainerAktionVorschauUi?,
+    onTrainerVorschauLaden: (String, List<Pair<String, String>>) -> Unit,
+    onTrainerVorschauZuruecksetzen: () -> Unit,
     onDismiss: () -> Unit,
     onSende: (String, List<Pair<String, String>>) -> Unit,
 ) {
@@ -221,13 +266,64 @@ private fun ZeilenAktionDialog(
             ?.let { werte[globalesRadio.name] = it.wert }
     }
     val nurBestaetigung = globalesRadio != null && felder.size == 1
+    val trainerEinstellung = istTrainerEinstellFormular(form, felder)
+    val trainerFeuern = istTrainerFeuerFormular(form, felder)
+    val trainerAktion = trainerEinstellung || trainerFeuern
+    val trainerNr = felder.firstOrNull { it.name == "trainer" }?.standard.orEmpty()
+    val submitName = form.buttons.firstOrNull()?.name.orEmpty()
+    val vorschauStatus = trainerVorschau?.takeIf {
+        it.trainerNr == trainerNr && it.aktionName == submitName
+    }
+    val serverVorschau = vorschauStatus?.vorschau
+
+    fun formularFelder(button: com.onlinesoccer.app.data.model.AktionsButton): List<Pair<String, String>> = buildList {
+        felder.forEach { feld ->
+            when (feld.typ) {
+                AktionFeldTyp.VERSTECKT -> add(feld.name to feld.standard)
+                else -> (werte[feld.name] ?: "").takeIf { it.isNotBlank() }?.let { add(feld.name to it) }
+            }
+        }
+        if (!button.name.isNullOrBlank()) add(button.name to button.text)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(aktion.titel, fontWeight = FontWeight.Bold) },
+        title = {
+            Text(
+                when {
+                    serverVorschau != null && trainerFeuern -> "Abfindung bestätigen"
+                    serverVorschau != null && trainerEinstellung -> "Trainerkosten bestätigen"
+                    else -> aktion.titel
+                },
+                fontWeight = FontWeight.Bold,
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (nurBestaetigung) {
+                if (serverVorschau != null) {
+                    Text(serverVorschau.meldung, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (trainerFeuern) {
+                            "Die Website bestätigt die Abfindung. Erst „Jetzt feuern“ entlässt den Trainer."
+                        } else {
+                            "Die Website bestätigt die Kosten. Erst „Jetzt einstellen“ stellt den Trainer ein."
+                        },
+                    )
+                } else if (vorschauStatus?.ladend == true) {
+                    Text("Kosten werden bei der Website abgefragt …")
+                } else if (trainerAktion) {
+                    vorschauStatus?.fehler?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (trainerFeuern) {
+                        Text("Die Website fragt die Abfindung ab, bevor der Trainer endgültig gefeuert wird.")
+                    } else {
+                        felder.forEach { feld ->
+                            when (feld.typ) {
+                                AktionFeldTyp.VERSTECKT -> Unit
+                                else -> FeldControl(feld, werte[feld.name] ?: "", onChange = { werte[feld.name] = it })
+                            }
+                        }
+                    }
+                } else if (nurBestaetigung) {
                     Text("Aktion für „$zeilenName“ wirklich ausführen?")
                 } else {
                     felder.forEach { feld ->
@@ -246,26 +342,46 @@ private fun ZeilenAktionDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onDismiss) { Text("Abbrechen") }
+                TextButton(
+                    onClick = {
+                        if (serverVorschau != null || vorschauStatus?.fehler != null) {
+                            onTrainerVorschauZuruecksetzen()
+                        } else if (trainerAktion && vorschauStatus?.ladend == true) {
+                            onDismiss()
+                        } else {
+                            onDismiss()
+                        }
+                    },
+                ) {
+                    Text(if (serverVorschau != null || vorschauStatus?.fehler != null) "Zurück" else "Abbrechen")
+                }
                 form.buttons.forEach { button ->
                     Button(
                         onClick = {
-                            val feldListe = buildList {
-                                felder.forEach { feld ->
-                                    when (feld.typ) {
-                                        AktionFeldTyp.VERSTECKT -> add(feld.name to feld.standard)
-                                        else -> (werte[feld.name] ?: "").takeIf { it.isNotBlank() }
-                                            ?.let { add(feld.name to it) }
-                                    }
-                                }
-                                if (!button.name.isNullOrBlank()) add(button.name to button.text)
+                            if (trainerAktion && serverVorschau != null) {
+                                onDismiss()
+                                onSende(form.ziel, serverVorschau.felder)
+                            } else if (trainerAktion) {
+                                onTrainerVorschauLaden(form.ziel, formularFelder(button))
+                            } else {
+                                val feldListe = formularFelder(button)
+                                onDismiss()
+                                onSende(form.ziel, feldListe)
                             }
-                            onDismiss()
-                            onSende(form.ziel, feldListe)
                         },
+                        enabled = vorschauStatus?.ladend != true,
                         modifier = Modifier.padding(start = 8.dp),
                     ) {
-                        Text(button.text)
+                        Text(
+                            when {
+                                serverVorschau != null && trainerFeuern -> "Jetzt feuern"
+                                serverVorschau != null && trainerEinstellung -> "Jetzt einstellen"
+                                trainerAktion && vorschauStatus?.ladend == true -> "Bitte warten …"
+                                trainerFeuern -> "Abfindung anzeigen"
+                                trainerEinstellung -> if (vorschauStatus?.fehler != null) "Erneut prüfen" else "Kosten anzeigen"
+                                else -> button.text
+                            },
+                        )
                     }
                 }
             }

@@ -30,6 +30,7 @@ import com.onlinesoccer.app.data.model.Teaminfo
 import com.onlinesoccer.app.data.model.TeamIds
 import com.onlinesoccer.app.data.model.TeamInfoMenuEintrag
 import com.onlinesoccer.app.data.model.TeamTrainer
+import com.onlinesoccer.app.data.model.TrainerAktionVorschau
 import com.onlinesoccer.app.data.model.TransferhistorieBlock
 import com.onlinesoccer.app.data.model.UebersichtAbschnitt
 import com.onlinesoccer.app.data.model.UebersichtZeile
@@ -217,22 +218,88 @@ class TeamRepository @Inject constructor(
         }
     }
 
-    /**
-     * Führt ein auf der Seite angebotenes Formular aus (POST wie im Browser:
-     * Felder in Reihenfolge + Absende-Button). Liefert `true` bei Erfolg.
-     */
+    /** Fragt bei der Website den Kostenhinweis vor dem Einstellen/Feuern ab. */
+    suspend fun ladeTrainerAktionVorschau(
+        ziel: String,
+        felder: List<Pair<String, String>>,
+    ): TrainerAktionVorschau? = withContext(Dispatchers.IO) {
+        val body = FormBody.Builder().apply { felder.forEach { (name, wert) -> add(name, wert) } }.build()
+        try {
+            client.newCall(Request.Builder().url(ziel).post(body).build()).execute().use { response ->
+                val bytes = response.body?.bytes() ?: return@withContext null
+                if (SessionGuard.isLoginView(bytes)) return@withContext null
+                parseTrainerAktionVorschau(bytes.toString(Charsets.UTF_8), felder)
+            }
+        } catch (e: IOException) {
+            null
+        }
+    }
+
+    /** Sendet ausschließlich das Formular der bereits angezeigten Schlussbestätigung. */
     suspend fun fuehreAktionAus(ziel: String, felder: List<Pair<String, String>>): Boolean =
         withContext(Dispatchers.IO) {
             val body = FormBody.Builder().apply { felder.forEach { (name, wert) -> add(name, wert) } }.build()
+            val trainerSchlussbestaetigung = ziel.substringBefore('?').endsWith("trainer.php") &&
+                felder.any { it.first == "te" || it.first == "tf" }
             try {
-                client.newCall(Request.Builder().url(ziel).post(body).build()).execute().use { response ->
-                    val bytes = response.body?.bytes() ?: return@withContext false
-                    !SessionGuard.isLoginView(bytes)
+                val bytes = client.newCall(Request.Builder().url(ziel).post(body).build()).execute().use { response ->
+                    response.body?.bytes() ?: return@withContext false
                 }
+                !SessionGuard.isLoginView(bytes) &&
+                    (!trainerSchlussbestaetigung || !hatTrainerSchlussbestaetigung(bytes.toString(Charsets.UTF_8)))
             } catch (e: IOException) {
                 false
             }
         }
+
+    /** Liest den Serverhinweis und die exakten Felder für die noch nicht abgesendete Bestätigung. */
+    internal fun parseTrainerAktionVorschau(
+        html: String,
+        urspruenglicheFelder: List<Pair<String, String>>,
+    ): TrainerAktionVorschau? {
+        if (urspruenglicheFelder.none { it.first == "trainer" }) return null
+        val einstellung = urspruenglicheFelder.any { it.first == "einstellen" }
+        val feuern = urspruenglicheFelder.any { it.first == "feuern" }
+        if (einstellung == feuern) return null
+
+        val doc = Jsoup.parse(html)
+        val submitName: String
+        val submitWert: String
+        val hinweisRegex: Regex
+        val benoetigteFelder: Set<String>
+        if (einstellung) {
+            submitName = "te"
+            submitWert = "einstellen"
+            hinweisRegex = Regex("Ein Trainer mit dem Skill .+? kosten\\.", RegexOption.IGNORE_CASE)
+            benoetigteFelder = setOf("trainer", "skill", "dauer")
+        } else {
+            submitName = "tf"
+            submitWert = "Feuern!"
+            hinweisRegex = Regex("Es kostet dich .+? den Trainer zu feuern\\.", RegexOption.IGNORE_CASE)
+            benoetigteFelder = setOf("trainer")
+        }
+        val submit = doc.select("input[type=submit][name=$submitName]")
+            .firstOrNull { it.attr("value").equals(submitWert, ignoreCase = true) }
+            ?: return null
+        val formular = submit.closest("form") ?: return null
+        val versteckteFelder = formular.select("input[type=hidden]").mapNotNull { feld ->
+            feld.attr("name").takeIf { it.isNotBlank() }?.let { it to feld.attr("value") }
+        }
+        if (!versteckteFelder.map { it.first }.containsAll(benoetigteFelder)) return null
+        val melding = hinweisRegex.find(doc.body()?.text().orEmpty())?.value ?: return null
+        return TrainerAktionVorschau(
+            meldung = melding,
+            felder = versteckteFelder + (submit.attr("name") to submit.attr("value")),
+        )
+    }
+
+    private fun hatTrainerSchlussbestaetigung(html: String): Boolean {
+        val doc = Jsoup.parse(html)
+        return doc.select("input[type=submit][name=te]")
+            .any { it.attr("value").equals("einstellen", ignoreCase = true) } ||
+            doc.select("input[type=submit][name=tf]")
+                .any { it.attr("value").equals("Feuern!", ignoreCase = true) }
+    }
 
     /** Lädt ein separates Formular (z. B. das Scouting-Gebot `juscout.php?g=<id>`). */
     suspend fun ladeAktionFormular(ziel: String): AktionForm? = withContext(Dispatchers.IO) {
@@ -284,7 +351,7 @@ class TeamRepository @Inject constructor(
         label = select.attr("name"),
         optionen = select.select("option").map { AktionsOption(it.attr("value").ifEmpty { it.text() }, it.text()) },
         standard = select.select("option[selected]").firstOrNull()?.let { it.attr("value").ifEmpty { it.text() } }
-            ?: select.select("option").firstOrNull()?.attr("value").orEmpty(),
+            ?: select.select("option").firstOrNull()?.let { it.attr("value").ifEmpty { it.text() } }.orEmpty(),
     )
 
     /** Jugendteam (`ju.php`): Gruppen je Jahrgang plus „ins A-Team berufen“-Auswahl. */
@@ -529,6 +596,7 @@ class TeamRepository @Inject constructor(
                 ),
                 aktionSchluessel = pid,
                 aktionTitel = "Training bearbeiten",
+                spielerPid = pid.toLongOrNull(),
             )
             val feld1 = hauptForm?.selectFirst("select[name=tr1$pid]")
             val feld2 = hauptForm?.selectFirst("select[name=tr2$pid]")
@@ -577,11 +645,13 @@ class TeamRepository @Inject constructor(
         }
         val tabelle = doc.select("table").maxByOrNull { it.select("tr").size }
             ?: return SeitenAnsicht(titel = TITEL_TRAINER, abschnitte = abschnitte)
+        val trainerInputs = doc.select("input[name=trainer]")
         val zeilen = tabelle.select("tr").mapNotNull { tr ->
             val zellen = tr.select("td")
             if (zellen.size < 4) return@mapNotNull null
             val nr = zellen[0].text().trim()
             if (nr.toIntOrNull() == null) return@mapNotNull null
+            val feuerButton = tr.selectFirst("input[type=submit][name=feuern]")
             UebersichtZeile(
                 ueberschrift = "Trainer $nr",
                 untertitel = zellen[1].text().trim(),
@@ -590,23 +660,39 @@ class TeamRepository @Inject constructor(
                     "Vertrag" to "${zellen[3].text().trim()} ZAT",
                 ),
                 aktionSchluessel = nr,
-                aktionTitel = "Trainer einstellen",
+                aktionTitel = if (feuerButton != null) "Feuern" else "Trainer einstellen",
             )
         }
-        val forms = doc.select("input[name=trainer]").indices.mapNotNull { idx ->
-            val nr = doc.select("input[name=trainer]")[idx].attr("value")
-            val skill = doc.select("select[name=skill]").getOrNull(idx) ?: return@mapNotNull null
-            val dauer = doc.select("select[name=dauer]").getOrNull(idx) ?: return@mapNotNull null
-            AktionForm(
-                ziel = ziel,
-                titel = "Trainer $nr einstellen",
-                felder = listOf(
-                    AktionFeld(name = "trainer", typ = AktionFeldTyp.VERSTECKT, standard = nr),
-                    selectFeld(skill).copy(label = "Skill"),
-                    selectFeld(dauer).copy(label = "Vertragslaufzeit"),
-                ),
-                buttons = listOf(AktionsButton("einstellen", "einstellen als Trainer $nr")),
-            )
+        val forms = tabelle.select("tr").mapNotNull { tr ->
+            val zellen = tr.select("td")
+            val nr = zellen.firstOrNull()?.text()?.trim()?.takeIf { it.toIntOrNull() != null }
+                ?: return@mapNotNull null
+            if (trainerInputs.none { it.attr("value") == nr }) return@mapNotNull null
+
+            val feuerButton = tr.selectFirst("input[type=submit][name=feuern]")
+            if (feuerButton != null) {
+                AktionForm(
+                    ziel = ziel,
+                    titel = "Trainer $nr feuern",
+                    felder = listOf(AktionFeld(name = "trainer", typ = AktionFeldTyp.VERSTECKT, standard = nr)),
+                    buttons = listOf(AktionsButton(feuerButton.attr("name"), feuerButton.attr("value"))),
+                )
+            } else {
+                val skill = tr.selectFirst("select[name=skill]") ?: return@mapNotNull null
+                val dauer = tr.selectFirst("select[name=dauer]") ?: return@mapNotNull null
+                val einstellenButton = tr.selectFirst("input[type=submit][name=einstellen]")
+                    ?: return@mapNotNull null
+                AktionForm(
+                    ziel = ziel,
+                    titel = "Trainer $nr einstellen",
+                    felder = listOf(
+                        AktionFeld(name = "trainer", typ = AktionFeldTyp.VERSTECKT, standard = nr),
+                        selectFeld(skill).copy(label = "Skill"),
+                        selectFeld(dauer).copy(label = "Vertragslaufzeit"),
+                    ),
+                    buttons = listOf(AktionsButton(einstellenButton.attr("name"), einstellenButton.attr("value"))),
+                )
+            }
         }
         abschnitte += UebersichtAbschnitt(
             titel = "Trainerstab",
@@ -649,13 +735,15 @@ class TeamRepository @Inject constructor(
                 },
                 aktionSchluessel = pid,
                 aktionTitel = "Vertrag verlängern",
+                spielerPid = pid?.toLongOrNull(),
             )
         }
         val gebote = mutableListOf<AktionZeile>()
         tabelle.select("tr").drop(1).forEach { tr ->
             val nameEl = tr.selectFirst("td a") ?: return@forEach
             val pid = Regex("spielerinfo\\((\\d+)\\)").find(nameEl.outerHtml())
-                ?.groupValues?.get(1) ?: return@forEach
+                ?.groupValues?.get(1)
+            if (pid == null) return@forEach
             val radios = tr.select("input[type=radio]").filter { it.attr("name").startsWith("gehalt[") }
             if (radios.isEmpty()) return@forEach
             gebote += AktionZeile(
@@ -668,6 +756,7 @@ class TeamRepository @Inject constructor(
                         label = "Laufzeit wählen",
                         optionen = radios.mapNotNull { radio ->
                             val monate = when (radio.attr("value")) {
+
                                 "1" -> "24"
                                 "2" -> "36"
                                 "3" -> "48"

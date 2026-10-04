@@ -64,6 +64,7 @@ import com.onlinesoccer.app.data.model.WertTabelle
 @Composable
 fun SeiteScreen(
     onClose: () -> Unit,
+    onSpielerClick: (Long) -> Unit = {},
     viewModel: SeiteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -99,6 +100,10 @@ fun SeiteScreen(
                 onStadionnameGeaendert = viewModel::stadionnameGeaendert,
                 onStadionnameSpeichern = viewModel::stadionnameSpeichern,
                 onServernamenVerwenden = viewModel::servernamenVerwenden,
+                onSpielerClick = onSpielerClick,
+                trainerVorschau = uiState.trainerVorschau,
+                onTrainerVorschauLaden = viewModel::ladeTrainerVorschau,
+                onTrainerVorschauZuruecksetzen = viewModel::trainerVorschauZuruecksetzen,
             )
         }
 
@@ -145,6 +150,10 @@ private fun SeitenAnsicht(
     onStadionnameGeaendert: (String) -> Unit = {},
     onStadionnameSpeichern: () -> Unit = {},
     onServernamenVerwenden: () -> Unit = {},
+    onSpielerClick: (Long) -> Unit = {},
+    trainerVorschau: TrainerAktionVorschauUi? = null,
+    onTrainerVorschauLaden: (String, List<Pair<String, String>>) -> Unit = { _, _ -> },
+    onTrainerVorschauZuruecksetzen: () -> Unit = {},
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -190,7 +199,10 @@ private fun SeitenAnsicht(
                     stadionname = stadionname,
                     onStadionnameGeaendert = onStadionnameGeaendert,
                     onStadionnameSpeichern = onStadionnameSpeichern,
-                    onServernamenVerwenden = onServernamenVerwenden,
+                    onSpielerClick = onSpielerClick,
+                    trainerVorschau = trainerVorschau,
+                    onTrainerVorschauLaden = onTrainerVorschauLaden,
+                    onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
                 )
             }
             if (stadionname != null && ansicht.abschnitte.none { it.titel == "Aktueller Stadion-Zustand" }) {
@@ -251,7 +263,11 @@ private fun AbschnittView(
     stadionname: StadionnameUiState? = null,
     onStadionnameGeaendert: (String) -> Unit = {},
     onStadionnameSpeichern: () -> Unit = {},
-    onServernamenVerwenden: () -> Unit = {},
+    onServernamenVerwenden: (String) -> Unit = {},
+    onSpielerClick: (Long) -> Unit = {},
+    trainerVorschau: TrainerAktionVorschauUi? = null,
+    onTrainerVorschauLaden: (String, List<Pair<String, String>>) -> Unit = { _, _ -> },
+    onTrainerVorschauZuruecksetzen: () -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         abschnitt.titel?.let { titel ->
@@ -271,12 +287,12 @@ private fun AbschnittView(
         }
         if (istStadionZustand) {
             stadionname?.let {
-                StadionnameKarte(
-                    state = it,
-                    onGeaendert = onStadionnameGeaendert,
-                    onSpeichern = onStadionnameSpeichern,
-                    onServernamenVerwenden = onServernamenVerwenden,
-                )
+                    StadionnameKarte(
+                        state = stadionname,
+                        onGeaendert = onStadionnameGeaendert,
+                        onSpeichern = onStadionnameSpeichern,
+                        onServernamenVerwenden = { onServernamenVerwenden("") },
+                    )
             }
         } else if (abschnitt.stadionPlan == null && abschnitt.infoZeilen.isNotEmpty()) {
             Card(
@@ -341,6 +357,10 @@ private fun AbschnittView(
                 verfuegbareAktionen = zeilenAktionen(zeile, abschnitt.aktionen),
                 onSende = onSende,
                 onFormularOeffnen = onFormularOeffnen,
+                onSpielerClick = onSpielerClick,
+                trainerVorschau = trainerVorschau,
+                onTrainerVorschauLaden = onTrainerVorschauLaden,
+                onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
             )
         }
 
