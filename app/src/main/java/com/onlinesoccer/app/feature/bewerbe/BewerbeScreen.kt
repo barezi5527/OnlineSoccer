@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -275,8 +276,8 @@ private fun TabelleAnsicht(
         }
     }
     val fülltBreite = kompakt != null
-    val horizontalScroll = rememberScrollState()
-    val verticalScroll = rememberScrollState()
+    val zeilenKlassen = tabelle.zeilenKlasse
+    val zeilenFarben = List(zeilenKlassen.size) { ligaTabellenZeilenHintergrund(zeilenKlassen[it]) }
 
     Column(Modifier.fillMaxSize()) {
         TabelleFilterLeiste(
@@ -294,56 +295,15 @@ private fun TabelleAnsicht(
             )
             return@Column
         }
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .then(if (!fülltBreite) Modifier.horizontalScroll(horizontalScroll) else Modifier),
-        ) {
-            Row {
-                cols.forEach { sp ->
-                    Text(
-                        sp.kopf,
-                        modifier = Modifier
-                            .then(if (sp.gewicht != null) Modifier.weight(sp.gewicht!!) else Modifier.width(sp.breite))
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = if (sp.team) TextAlign.Start else TextAlign.Center,
-                    )
-                }
-            }
-            Column(
-                Modifier
-                    .weight(1f)
-                    .verticalScroll(verticalScroll),
-            ) {
-                tabelle.zeilen.forEachIndexed { i, zeile ->
-                    val teamId = tabelle.zeilenTeamIds.getOrNull(i)
-                    val klasse = tabelle.zeilenKlasse.getOrNull(i)
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(ligaTabellenZeilenHintergrund(klasse)),
-                    ) {
-                        cols.forEach { sp ->
-                            val clickable = sp.team && teamId != null
-                            Text(
-                                sp.wert(zeile),
-                                modifier = Modifier
-                                    .then(if (sp.gewicht != null) Modifier.weight(sp.gewicht!!) else Modifier.width(sp.breite))
-                                    .then(if (clickable) Modifier.clickable { onTeamClick(teamId) } else Modifier)
-                                    .padding(horizontal = 6.dp, vertical = 10.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = if (sp.team) FontWeight.Medium else FontWeight.Normal,
-                                maxLines = 1,
-                                textAlign = if (sp.team) TextAlign.Start else TextAlign.Center,
-                            )
-                        }
-                    }
-                }
-            }
-        }
+        TabellenRaster(
+            spalten = cols,
+            zeilen = tabelle.zeilen,
+            teamIds = tabelle.zeilenTeamIds,
+            onTeamClick = onTeamClick,
+            modifier = Modifier.weight(1f),
+            eigeneHoehenRollleiste = true,
+            zeilenHintergrund = { index -> zeilenFarben.getOrNull(index) ?: Color.Transparent },
+        )
         TabellenLegende()
     }
 }
@@ -484,7 +444,7 @@ internal fun kompakteTabellenSpalten(header: List<String>): List<TabellenSpalte>
     val spiele = idx("Spiele", "Sp.")
     val torePlus = idx("Tore+", "Tore +", "T+")
     val toreMinus = idx("Tore-", "Tore -", "T-", "Gegentore")
-    val diff = idx("Tore +/-", "Diff.", "Tore/Sp.", "Tordifferenz")
+    val diff = idx("Tore +/-", "Tore+/-", "Diff.", "Tore/Sp.", "Tordifferenz")
     val punkte = idx("Punkte", "Pkt.")
     if (team == null) return null
 
