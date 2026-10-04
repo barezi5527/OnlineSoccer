@@ -6,6 +6,9 @@ import com.onlinesoccer.app.data.model.InternationaleAnsicht
 import com.onlinesoccer.app.data.model.InternationaleFilter
 import com.onlinesoccer.app.data.model.InternationaleOption
 import com.onlinesoccer.app.data.model.InternationaleSpiel
+import com.onlinesoccer.app.data.model.InternationaleTabelleKlasse
+import com.onlinesoccer.app.data.model.InternationaleTeam
+import com.onlinesoccer.app.data.model.InternationaleTeilnehmerGruppe
 import com.onlinesoccer.app.core.network.HtmlTools
 import java.io.IOException
 import javax.inject.Inject
@@ -49,27 +52,9 @@ class InternationaleRepository @Inject constructor(
             gruppe = selectedValue(doc, "gruppe"),
             ergebnisse = selectedValue(doc, "ergebnisse"),
         )
-        val spiele = doc.select("#international a[href*='st.php']")
-            .mapNotNull { it.parent()?.parent() }
-            .mapNotNull { parent ->
-                val teams = parent.select("a[href*='st.php']")
-                if (teams.size < 2) return@mapNotNull null
-                val berichtLink = parent.selectFirst(
-                    "a[href*='rep/saison'], a[href*='os_bericht'], a[onclick*='os_bericht']",
-                )
-                val bericht = berichtLink?.let { link ->
-                    val href = link.attr("href")
-                    when {
-                        href.contains("os_bericht") -> osBerichtUrl(href)
-                        href.contains("rep/saison") -> absoluteUrl(href)
-                        else -> osBerichtUrl(link.attr("onclick"))
-                    }
-                }
-                val ergebnis = parent.select("span").map { it.text().trim() }
-                    .firstOrNull { Regex("\\d+\\s*:\\s*\\d+").containsMatchIn(it) }
-                InternationaleSpiel(teams[0].text().trim(), teams[1].text().trim(), ergebnis, bericht)
-            }
-            .distinctBy { it.heim to it.gast }
+        val international = doc.selectFirst("#international")
+        val spiele = international?.let(::parseSpiele).orEmpty()
+        val teilnehmer = parseTeilnehmer(doc)
 
         val tabellen = doc.selectFirst("table.osranking")?.let(::parseOsRanking)
             ?.let(::listOf)
@@ -77,22 +62,33 @@ class InternationaleRepository @Inject constructor(
                 com.onlinesoccer.app.data.model.WertTabelle(
                     header = tabelle.header,
                     zeilen = tabelle.zeilen.map { it.zellen },
+                    teamIds = tabelle.zeilen.map { it.teamId },
+                    zeilenKlasse = tabelle.zeilen.map {
+                        InternationaleTabelleKlasse.vonCssKlasse(it.cssKlasse)
+                    },
                 )
             }
 
         return InternationaleAnsicht(
             titel = doc.select("h1,h2,h3").firstOrNull()?.text()?.trim(),
             saisonen = options(doc, "season"),
-            runden = options(doc, "runde"),
+            runden = options(doc, "runde").filterNot { it.wert == RUNDE_TURNIERBAUM },
             gruppen = options(doc, "gruppe"),
             ergebnisOptionen = options(doc, "ergebnisse"),
             filter = filter,
-            abschnitte = doc.select("p, li").map { it.text().trim() }
-                .filter { it.isNotEmpty() && it.length < 300 && it != "Konferenz ansehen" }
-                .distinct()
-                .take(120),
+            abschnitte = if (teilnehmer.isNotEmpty()) {
+                emptyList()
+            } else {
+                doc.select("p, li").map { it.text().trim() }
+                    .filter { it.isNotEmpty() && it.length < 300 && it != "Konferenz ansehen" }
+                    .distinct()
+                    .take(120)
+            },
             tabellen = tabellen,
             spiele = spiele,
+            teilnehmer = teilnehmer,
+            zatOptionen = spiele.mapNotNull { it.zat }.distinct()
+                .map { zat -> InternationaleOption(zat, zat) },
         )
     }
 
@@ -130,13 +126,213 @@ class InternationaleRepository @Inject constructor(
         return com.onlinesoccer.app.data.model.WertTabelle(
             header = header,
             zeilen = zeilen,
+            teamIds = if (istClubRanking) rows.drop(1).map(::teamIdAusZeile) else emptyList(),
+            zeilenKlasse = rows.drop(1).map {
+                InternationaleTabelleKlasse.vonCssKlasse(it.attr("class"))
+            },
         )
+    }
+
+    /** OSC/OSE-Paarungen sind auf der Website als fortlaufende Span-Gruppen gerendert. */
+    private fun parseSpiele(container: org.jsoup.nodes.Element): List<InternationaleSpiel> {
+        val gruppen = mutableListOf<Paarungsgruppe>()
+        var aktuelleGruppe = mutableListOf<org.jsoup.nodes.Element>()
+        var aktuellesZat: String? = null
+        container.children().forEach { child ->
+            // `<span class="first all"><h2>ZAT 17</h2></span>` leitet einen Spieltag ein.
+            // Wichtig ist die Reihenfolge: erst die laufende Paarung abschließen, dann
+            // den neuen Spieltag setzen, sonst trägt die vorige Paarung den neuen ZAT.
+            val neueUeberschrift = zatUeberschrift(child)
+            if (child.hasClass("first") && aktuelleGruppe.isNotEmpty()) {
+                gruppen += Paarungsgruppe(aktuelleGruppe, aktuellesZat)
+                aktuelleGruppe = mutableListOf()
+            }
+            if (neueUeberschrift != null) aktuellesZat = neueUeberschrift
+            aktuelleGruppe += child
+        }
+        if (aktuelleGruppe.isNotEmpty()) gruppen += Paarungsgruppe(aktuelleGruppe, aktuellesZat)
+
+        val spiele = gruppen.flatMap { (elemente, zat) ->
+            val teams = elemente.flatMap { it.select("a[href*='st.php'], a[onclick*='teaminfo']") }
+                .take(2)
+                .map { link ->
+                    link.text().trim() to teamId(link)
+                }
+            if (teams.size < 2) return@flatMap emptyList()
+
+            val berichte = elemente.flatMap {
+                it.select("a[href*='rep/saison'], a[href*='os_bericht'], a[onclick*='os_bericht']")
+            }
+            val ergebnisse = elemente.map { it.text().trim() }
+                .filter { Regex("^\\d+\\s*:\\s*\\d+$").matches(it) }
+            if (berichte.isEmpty()) {
+                return@flatMap listOf(
+                    InternationaleSpiel(
+                        heim = teams[0].first,
+                        gast = teams[1].first,
+                        ergebnis = ergebnisse.firstOrNull(),
+                        heimTeamId = teams[0].second,
+                        gastTeamId = teams[1].second,
+                        zat = zat,
+                    ),
+                )
+            }
+            berichte.mapIndexed { index, link ->
+                val berichtTeams = reportTeams(link)
+                val paarung = berichtTeams?.let { (heimId, gastId) ->
+                    when {
+                        heimId == teams[0].second && gastId == teams[1].second -> teams[0] to teams[1]
+                        heimId == teams[1].second && gastId == teams[0].second -> teams[1] to teams[0]
+                        else -> null
+                    }
+                } ?: if (index % 2 == 0) teams[0] to teams[1] else teams[1] to teams[0]
+                InternationaleSpiel(
+                    heim = paarung.first.first,
+                    gast = paarung.second.first,
+                    ergebnis = ergebnisse.getOrNull(index),
+                    berichtUrl = berichtUrl(link),
+                    heimTeamId = paarung.first.second,
+                    gastTeamId = paarung.second.second,
+                    zat = zat,
+                )
+            }
+        }
+        if (spiele.isNotEmpty()) return spiele.distinctBy { it.berichtUrl ?: (it.heim to it.gast) }
+
+        // Fallback für ältere/abweichende Markups, bei denen die Paarungen nicht
+        // mit den Website-Klassen gruppiert sind.
+        return container.select("a[href*='st.php']")
+            .mapNotNull { it.parent()?.parent() }
+            .mapNotNull { parent ->
+                val teams = parent.select("a[href*='st.php']").take(2)
+                if (teams.size < 2) return@mapNotNull null
+                val berichtLink = parent.selectFirst(
+                    "a[href*='rep/saison'], a[href*='os_bericht'], a[onclick*='os_bericht']",
+                )
+                InternationaleSpiel(
+                    heim = teams[0].text().trim(),
+                    gast = teams[1].text().trim(),
+                    ergebnis = parent.select("span").map { it.text().trim() }
+                        .firstOrNull { Regex("\\d+\\s*:\\s*\\d+").containsMatchIn(it) },
+                    berichtUrl = berichtLink?.let(::berichtUrl),
+                    heimTeamId = teamId(teams[0]),
+                    gastTeamId = teamId(teams[1]),
+                    zat = zatUeberschrift(parent),
+                )
+            }
+            .distinctBy { it.heim to it.gast }
+    }
+
+    /** Spieltag-Überschrift der Website (`ZAT 17`), sonst `null`. */
+    private fun zatUeberschrift(element: org.jsoup.nodes.Element): String? {
+        val kandidat = element.selectFirst("h1, h2, h3")?.text()?.trim()
+        return kandidat?.takeIf { ZAT_REGEX.matches(it) }
+    }
+
+    private data class Paarungsgruppe(
+        val elemente: List<org.jsoup.nodes.Element>,
+        val zat: String?,
+    )
+
+    private companion object {
+        /** Spieltag-Überschrift der Gruppenphase, z. B. `ZAT 17`. */
+        val ZAT_REGEX = Regex("ZAT\\s*\\d+", RegexOption.IGNORE_CASE)
+
+        /**
+         * Wert der Rundenoption „Tableau" (`runde=99`) auf den Finalrundenseiten.
+         * Die Option blendet den Turnierbaum an: ein CSS-Grid aus
+         * `div.tableau-runde`/`div.tableau-paarung` ohne `#international` und ohne
+         * Tabelle. Die App hätte dafür keinen Inhalt und zeigte einen leeren
+         * Bildschirm, deshalb bleibt die Option im Filter weg. Alle übrigen Runden
+         * (Zwischenrunde bis Finale) stehen normal zur Auswahl.
+         */
+        const val RUNDE_TURNIERBAUM = "99"
+    }
+
+    private fun teamId(link: org.jsoup.nodes.Element): Long? =
+        Regex("(?:[?&]c=|teaminfo\\()([0-9]+)")
+            .find(link.attr("href") + " " + link.attr("onclick"))
+            ?.groupValues?.get(1)?.toLongOrNull()
+
+    /** Team-ID der Tabellenzeile (erster Vereinslink der Zeile). */
+    private fun teamIdAusZeile(row: org.jsoup.nodes.Element): Long? =
+        row.selectFirst("a[href*='st.php'], a[onclick*='teaminfo']")?.let { link ->
+            Regex("(?:[?&]c=|teaminfo\\()([0-9]+)")
+                .find(link.attr("href") + " " + link.attr("onclick"))
+                ?.groupValues?.get(1)?.toLongOrNull()
+        }
+
+    private fun reportTeams(link: org.jsoup.nodes.Element): Pair<Long, Long>? {
+        val hrefMatch = Regex("/rep/saison/\\d+/\\d+/(\\d+)-(\\d+)\\.html")
+            .find(link.attr("href"))
+        if (hrefMatch != null) {
+            val heim = hrefMatch.groupValues[1].toLongOrNull()
+            val gast = hrefMatch.groupValues[2].toLongOrNull()
+            return if (heim != null && gast != null) heim to gast else null
+        }
+        val onClickMatch = Regex("os_bericht\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)")
+            .find(link.attr("onclick")) ?: return null
+        return onClickMatch.groupValues[1].toLongOrNull()?.let { heim ->
+            onClickMatch.groupValues[2].toLongOrNull()?.let { gast -> heim to gast }
+        }
+    }
+
+    private fun berichtUrl(link: org.jsoup.nodes.Element): String? {
+        val href = link.attr("href")
+        return when {
+            href.contains("os_bericht") -> osBerichtUrl(href)
+            href.contains("rep/saison") -> absoluteUrl(href)
+            else -> osBerichtUrl(link.attr("onclick"))
+        }
     }
 
     /** Club-Summe auf 3 Nachkommastellen runden (Server liefert 7+ Stellen). */
     private fun summe3(text: String): String {
         val wert = text.replace(",", ".").toDoubleOrNull() ?: return text
         return String.format(java.util.Locale.US, "%.3f", wert)
+    }
+
+    /**
+     * Teilnehmerliste (`intTeilnehmer`): `<h2>`-Wettbewerbsüberschrift gefolgt von
+     * `<ul class="int_teilnehmer">` mit je `<li>` und drei `<div>`-Zeilen
+     * (Verein + Trainer, Liga/Runde, Skill-/Optischnitt).
+     */
+    internal fun parseTeilnehmer(doc: org.jsoup.nodes.Document): List<InternationaleTeilnehmerGruppe> {
+        val gruppen = mutableListOf<InternationaleTeilnehmerGruppe>()
+        var bezeichnung: String? = null
+        var teams = mutableListOf<InternationaleTeam>()
+
+        fun abschliessen() {
+            val name = bezeichnung
+            if (name != null && teams.isNotEmpty()) {
+                gruppen += InternationaleTeilnehmerGruppe(name, teams.toList())
+            }
+        }
+
+        doc.select("h1, h2, ul.int_teilnehmer").forEach { element ->
+            when {
+                element.tagName() == "h2" -> {
+                    abschliessen()
+                    bezeichnung = element.text().trim().ifEmpty { bezeichnung }
+                    teams = mutableListOf()
+                }
+                element.tagName() == "ul" -> element.select("li").forEach { li ->
+                    val link = li.selectFirst("a[href*='st.php'], a[onclick*='teaminfo']")
+                    val name = link?.text()?.trim().orEmpty()
+                    if (name.isEmpty()) return@forEach
+                    val zusatz = li.select("div").drop(1)
+                        .map { it.text().trim() }
+                        .filter { it.isNotEmpty() }
+                    teams += InternationaleTeam(
+                        name = name,
+                        teamId = link?.let(::teamId),
+                        zusatz = zusatz,
+                    )
+                }
+            }
+        }
+        abschliessen()
+        return gruppen
     }
 
     private fun flagCode(row: org.jsoup.nodes.Element): String =

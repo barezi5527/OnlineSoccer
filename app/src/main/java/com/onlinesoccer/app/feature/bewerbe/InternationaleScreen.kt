@@ -1,32 +1,41 @@
 package com.onlinesoccer.app.feature.bewerbe
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,87 +47,552 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.theme.internationaleTabellenZeilenHintergrund
 import com.onlinesoccer.app.data.model.InternationaleAnsicht
 import com.onlinesoccer.app.data.model.InternationaleFilter
 import com.onlinesoccer.app.data.model.InternationaleOption
+import com.onlinesoccer.app.data.model.InternationaleSpiel
+import com.onlinesoccer.app.data.model.InternationaleTabelleKlasse
+import com.onlinesoccer.app.data.model.InternationaleTeilnehmerGruppe
 import com.onlinesoccer.app.data.model.WertTabelle
 import com.onlinesoccer.app.ui.HubTabs
 
-private enum class InternationaleBereich(val label: String, val path: String) {
-    OS_RANKING("OS-Ranking", "/osneu/osranking"),
-    CLUB_RANKING("Club-Ranking", "/osneu/clubranking"),
-    TEILNEHMER("Internationale Teilnehmer", "/osneu/intTeilnehmer"),
-    OSC_QUALI("OSC Qualifikation", "/osneu/oscq"),
-    OSC_GRUPPE("OS Championscup GP", "/osneu/oscgp"),
-    OSC_FINAL("OS Championscup FR", "/osneu/oscfr"),
-    OSE_QUALI("OSE Qualifikation", "/osneu/oseq"),
-    OSE_GRUPPE("OS Europacup GP", "/osneu/osegp"),
-    OSE_FINAL("OS Europacup FR", "/osneu/osefr"),
-    SUPERCUP("Supercup", "/osneu/supercup"),
+/**
+ * Internationale Wettbewerbe, gegliedert nach Bereichen.
+ *
+ * Statt zehn gleichrangiger Reiter gibt es fünf Bereiche ([InternationaleBereich]).
+ * Jeder Bereich listet seine Ansichten als sichtbare Einträge auf – die Ansichten
+ * selbst teilen sich in „Begegnungen" und „Tabelle", damit die Gruppenphasen-Tabelle
+ * erreichbar bleibt, ohne einen weiteren Menüpunkt anzulegen.
+ */
+private enum class InternationaleBereich(val label: String, val beschreibung: String) {
+    TEILNEHMER(
+        "Teilnehmer",
+        "Welche Vereine starten in den internationalen Wettbewerben",
+    ),
+    OSC(
+        "OSC",
+        "OS Championscup: Qualifikation, Gruppenphase und Finalrunde",
+    ),
+    OSE(
+        "OSE",
+        "OS Europacup: Qualifikation, Gruppenphase und Finalrunde",
+    ),
+    SUPERCUP(
+        "Supercup",
+        "Europapokal der Vereine gegen den Champion",
+    ),
+    RANKINGS(
+        "Rankings",
+        "OS- und Club-Ranking",
+    ),
 }
 
-/** Bereiche, die Begegnungs-Ergebnisse anzeigen und daher standardmäßig ausgeblendet werden. */
-private val ergebnisBereiche = setOf(
-    InternationaleBereich.OSC_QUALI,
-    InternationaleBereich.OSC_GRUPPE,
-    InternationaleBereich.OSC_FINAL,
-    InternationaleBereich.OSE_QUALI,
-    InternationaleBereich.OSE_GRUPPE,
-    InternationaleBereich.OSE_FINAL,
-    InternationaleBereich.SUPERCUP,
+/** Seitenpfad einer Ansicht; `null` steht für die Bereichsübersicht. */
+private enum class InternationaleAnsichtId(
+    val label: String,
+    val path: String?,
+    val mitTabelle: Boolean = false,
+    /** `<h2>`-Abschnitt der Teilnehmerseite, auf den die Ansicht beschränkt ist. */
+    val teilnehmerAbschnitt: String? = null,
+) {
+    TEILNEHMER_OSC("OSC-Teilnehmer", "/osneu/intTeilnehmer", teilnehmerAbschnitt = "OSC"),
+    TEILNEHMER_OSCQ("OSC-Qualifikation", "/osneu/intTeilnehmer", teilnehmerAbschnitt = "OSCQ"),
+    TEILNEHMER_OSE("OSE-Teilnehmer", "/osneu/intTeilnehmer", teilnehmerAbschnitt = "OSE"),
+    TEILNEHMER_OSEQ("OSE-Qualifikation", "/osneu/intTeilnehmer", teilnehmerAbschnitt = "OSEQ"),
+    OSC_QUALI("Qualifikation", "/osneu/oscq"),
+    OSC_GRUPPE("Gruppenphase", "/osneu/oscgp", mitTabelle = true),
+    OSC_FINAL("Finalrunde", "/osneu/oscfr"),
+    OSE_QUALI("Qualifikation", "/osneu/oseq"),
+    OSE_GRUPPE("Gruppenphase", "/osneu/osegp", mitTabelle = true),
+    OSE_FINAL("Finalrunde", "/osneu/osefr"),
+    SUPERCUP("Supercup", "/osneu/supercup"),
+    OS_RANKING("OS-Ranking", "/osneu/osranking"),
+    CLUB_RANKING("Club-Ranking", "/osneu/clubranking"),
+}
+
+private val bereichAnsichten = mapOf(
+    InternationaleBereich.TEILNEHMER to listOf(
+        InternationaleAnsichtId.TEILNEHMER_OSC,
+        InternationaleAnsichtId.TEILNEHMER_OSCQ,
+        InternationaleAnsichtId.TEILNEHMER_OSE,
+        InternationaleAnsichtId.TEILNEHMER_OSEQ,
+    ),
+    InternationaleBereich.OSC to listOf(
+        InternationaleAnsichtId.OSC_QUALI,
+        InternationaleAnsichtId.OSC_GRUPPE,
+        InternationaleAnsichtId.OSC_FINAL,
+    ),
+    InternationaleBereich.OSE to listOf(
+        InternationaleAnsichtId.OSE_QUALI,
+        InternationaleAnsichtId.OSE_GRUPPE,
+        InternationaleAnsichtId.OSE_FINAL,
+    ),
+    InternationaleBereich.SUPERCUP to listOf(
+        InternationaleAnsichtId.SUPERCUP,
+    ),
+    InternationaleBereich.RANKINGS to listOf(
+        InternationaleAnsichtId.OS_RANKING,
+        InternationaleAnsichtId.CLUB_RANKING,
+    ),
+)
+
+/** Bereiche, in denen Begegnungsergebnisse standardmäßig verborgen bleiben. */
+private val ergebnisAnsichten = setOf(
+    InternationaleAnsichtId.OSC_QUALI,
+    InternationaleAnsichtId.OSC_GRUPPE,
+    InternationaleAnsichtId.OSC_FINAL,
+    InternationaleAnsichtId.OSE_QUALI,
+    InternationaleAnsichtId.OSE_GRUPPE,
+    InternationaleAnsichtId.OSE_FINAL,
+    InternationaleAnsichtId.SUPERCUP,
 )
 
 @Composable
 fun InternationaleScreen(
     onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit,
     viewModel: InternationaleViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var bereich by rememberSaveable { mutableStateOf(InternationaleBereich.OS_RANKING) }
-    var ausgewaehltesRankingTeam by remember { mutableStateOf<String?>(null) }
+    var bereich by rememberSaveable { mutableStateOf(InternationaleBereich.OSC) }
+    // Ziel des Zurück-Pfeils: der zuletzt gewählte Bereich, wenn gerade eine
+    // direkt geöffnete Einzelansicht (Supercup) offen ist.
+    var vorherigerBereich by rememberSaveable { mutableStateOf(InternationaleBereich.OSC) }
+    var ansicht by rememberSaveable { mutableStateOf<InternationaleAnsichtId?>(null) }
+    var zeigeTabelle by rememberSaveable { mutableStateOf(false) }
     var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
-    val ansicht = uiState.ansicht
+    var ausgewaehltesRankingLand by rememberSaveable { mutableStateOf<String?>(null) }
+    var gewaehlterZat by rememberSaveable { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(bereich) {
-        ausgewaehltesRankingTeam = null
-        viewModel.lade(bereich.path)
+    LaunchedEffect(bereich, ansicht) {
+        val pfad = ansicht?.path ?: return@LaunchedEffect
+        // Rückkehr aus dem Mannschaftskader: derselbe Bildschirm wird neu zusammengesetzt,
+        // das ViewModel lebt weiter. Ohne diese Prüfung würden Tabelle, ZAT und Saison
+        // zurückgesetzt und die Ansicht wieder im Begegnungsmodus starten.
+        if (viewModel.istAnsichtGeladen(ansicht!!.name)) return@LaunchedEffect
+        ausgewaehltesRankingLand = null
+        zeigeTabelle = false
+        ergebnisseSichtbar = false
+        gewaehlterZat = null
+        viewModel.lade(ansicht!!.name, pfad)
     }
 
+val geladen = uiState.ansicht
+
+    // Supercup hat nur eine Ansicht: der Chip öffnet die Begegnungen direkt,
+    // die Zwischenliste mit dem gleichnamigen Unterpunkt entfällt.
+    val direktOffen = bereichAnsichten.getValue(bereich).singleOrNull()
+    // Ziel des Zurück-Pfeils: aus einer direkt geöffneten Ansicht zurück in den
+    // zuvor gewählten Bereich, sonst in die Liste des eigenen Bereichs.
+    val zurueckNach = if (direktOffen != null) vorherigerBereich else bereich
+
     Column(Modifier.fillMaxSize()) {
-        HubTabs(
-            tabs = InternationaleBereich.entries.map { it.label to it },
-            selected = bereich,
-            onSelect = { bereich = it as InternationaleBereich },
-        )
+        if (ansicht == null) {
+            HubTabs(
+                tabs = InternationaleBereich.entries.map { it.label to it },
+                selected = bereich,
+                onSelect = {
+                    val gewaehlt = it as InternationaleBereich
+                    if (gewaehlt != bereich) vorherigerBereich = bereich
+                    bereich = gewaehlt
+                    ansicht = bereichAnsichten.getValue(gewaehlt).singleOrNull()
+                },
+            )
+        } else {
+            ZurueckZeile(
+                titel = ansicht!!.label,
+                bereich = bereich.label,
+                zurueckNach = zurueckNach.label,
+                zeigeErgebnisse = ansicht!! in ergebnisAnsichten,
+                ergebnisseSichtbar = ergebnisseSichtbar,
+                onErgebnisseSichtbar = { ergebnisseSichtbar = it },
+                // Beim erneuten Öffnen soll wieder frisch geladen werden, nach dem
+                // Zurück aus dem Kader bleibt die bisherige Ansicht dagegen erhalten.
+                onZurueck = {
+                    bereich = zurueckNach
+                    ansicht = bereichAnsichten.getValue(zurueckNach).singleOrNull()
+                    viewModel.verwerfeAnsicht()
+                },
+            )
+        }
         Box(Modifier.fillMaxSize().weight(1f)) {
             when {
-                uiState.fehler != null && ansicht == null -> FehlerAnsicht(uiState.fehler!!, onRetry = { viewModel.lade(bereich.path) })
-                ansicht != null -> InternationaleAnsichtContent(
-                    ansicht = ansicht,
-                    istOsRanking = bereich == InternationaleBereich.OS_RANKING,
-                    istErgebnisBereich = bereich in ergebnisBereiche,
+                ansicht == null -> BereichUebersicht(
+                    bereich = bereich,
+                    onSelect = { ansicht = it },
+                )
+                uiState.fehler != null && geladen == null -> FehlerAnsicht(
+                    fehler = uiState.fehler!!,
+                    onRetry = { viewModel.lade(ansicht!!.name, ansicht!!.path!!) },
+                )
+                geladen != null -> AnsichtInhalt(
+                    ansichtId = ansicht!!,
+                    ansicht = geladen,
+                    zeigeTabelle = zeigeTabelle,
+                    onZeigeTabelle = { zeigeTabelle = it },
                     ergebnisseSichtbar = ergebnisseSichtbar,
-                    onErgebnisseSichtbar = { ergebnisseSichtbar = it },
-                    ausgewaehlteZeile = ausgewaehltesRankingTeam,
-                    onRankingTeam = { ausgewaehltesRankingTeam = it },
-                    onFilter = {
-                        ausgewaehltesRankingTeam = null
-                        viewModel.lade(bereich.path, it)
-                    },
+                    ausgewaehltesLand = ausgewaehltesRankingLand,
+                    onRankingLand = { ausgewaehltesRankingLand = it },
+                    gewaehlterZat = gewaehlterZat,
+                    onZat = { gewaehlterZat = it },
+                    onFilter = { viewModel.lade(ansicht!!.name, ansicht!!.path!!, it) },
                     onSpielbericht = onSpielbericht,
+                    onTeamClick = onTeamClick,
                 )
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
-            if (uiState.ladend && ansicht != null) {
+            if (uiState.ladend && geladen != null && ansicht != null) {
                 CircularProgressIndicator(Modifier.align(Alignment.TopCenter).padding(8.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Kopfzeile einer Ansicht: zurück, Ansicht über Bereich und – bei den Wettbewerben
+ * mit verborgenen Ergebnissen – rechts der Schalter „Ergebnisse anzeigen". Die
+ * Überschrift des Inhalts ist damit entfernt, siehe [AnsichtInhalt].
+ *
+ * [zurueckNach] ist das Ziel des Pfeils und weicht bei direkt geöffneten
+ * Einzelansichten vom eigenen [bereich] ab, etwa beim Supercup.
+ */
+@Composable
+private fun ZurueckZeile(
+    titel: String,
+    bereich: String,
+    zurueckNach: String,
+    zeigeErgebnisse: Boolean,
+    ergebnisseSichtbar: Boolean,
+    onErgebnisseSichtbar: (Boolean) -> Unit,
+    onZurueck: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, end = 12.dp, top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onZurueck) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück zu $zurueckNach")
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                titel,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            // Beim Supercup tragen Bereich und Ansicht denselben Namen; die
+            // Zeile wäre dann zweimal dieselbe Überschrift.
+            if (bereich != titel) {
+                Text(
+                    bereich,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (zeigeErgebnisse) {
+            CheckboxZeile("Ergebnisse anzeigen", ergebnisseSichtbar, onErgebnisseSichtbar)
+        }
+    }
+}
+
+/** Übersicht eines Bereichs: die Ansichten als große, sichtbare Einträge. Nur
+ * Bereiche mit mehreren Ansichten brauchen diese Liste, beim Supercup mit nur
+ * einer Ansicht öffnet der Chip die Begegnungen direkt. */
+@Composable
+private fun BereichUebersicht(
+    bereich: InternationaleBereich,
+    onSelect: (InternationaleAnsichtId) -> Unit,
+) {
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        item {
+            Text(
+                bereich.label,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                bereich.beschreibung,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+        }
+        items(bereichAnsichten.getValue(bereich), key = { it.name }) { eintrag ->
+            Card(
+                Modifier.fillMaxWidth().clickable { onSelect(eintrag) },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 14.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        eintrag.label,
+                        Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Inhalt einer Ansicht. Die Überschrift steht in [ZurueckZeile] oben; das
+ * Server-`<h1>` der Seite nicht noch einmal darüber setzen, sonst stünden
+ * „Qualifikation / OSC" und „OSC-Qualifikation" doppelt im Kopf.
+ */
+@Composable
+private fun AnsichtInhalt(
+    ansichtId: InternationaleAnsichtId,
+    ansicht: InternationaleAnsicht,
+    zeigeTabelle: Boolean,
+    onZeigeTabelle: (Boolean) -> Unit,
+    ergebnisseSichtbar: Boolean,
+    ausgewaehltesLand: String?,
+    onRankingLand: (String) -> Unit,
+    gewaehlterZat: String?,
+    onZat: (String?) -> Unit,
+    onFilter: (InternationaleFilter) -> Unit,
+    onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit,
+) {
+        val zeigeTabellenAnsicht = ansichtId.mitTabelle && zeigeTabelle && ansicht.tabellen.isNotEmpty()
+    val spiele = if (gewaehlterZat == null) {
+        ansicht.spiele
+    } else {
+        ansicht.spiele.filter { it.zat == gewaehlterZat }
+    }
+
+    if (zeigeTabellenAnsicht) {
+        // Eigener Aufbau: Filter und Umschalter bleiben oben stehen, die
+        // Spaltenüberschrift der Tabellen fixiert darüber, darunter rollt nur der
+        // Tabellenteil. Ein Scrollen der ganzen Seite wäre hier doppelt.
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterLeiste(
+                ansicht = ansicht,
+                onFilter = onFilter,
+                zeigeErgebnisFilter = false,
+                gewaehlterZat = gewaehlterZat,
+                onZat = onZat,
+                zeigeZatFilter = false,
+            )
+            AnsichtUmschalter(zeigeTabelle, onZeigeTabelle)
+            TabelleMitFixerKopfzeile(ansicht.tabellen, onTeamClick, Modifier.weight(1f))
+            if (ansicht.tabellen.any { it.zeilenKlasse.any { klasse -> klasse != null } }) {
+                InternationaleTabellenLegende()
+            }
+        }
+        return
+    }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (ansichtId == InternationaleAnsichtId.OS_RANKING) {
+            RankingHinweis("Tippe auf ein Land, um es in der Tabelle hervorzuheben.", ausgewaehltesLand)
+        }
+        FilterLeiste(
+            ansicht = ansicht,
+            onFilter = onFilter,
+            zeigeErgebnisFilter = ansichtId !in ergebnisAnsichten,
+            gewaehlterZat = gewaehlterZat,
+            onZat = onZat,
+        )
+        if (ansichtId.mitTabelle && ansicht.tabellen.isNotEmpty()) {
+            AnsichtUmschalter(zeigeTabelle, onZeigeTabelle)
+        }
+
+        if (ansicht.teilnehmer.isNotEmpty()) {
+            val abschnitt = ansichtId.teilnehmerAbschnitt
+            ansicht.teilnehmer
+                .filter { abschnitt == null || it.bezeichnung.equals(abschnitt, ignoreCase = true) }
+                .forEach { gruppe ->
+                    TeilnehmerGruppe(gruppe, onTeamClick)
+                }
+        } else {
+            if (spiele.isNotEmpty()) {
+                Text(
+                    "Begegnungen",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                spiele.forEach { spiel ->
+                    BegegnungCard(spiel, ergebnisseSichtbar, onSpielbericht, onTeamClick)
+                }
+            }
+            // In der Gruppenphase gibt es den Umschalter "Tabelle"; die Tabelle dort
+            // nicht noch einmal unter den Begegnungen ausgeben.
+            if (!ansichtId.mitTabelle) {
+                ansicht.tabellen.forEach { tabelle ->
+                    Tabelle(tabelle = tabelle, onTeamClick = onTeamClick)
+                }
+                if (ansicht.teilnehmer.isEmpty() &&
+                    ansicht.tabellen.any { it.zeilenKlasse.any { klasse -> klasse != null } }
+                ) {
+                    InternationaleTabellenLegende()
+                }
+            }
+            if (ansicht.abschnitte.isNotEmpty()) {
+                Text(
+                    "Weitere Informationen",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                ansicht.abschnitte.forEach { abschnitt ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Text(abschnitt, Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+            if (spiele.isEmpty() && ansicht.tabellen.isEmpty() && ansicht.abschnitte.isEmpty()) {
+                Text(
+                    if (ansichtId.mitTabelle || ansichtId in ergebnisAnsichten) {
+                        "Zu dieser Auswahl sind noch keine Spiele eingetragen."
+                    } else {
+                        "Für diese Auswahl liegen derzeit keine Daten vor."
+                    },
+                    Modifier.padding(16.dp),
+                )
+            } else if (spiele.isEmpty() && ansicht.spiele.isNotEmpty()) {
+                Text(
+                    "Für ${gewaehlterZat.orEmpty()} sind keine Begegnungen eingetragen.",
+                    Modifier.padding(16.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnsichtUmschalter(zeigeTabelle: Boolean, onZeigeTabelle: (Boolean) -> Unit) {
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        SegmentedButton(
+            selected = !zeigeTabelle,
+            onClick = { onZeigeTabelle(false) },
+            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+        ) { Text("Begegnungen") }
+        SegmentedButton(
+            selected = zeigeTabelle,
+            onClick = { onZeigeTabelle(true) },
+            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+        ) { Text("Tabelle") }
+    }
+}
+
+@Composable
+private fun CheckboxZeile(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.clickable { onCheckedChange(!checked) },
+        )
+    }
+}
+
+@Composable
+private fun RankingHinweis(text: String, ausgewaehltesLand: String?) {
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text("Länderranking", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(text, style = MaterialTheme.typography.bodySmall)
+            ausgewaehltesLand?.let { name ->
+                Text(
+                    "Ausgewählt: $name",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+
+/** Teilnehmerliste: eine Card je Wettbewerb, darin je Verein mit Detailzeilen. */
+@Composable
+private fun TeilnehmerGruppe(
+    gruppe: InternationaleTeilnehmerGruppe,
+    onTeamClick: (Long) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(vertical = 4.dp)) {
+            Text(
+                gruppe.bezeichnung,
+                Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            HorizontalDivider()
+            gruppe.teams.forEach { team ->
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (team.teamId != null) {
+                                Modifier.clickable { onTeamClick(team.teamId) }
+                            } else {
+                                Modifier
+                            },
+                        )
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    Text(
+                        team.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = if (team.teamId != null) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    )
+                    team.zusatz.forEach { zeile ->
+                        Text(
+                            zeile,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     }
@@ -142,124 +616,33 @@ private fun FehlerAnsicht(fehler: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun InternationaleAnsichtContent(
-    ansicht: InternationaleAnsicht,
-    istOsRanking: Boolean,
-    istErgebnisBereich: Boolean,
-    ergebnisseSichtbar: Boolean,
-    onErgebnisseSichtbar: (Boolean) -> Unit,
-    ausgewaehlteZeile: String?,
-    onRankingTeam: (String) -> Unit,
-    onFilter: (InternationaleFilter) -> Unit,
-    onSpielbericht: (String?, String?) -> Unit,
-) {
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(ansicht.titel ?: "Internationale Bewerbe", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        if (istOsRanking) {
-            Card(
-                Modifier.fillMaxWidth(),
-                colors = androidx.compose.material3.CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                ),
-            ) {
-                Column(Modifier.padding(12.dp)) {
-                    Text("Länderranking", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Text(
-                        "Tippe auf ein Land, um es in der Tabelle hervorzuheben.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    ausgewaehlteZeile?.let { name ->
-                        Text("Ausgewählt: $name", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-        FilterLeiste(ansicht, onFilter, zeigeErgebnisFilter = !istErgebnisBereich)
-        if (istErgebnisBereich) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = ergebnisseSichtbar,
-                    onCheckedChange = onErgebnisseSichtbar,
-                )
-                Text(
-                    "Ergebnisse anzeigen",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.clickable { onErgebnisseSichtbar(!ergebnisseSichtbar) },
-                )
-            }
-        }
-        if (ansicht.spiele.isNotEmpty()) {
-            Text("Begegnungen", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            ansicht.spiele.forEach { spiel ->
-                BegegnungCard(spiel.heim, spiel.gast, spiel.ergebnis, spiel.berichtUrl, ergebnisseSichtbar, onSpielbericht)
-            }
-        }
-        ansicht.tabellen.forEachIndexed { index, tabelle ->
-            val istRanking = istRankingTabelle(tabelle)
-            Tabelle(
-                tabelle = tabelle,
-                selectable = istRanking && index == 0,
-                selectedRow = ausgewaehlteZeile,
-                onRowClick = onRankingTeam,
-            )
-        }
-        if (ansicht.abschnitte.isNotEmpty()) {
-            Text("Weitere Informationen", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            ansicht.abschnitte.forEach { abschnitt ->
-                Card(Modifier.fillMaxWidth()) {
-                    Text(abschnitt, Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-        if (ansicht.abschnitte.isEmpty() && ansicht.spiele.isEmpty() && ansicht.tabellen.isEmpty()) {
-            Text("Keine Daten für diese Auswahl gefunden.", Modifier.padding(16.dp))
-        }
-    }
-}
-
-@Composable
 private fun BegegnungCard(
-    heim: String,
-    gast: String,
-    ergebnis: String?,
-    berichtUrl: String?,
+    spiel: InternationaleSpiel,
     ergebnisseSichtbar: Boolean,
     onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit,
 ) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    heim,
-                    Modifier.weight(1f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Medium,
-                )
-                val resultat = ergebnis?.takeIf { ergebnisseSichtbar }
+                MannschaftText(spiel.heim, spiel.heimTeamId, Modifier.weight(1f), TextAlign.Start, onTeamClick)
+                val resultat = spiel.ergebnis?.takeIf { ergebnisseSichtbar }
                 Text(
                     resultat ?: "vs.",
-                    Modifier.padding(horizontal = 10.dp),
+                    Modifier.padding(horizontal = 8.dp),
                     fontWeight = FontWeight.Bold,
-                    color = if (resultat != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    color = if (resultat != null) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 )
-                Text(
-                    gast,
-                    Modifier.weight(1f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Medium,
-                )
+                MannschaftText(spiel.gast, spiel.gastTeamId, Modifier.weight(1f), TextAlign.End, onTeamClick)
             }
-            if (berichtUrl != null) {
+            if (spiel.berichtUrl != null) {
                 TextButton(
-                    onClick = { onSpielbericht(null, berichtUrl) },
+                    onClick = { onSpielbericht(null, spiel.berichtUrl) },
                     modifier = Modifier.align(Alignment.End),
                 ) {
                     Text("Spielbericht öffnen")
@@ -270,24 +653,62 @@ private fun BegegnungCard(
 }
 
 @Composable
+private fun MannschaftText(
+    name: String,
+    teamId: Long?,
+    modifier: Modifier,
+    textAlign: TextAlign,
+    onTeamClick: (Long) -> Unit,
+) {
+    Text(
+        name,
+        modifier.then(if (teamId != null) Modifier.clickable { onTeamClick(teamId) } else Modifier),
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        fontWeight = FontWeight.Medium,
+        textAlign = textAlign,
+        color = if (teamId != null) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+    )
+}
+
+@Composable
 private fun FilterLeiste(
     ansicht: InternationaleAnsicht,
     onFilter: (InternationaleFilter) -> Unit,
     zeigeErgebnisFilter: Boolean = true,
+    gewaehlterZat: String? = null,
+    onZat: (String?) -> Unit = {},
+    zeigeZatFilter: Boolean = true,
 ) {
     val filter = ansicht.filter
-    val grundAuswahl = listOf(
+    val grundAuswahl = mutableListOf(
         FilterAuswahl("Saison", ansicht.saisonen, filter.saison) { value -> onFilter(filter.copy(saison = value)) },
+    )
+    // Die Gruppenphase gliedert die Website nach Spieltag; die Auswahl filtert
+    // die bereits geladenen Paarungen, ein erneutes Laden ist nicht nötig. Sie
+    // gehört neben den Saisonfilter, damit beide Zeilen der Leiste belegt sind.
+    if (zeigeZatFilter && ansicht.zatOptionen.size >= 2) {
+        grundAuswahl += FilterAuswahl(
+            label = "Alle Spieltage",
+            optionen = listOf(InternationaleOption(ALLE_ZAT_WERT, "Alle Spieltage")) + ansicht.zatOptionen,
+            selected = gewaehlterZat ?: ALLE_ZAT_WERT,
+            onSelect = { value -> onZat(value.takeIf { it != ALLE_ZAT_WERT }) },
+        )
+    }
+    grundAuswahl += listOf(
         FilterAuswahl("Runde", ansicht.runden, filter.runde) { value -> onFilter(filter.copy(runde = value)) },
         FilterAuswahl("Gruppe", ansicht.gruppen, filter.gruppe) { value -> onFilter(filter.copy(gruppe = value)) },
     )
-    val auswahl = (if (zeigeErgebnisFilter) {
-        grundAuswahl + FilterAuswahl("Ergebnisse", ansicht.ergebnisOptionen, filter.ergebnisse) { value ->
+    if (zeigeErgebnisFilter) {
+        grundAuswahl += FilterAuswahl("Ergebnisse", ansicht.ergebnisOptionen, filter.ergebnisse) { value ->
             onFilter(filter.copy(ergebnisse = value))
         }
-    } else {
-        grundAuswahl
-    }).filter { it.optionen.size >= 2 }
+    }
+    val auswahl = grundAuswahl.filter { it.optionen.size >= 2 }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         auswahl.chunked(2).forEach { zeile ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -300,11 +721,14 @@ private fun FilterLeiste(
     }
 }
 
+/** Ersatzwert des Spieltagfilters für „alle Spieltage"; ZAT-Werte sind nie leer. */
+private const val ALLE_ZAT_WERT = ""
+
 private data class FilterAuswahl(
     val label: String,
     val optionen: List<InternationaleOption>,
     val selected: String?,
-    val onSelect: (String) -> Unit,
+    val onSelect: (String?) -> Unit,
 )
 
 @Composable
@@ -332,75 +756,109 @@ private fun Auswahl(
     }
 }
 
+/**
+ * Tabellenansicht mit der Spaltenvorlage der Ligatabelle: Gruppenphasen zeigen
+ * `#`, Team, Sp., Tore, Diff. und Pkt., Ranglisten nur Platz, Team und Summe.
+ * Weitere Spalten der Website werden bewusst weggelassen, damit die Tabelle in
+ * die Breite passt. Ein Tipp auf das Team öffnet den Kader wie in der Ligatabelle.
+ * Die Zeilen sind nach der Bedeutung der Platzierung eingefärbt (Website: `top`,
+ * `middle`, `bottom`), die Legende steht darunter.
+ */
 @Composable
 private fun Tabelle(
     tabelle: WertTabelle,
-    selectable: Boolean = false,
-    selectedRow: String? = null,
-    onRowClick: (String) -> Unit = {},
+    onTeamClick: (Long) -> Unit,
 ) {
-    val istRanking = istRankingTabelle(tabelle)
+    val spalten = kompakteTabellenSpalten(tabelle.header)
+        ?: ranglistenTabellenSpalten(tabelle.header)
+    if (spalten == null || tabelle.zeilen.isEmpty()) return
+
+    val zeilenKlassen = tabelle.zeilenKlasse
+    val zeilenFarben = List(zeilenKlassen.size) {
+        internationaleTabellenZeilenHintergrund(zeilenKlassen[it])
+    }
 
     Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.horizontalScroll(rememberScrollState()).padding(8.dp)) {
-            Row {
-                tabelle.header.forEachIndexed { index, text ->
-                    Text(
-                        text,
-                        Modifier.then(
-                            if (istRanking) Modifier.width(rankingSpaltenbreite(index, tabelle.header)) else Modifier,
-                        ).padding(4.dp),
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.labelSmall,
+        Column(Modifier.padding(vertical = 4.dp)) {
+            TabellenRaster(
+                spalten = spalten,
+                zeilen = tabelle.zeilen,
+                teamIds = tabelle.teamIds,
+                onTeamClick = onTeamClick,
+                zeilenHintergrund = { index -> zeilenFarben.getOrNull(index) ?: Color.Transparent },
+            )
+        }
+    }
+}
+
+/**
+ * Tabellen mit fixierter Spaltenüberschrift: die Kopfzeile bleibt stehen, darunter
+ * rollen die Datenzeilen. Alle Tabellen einer Ansicht teilen sich dieselben Spalten
+ * (Gruppenphase, Rangliste), deshalb genügt eine Kopfzeile.
+ */
+@Composable
+private fun TabelleMitFixerKopfzeile(
+    tabellen: List<WertTabelle>,
+    onTeamClick: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val spalten = tabellen
+        .firstNotNullOfOrNull { kompakteTabellenSpalten(it.header) ?: ranglistenTabellenSpalten(it.header) }
+        ?: return
+    val zeilenFarben = tabellen.map { tabelle ->
+        List(tabelle.zeilenKlasse.size) { internationaleTabellenZeilenHintergrund(tabelle.zeilenKlasse[it]) }
+    }
+
+    Card(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(vertical = 4.dp)) {
+            TabellenKopfzeile(spalten)
+            Column(
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                tabellen.forEachIndexed { tabelleIndex, tabelle ->
+                    TabellenZeilen(
+                        spalten = spalten,
+                        zeilen = tabelle.zeilen,
+                        teamIds = tabelle.teamIds,
+                        onTeamClick = onTeamClick,
+                        zeilenHintergrund = { index ->
+                            zeilenFarben[tabelleIndex].getOrNull(index) ?: Color.Transparent
+                        },
                     )
-                }
-            }
-            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                tabelle.zeilen.take(250).forEach { zeile ->
-                    val rowKey = rankingName(zeile, tabelle.header)
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .then(if (selectable) Modifier.clickable { onRowClick(rowKey) } else Modifier)
-                            .background(
-                                if (selectable && selectedRow == rowKey) {
-                                    MaterialTheme.colorScheme.secondaryContainer
-                                } else {
-                                    androidx.compose.ui.graphics.Color.Transparent
-                                },
-                            ),
-                    ) {
-                        zeile.forEachIndexed { index, text ->
-                            Text(
-                                text,
-                                Modifier.then(
-                                    if (istRanking) Modifier.width(rankingSpaltenbreite(index, tabelle.header)) else Modifier,
-                                ).padding(4.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
                 }
             }
         }
     }
 }
 
-private fun istRankingTabelle(tabelle: WertTabelle): Boolean =
-    tabelle.header.size >= 2 && tabelle.header.firstOrNull() == "Platz" &&
-        "Summe" in tabelle.header
-
-private fun rankingSpaltenbreite(index: Int, header: List<String>): Dp {
-    val spalte = header.getOrNull(index) ?: return 88.dp
-    return when (spalte) {
-        "Platz" -> 56.dp
-        "Club" -> 180.dp
-        "Land" -> if ("Club" in header) 56.dp else 180.dp
-        else -> 88.dp
+/** Legende der Platzbedeutungen unter den internationalen Tabellen (wie auf der Website). */
+@Composable
+private fun InternationaleTabellenLegende() {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        InternationaleTabelleKlasse.entries.forEach { klasse ->
+            Row(
+                Modifier
+                    .weight(1f)
+                    .background(
+                        internationaleTabellenZeilenHintergrund(klasse),
+                        RoundedCornerShape(4.dp),
+                    )
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    klasse.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2,
+                )
+            }
+        }
     }
 }
-
-private fun rankingName(zeile: List<String>, header: List<String>): String =
-    zeile.getOrNull(header.indexOf("Club").takeIf { it >= 0 } ?: 1)?.takeIf { it.isNotBlank() }
-        ?: zeile.getOrNull(header.indexOf("Land").takeIf { it >= 0 } ?: 1)?.takeIf { it.isNotBlank() }
-        ?: "Team"

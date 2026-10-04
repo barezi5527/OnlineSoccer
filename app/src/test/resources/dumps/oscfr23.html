@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+<body>
+  <h1>OSC Finalrunde</h1>
+  <form method="POST" action="/osneu/oscfr">
+    <select name="runde">
+      <option value="0">---Runde---</option>
+      <option value="1">Zwischenrunde</option>
+      <option value="2">Achtelfinale</option>
+      <option value="3">Viertelfinale</option>
+      <option value="4">Halbfinale</option>
+      <option selected value="5">Finale</option>
+      <option value="99">Tableau</option>
+    </select>
+    <select name="season">
+      <option value="0">---Saison---</option>
+      <option selected value="23">Saison 23</option>
+      <option value="24">Saison 24</option>
+    </select>
+    <select name="ergebnisse">
+      <option value="0">Ergebnisse nicht anzeigen</option>
+      <option selected value="1">Ergebnisse anzeigen</option>
+    </select>
+    <input type="submit" value="Anzeigen" />
+  </form>
+  <hr />
+  <div class="table" id="international">
+    <span class="first">
+      <img src="/images/flaggen/AUT.gif" alt="Flagge &amp;Ouml;sterreich" />
+    </span>
+    <span>
+      <img src="/images/wappen/00001309.gif" alt="Wappen Mödling OSC" />
+    </span>
+    <span><a href="/st.php?c=1309" class="" onClick="teaminfo(1309);return false;"><b>Mödling OSC</b></a></span>
+    <span>-</span>
+    <span>
+      <img src="/images/flaggen/POR.gif" alt="Flagge Portugal" />
+    </span>
+    <span>
+      <img src="/images/wappen/00000709.gif" alt="Wappen Benfica Leixões" />
+    </span>
+    <span><a href="/st.php?c=709" class="stu" onClick="teaminfo(709);return false;">Benfica Leixões</a></span>
+    <span>1:0 </span>
+    <span><a href="/rep/saison/23/71/1309-709.html" onClick="os_bericht(1309,709,71,23); return false;">Klick</a></span>
+    <span><a href="/bericht.php?s=1915770" onClick="kommentar(1915770); return false;">0 Vor. / 0 Kom.</a></span>
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</body>
+</html>

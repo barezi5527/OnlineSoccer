@@ -22,6 +22,23 @@ data class InternationaleAnsicht(
     val abschnitte: List<String> = emptyList(),
     val tabellen: List<WertTabelle> = emptyList(),
     val spiele: List<InternationaleSpiel> = emptyList(),
+    /** Teilnehmerliste (`intTeilnehmer`), nach Wettbewerb gruppiert. */
+    val teilnehmer: List<InternationaleTeilnehmerGruppe> = emptyList(),
+    /** Spieltage (ZAT) der Gruppenphase – die Website gliedert die Paarungen danach. */
+    val zatOptionen: List<InternationaleOption> = emptyList(),
+)
+
+/** Eine Wettbewerbsgruppe der Teilnehmerliste (OSC, OSE, OSC-Qualifikation, OSE-Qualifikation). */
+data class InternationaleTeilnehmerGruppe(
+    val bezeichnung: String,
+    val teams: List<InternationaleTeam> = emptyList(),
+)
+
+/** Ein Verein aus der Teilnehmerliste mit Trainer- und Detailzeile. */
+data class InternationaleTeam(
+    val name: String,
+    val teamId: Long? = null,
+    val zusatz: List<String> = emptyList(),
 )
 
 data class InternationaleSpiel(
@@ -29,4 +46,29 @@ data class InternationaleSpiel(
     val gast: String,
     val ergebnis: String? = null,
     val berichtUrl: String? = null,
+    val heimTeamId: Long? = null,
+    val gastTeamId: Long? = null,
+    /** Spieltag laut Website-Überschrift (`ZAT 17`), nur in der Gruppenphase vorhanden. */
+    val zat: String? = null,
 )
+
+/**
+ * Farbklasse einer Zeile in den internationalen Tabellen – wie die Website sie per
+ * CSS-Klasse am `<tr>` der Gruppenphase setzt (`osneu/css/style.css`:
+ * `intTabelle tr.top`, `tr.middle`, `tr.bottom`). Bedeutung und Farbe stammen
+ * ausschließlich vom Server.
+ */
+enum class InternationaleTabelleKlasse(val cssKlasse: String, val label: String) {
+    TOP("top", "Finalrunde"),
+    MITTEL("middle", "Mittelfeld"),
+    UNTEN("bottom", "Ausgeschieden"),
+    ;
+
+    companion object {
+        fun vonCssKlasse(cssKlasse: String?): InternationaleTabelleKlasse? {
+            if (cssKlasse.isNullOrBlank()) return null
+            val einzelne = cssKlasse.trim().split(Regex("\\s+"))
+            return entries.firstOrNull { it.cssKlasse in einzelne }
+        }
+    }
+}

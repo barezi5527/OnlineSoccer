@@ -1,5 +1,9 @@
 package com.onlinesoccer.app.data.repository
 
+import com.onlinesoccer.app.data.model.InternationaleTabelleKlasse
+import com.onlinesoccer.app.feature.bewerbe.kompakteTabellenSpalten
+import com.onlinesoccer.app.feature.bewerbe.ranglistenTabellenSpalten
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -7,6 +11,135 @@ import org.junit.Test
 
 class InternationaleRepositoryParseTest {
     private val repository = InternationaleRepository(okhttp3.OkHttpClient())
+
+    @Test
+    fun teilnehmerlisteWirdNachWettbewerbGruppiert() {
+        val ansicht = repository.parse(File("src/test/resources/dumps/int_teilnehmer.html").readText())
+
+        // Leere Wettbewerbsabschnitte (hier OSE) werden nicht aufgenommen.
+        assertEquals(listOf("OSC", "OSCQ", "OSEQ"), ansicht.teilnehmer.map { it.bezeichnung })
+
+        val osc = ansicht.teilnehmer.first()
+        assertEquals("Admira Pinkafeld", osc.teams.single().name)
+        assertEquals(224L, osc.teilnehmerId())
+        assertTrue(osc.teams.single().zusatz.contains("Skillschnitt: 62.34 - Optischnitt: 90.15"))
+        assertTrue(osc.teams.single().zusatz.none { it.contains("Admira Pinkafeld") })
+        assertTrue(ansicht.abschnitte.isEmpty())
+    }
+
+    private fun com.onlinesoccer.app.data.model.InternationaleTeilnehmerGruppe.teilnehmerId(): Long? =
+        teams.single().teamId
+
+    @Test
+    fun gruppenphaseGliedertPaarungenNachSpieltag() {
+        val ansicht = repository.parse(File("src/test/resources/dumps/oscgp23.html").readText())
+
+        assertEquals(listOf("ZAT 17", "ZAT 19"), ansicht.zatOptionen.map { it.label })
+        assertEquals(2, ansicht.spiele.size)
+        assertEquals("ZAT 17", ansicht.spiele[0].zat)
+        assertEquals("ZAT 19", ansicht.spiele[1].zat)
+        assertEquals("Eintracht Wuppertal", ansicht.spiele[0].heim)
+        assertEquals(164L, ansicht.spiele[0].heimTeamId)
+        assertEquals("Mödling OSC", ansicht.spiele[1].heim)
+        assertEquals(1309L, ansicht.spiele[1].heimTeamId)
+        assertEquals(1, ansicht.spiele.count { it.zat == "ZAT 17" })
+    }
+
+    @Test
+    fun gruppenphaseOhneSpieltagUeberschriftenBleibtOhneZatFilter() {
+        val ansicht = repository.parse(File("src/test/resources/dumps/oscq.html").readText())
+
+        assertTrue("Qualifikation kennt keine ZAT-Überschriften", ansicht.zatOptionen.isEmpty())
+        assertTrue(ansicht.spieleAlleOhneZat())
+    }
+
+    private fun com.onlinesoccer.app.data.model.InternationaleAnsicht.spieleAlleOhneZat(): Boolean =
+        spiele.all { it.zat == null }
+
+    @Test
+    fun gruppenphaseTabelleUebernimmtPlatzklassenDerWebsite() {
+        val tabelle = repository.parse(File("src/test/resources/dumps/oscgp23.html").readText())
+            .tabellen
+            .single()
+
+        assertEquals(
+            listOf(
+                InternationaleTabelleKlasse.TOP,
+                InternationaleTabelleKlasse.MITTEL,
+                InternationaleTabelleKlasse.UNTEN,
+            ),
+            tabelle.zeilenKlasse,
+        )
+        assertEquals(listOf(212L, 164L, 266L), tabelle.teamIds)
+    }
+
+    @Test
+    fun finalrundeBlendetDieTurnierbaumOptionAus() {
+        val ansicht = repository.parse(File("src/test/resources/dumps/oscfr23.html").readText())
+
+        // Die Website bietet im Runde-Filter zusätzlich „Tableau" (`runde=99`).
+        // Diese Auswahl liefert nur den Turnierbaum und damit keinen Inhalt für
+        // die App, deshalb darf sie im Filter nicht auftauchen.
+        assertEquals(
+            listOf("---Runde---", "Zwischenrunde", "Achtelfinale", "Viertelfinale", "Halbfinale", "Finale"),
+            ansicht.runden.map { it.label },
+        )
+        assertTrue(ansicht.runden.none { it.wert == "99" })
+
+        // Die übrigen Runden der Seite bleiben unverändert lesbar.
+        assertEquals("Finale", ansicht.runden.last().label)
+        assertEquals("5", ansicht.filter.runde)
+        assertEquals(1, ansicht.spiele.size)
+        assertEquals("Mödling OSC", ansicht.spiele.single().heim)
+    }
+
+    @Test
+    fun ranglistenTabelleHatKeinePlatzklassen() {
+        val tabelle = repository.parse(
+            """
+            <table class="osranking">
+              <tr><th>Platz</th><th colspan="2">Land</th><th>Saison 23</th><th></th><th>Summe</th></tr>
+              <tr><td>1.</td><td><img src="../images/flaggen/FLAG.gif" /></td><td><a href="../st.php?c=7">Club A</a></td><td>8.833</td><td>Info</td><td>14.1363333</td></tr>
+            </table>
+            """.trimIndent(),
+        ).tabellen.single()
+
+        assertEquals(listOf(null), tabelle.zeilenKlasse)
+    }
+
+    @Test
+    fun oscQualifikationListetHinUndRueckspieleMitVereinsIds() {
+        val ansicht = repository.parse(File("src/test/resources/dumps/oscq.html").readText())
+
+        assertEquals(4, ansicht.spiele.size)
+        assertEquals("Beispiel A", ansicht.spiele[0].heim)
+        assertEquals("Beispiel B", ansicht.spiele[0].gast)
+        assertEquals(11L, ansicht.spiele[0].heimTeamId)
+        assertEquals(22L, ansicht.spiele[0].gastTeamId)
+        assertEquals("2:0", ansicht.spiele[0].ergebnis)
+        assertEquals("Beispiel B", ansicht.spiele[1].heim)
+        assertEquals("Beispiel A", ansicht.spiele[1].gast)
+        assertEquals(22L, ansicht.spiele[1].heimTeamId)
+        assertEquals("https://os.ongapo.com/rep/saison/24/7/22-11.html", ansicht.spiele[1].berichtUrl)
+        assertEquals("Beispiel C", ansicht.spiele[2].heim)
+        assertEquals("Beispiel D", ansicht.spiele[2].gast)
+        assertEquals("Beispiel D", ansicht.spiele[3].heim)
+        assertEquals("Beispiel C", ansicht.spiele[3].gast)
+    }
+
+    @Test
+    fun oscQualifikationListetAuchPaarungenOhneSpielberichte() {
+        val ansicht = repository.parse(File("src/test/resources/dumps/oscq_ohne_berichte.html").readText())
+
+        assertEquals(3, ansicht.spiele.size)
+        assertEquals("Team A", ansicht.spiele[0].heim)
+        assertEquals("Team B", ansicht.spiele[0].gast)
+        assertEquals(101L, ansicht.spiele[0].heimTeamId)
+        assertEquals(202L, ansicht.spiele[0].gastTeamId)
+        assertEquals(null, ansicht.spiele[0].berichtUrl)
+        assertEquals("Team E", ansicht.spiele[2].heim)
+        assertEquals("Team F", ansicht.spiele[2].gast)
+    }
 
     @Test
     fun filterUndTabelleWerdenGelesen() {
@@ -59,6 +192,85 @@ class InternationaleRepositoryParseTest {
         val tabelle = ansicht.tabellen.single()
         assertEquals(listOf("Platz", "Summe", "Land", "Club", "Saison 23", "Saison 22", "Saison 21"), tabelle.header)
         assertEquals(listOf("1.", "14.136", "FLAG", "Club A", "8.833", "7.955", "0"), tabelle.zeilen.single())
+        assertEquals(listOf(7L), tabelle.teamIds)
+    }
+
+    @Test
+    fun gruppenphasenTabelleLiefertSpaltenUndVereinsIds() {
+        val ansicht = repository.parse(
+            """
+            <table class="intTabelle">
+              <tr><th>#</th><th>Land</th><th>Club</th><th>Spiele</th><th>Si.</th><th>Un.</th><th>Ni.</th><th>Tore+</th><th>Tore-</th><th>Tore+/-</th><th>Punkte</th></tr>
+              <tr><td>1.</td><td>AUT</td><td><a href="/st.php?c=11">Team A</a></td><td>6</td><td>5</td><td>1</td><td>0</td><td>12</td><td>3</td><td>9</td><td>16</td></tr>
+            </table>
+            """.trimIndent(),
+        )
+
+        val tabelle = ansicht.tabellen.single()
+        assertEquals("Club", tabelle.header[2])
+        assertEquals(11L, tabelle.teamIds.single())
+    }
+
+    @Test
+    fun gruppenphasenTabelleNutztKompakteLigatabellenSpalten() {
+        val tabelle = repository.parse(
+            """
+            <table class="intTabelle">
+              <tr><th>#</th><th>Land</th><th>Club</th><th>Spiele</th><th>Si.</th><th>Un.</th><th>Ni.</th><th>Tore+</th><th>Tore-</th><th>Tore+/-</th><th>Punkte</th></tr>
+              <tr><td>1.</td><td>AUT</td><td><a href="/st.php?c=11">Team A</a></td><td>6</td><td>5</td><td>1</td><td>0</td><td>12</td><td>3</td><td>9</td><td>16</td></tr>
+            </table>
+            """.trimIndent(),
+        ).tabellen.single()
+
+        val spalten = kompakteTabellenSpalten(tabelle.header)!!
+        assertEquals(listOf("#", "Team", "Sp.", "Tore", "Diff.", "Pkt."), spalten.map { it.kopf })
+        val zeile = tabelle.zeilen.single()
+        assertEquals("1.", spalten[0].wert(zeile))
+        assertEquals("Team A", spalten[1].wert(zeile))
+        assertEquals("6", spalten[2].wert(zeile))
+        assertEquals("12:3", spalten[3].wert(zeile))
+        assertEquals("9", spalten[4].wert(zeile))
+        assertEquals("16", spalten[5].wert(zeile))
+        assertTrue("Alle Spalten sind gewichtet, damit die Tabelle die Breite füllt", spalten.all { it.gewicht != null })
+    }
+
+    @Test
+    fun clubRankingZeigtNurPlatzTeamUndSumme() {
+        val tabelle = repository.parse(
+            """
+            <table class="osranking">
+              <tr><th>Platz</th><th colspan="2">Land</th><th>Saison 23</th><th></th><th>Saison 22</th><th></th><th>Saison 21</th><th></th><th>Summe</th></tr>
+              <tr><td>1.</td><td><img src="../images/flaggen/FLAG.gif" /></td><td><a href="../st.php?c=7">Club A</a></td><td>8.833</td><td>Details</td><td>7.955</td><td>Info</td><td>0</td><td>Info</td><td>14.1363333</td></tr>
+              <tr><td>2.</td><td><img src="../images/flaggen/FLAG.gif" /></td><td><a href="../st.php?c=8">Club B</a></td><td>8.000</td><td>Details</td><td>7.000</td><td>Info</td><td>0</td><td>Info</td><td>15.0000000</td></tr>
+            </table>
+            """.trimIndent(),
+        ).tabellen.single()
+
+        val spalten = ranglistenTabellenSpalten(tabelle.header)!!
+        assertEquals(listOf("#", "Team", "Summe"), spalten.map { it.kopf })
+        assertTrue("Team-Spalte ist die einzige klickbare", spalten.single { it.team }.kopf == "Team")
+        assertEquals("1.", spalten[0].wert(tabelle.zeilen[0]))
+        assertEquals("Club A", spalten[1].wert(tabelle.zeilen[0]))
+        assertEquals("14.136", spalten[2].wert(tabelle.zeilen[0]))
+        assertEquals(listOf(7L, 8L), tabelle.teamIds)
+    }
+
+    @Test
+    fun laenderRankingZeigtPlatzLandUndSumme() {
+        val tabelle = repository.parse(
+            """
+            <table class="osranking">
+              <tr><th>Platz</th><th>Land</th><th></th><th>Saison 23</th><th>Saison 22</th><th>Saison 21</th><th>Summe</th></tr>
+              <tr><td>1.</td><td><img src="../images/flaggen/AUT.gif" title="Oesterreich" /></td><td>Österreich</td><td>9.000</td><td>0</td><td>0</td><td>18.0000000</td></tr>
+            </table>
+            """.trimIndent(),
+        ).tabellen.single()
+
+        val spalten = ranglistenTabellenSpalten(tabelle.header)!!
+        assertEquals(listOf("#", "Team", "Summe"), spalten.map { it.kopf })
+        assertEquals("Österreich", spalten[1].wert(tabelle.zeilen.single()))
+        assertEquals("18.0000000", spalten[2].wert(tabelle.zeilen.single()))
+        assertTrue("Länder haben keine Vereins-ID", tabelle.teamIds.isEmpty())
     }
 
     @Test

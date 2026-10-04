@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de">
+<body>
+  <h1>OSC Gruppenphase</h1>
+  <form method="POST" action="/osneu/oscgp?season=23">
+    <select name="season"><option value="0">---Saison---</option><option selected value="23">Saison 23</option><option value="24">Saison 24</option></select>
+    <select name="ergebnisse"><option selected value="0">Ergebnisse nicht anzeigen</option><option value="1">Ergebnisse anzeigen</option></select>
+    <input type="submit" value="Anzeigen" />
+  </form>
+  <hr />
+  <div class="table" id="international">
+    <span class="first all"><h2>ZAT 17</h2></span>
+    <span class="first"><img src="/images/flaggen/GER.gif" alt="Flagge Deutschland" /></span>
+    <span><img src="/images/wappen/00000164.gif" alt="Wappen Eintracht Wuppertal" /></span>
+    <span><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></span>
+    <span>-</span>
+    <span><img src="/images/flaggen/HUN.gif" alt="Flagge Ungarn" /></span>
+    <span><img src="/images/wappen/00000266.png" alt="Wappen Balaton Siofok" /></span>
+    <span><a href="/st.php?c=266" onClick="teaminfo(266);return false;">Balaton Siofok</a></span>
+    <span></span>
+    <span><a href="/rep/saison/23/17/164-266.html" onClick="os_bericht(164,266,17,23); return false;">Klick</a></span>
+    <span><a href="/bericht.php?s=1907156" onClick="kommentar(1907156); return false;">0 Vor. / 0 Kom.</a></span>
+
+    <span class="first all"><h2>ZAT 19</h2></span>
+    <span class="first"><img src="/images/flaggen/AUT.gif" alt="Flagge Oesterreich" /></span>
+    <span><img src="/images/wappen/00001309.gif" alt="Wappen Moedling OSC" /></span>
+    <span><a href="/st.php?c=1309" onClick="teaminfo(1309);return false;">Mödling OSC</a></span>
+    <span>-</span>
+    <span><img src="/images/flaggen/WAL.gif" alt="Flagge Wales" /></span>
+    <span><img src="/images/wappen/00000212.gif" alt="Wappen Cardiff College" /></span>
+    <span><a href="/st.php?c=212" onClick="teaminfo(212);return false;">Cardiff College</a></span>
+    <span></span>
+    <span><a href="/rep/saison/23/19/1309-212.html" onClick="os_bericht(1309,212,19,23); return false;">Klick</a></span>
+    <span><a href="/bericht.php?s=1907200" onClick="kommentar(1907200); return false;">0 Vor. / 0 Kom.</a></span>
+  </div>
+  <table border="0" class="intTabelle">
+    <tr><th>#</th><th>Land</th><th>Club</th><th>Spiele</th><th>Si.</th><th>Un.</th><th>Ni.</th><th>Tore+</th><th>Tore-</th><th>Tore+/-</th><th>Punkte</th></tr>
+    <tr class="top"><td>1.</td><td><img src="/images/flaggen/WAL.gif" alt="Flagge Wales" /></td><td><a href="/st.php?c=212" onClick="teaminfo(212);return false;">Cardiff College</a></td><td>8</td><td>7</td><td>1</td><td>0</td><td>36</td><td>13</td><td>23</td><td>22</td></tr>
+    <tr class="middle"><td>9.</td><td><img src="/images/flaggen/GER.gif" alt="Flagge Deutschland" /></td><td><a href="/st.php?c=164" onClick="teaminfo(164);return false;">Eintracht Wuppertal</a></td><td>8</td><td>5</td><td>2</td><td>1</td><td>20</td><td>9</td><td>11</td><td>17</td></tr>
+    <tr class="bottom lineover"><td>25.</td><td><img src="/images/flaggen/HUN.gif" alt="Flagge Ungarn" /></td><td><a href="/st.php?c=266" onClick="teaminfo(266);return false;">Balaton Siofok</a></td><td>8</td><td>2</td><td>1</td><td>5</td><td>9</td><td>18</td><td>-9</td><td>7</td></tr>
+  </table>
+</body>
+</html>

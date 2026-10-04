@@ -19,6 +19,8 @@ data class TabellenZeile(
     val berichtUrl: String? = null,
     /** Spielerposition aus den CSS-Klassen der Namenszelle (z. B. `TOR`, `STU`). */
     val position: SpielerPosition? = null,
+    /** CSS-Klassen des `<tr>` (z. B. `top`, `middle`, `bottom` der intTabelle). */
+    val cssKlasse: String? = null,
 )
 
 data class GeparsteTabelle(
@@ -97,6 +99,7 @@ object HtmlTools {
             vorschau = vorschau,
             berichtUrl = berichtUrl,
             position = positionVonCssKlasse(link?.parent()?.className().orEmpty()),
+            cssKlasse = tr.attr("class").takeIf { it.isNotBlank() },
         )
     }
 

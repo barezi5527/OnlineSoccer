@@ -102,6 +102,10 @@ data class SaisonhistorieEintrag(
 data class WertTabelle(
     val header: List<String> = emptyList(),
     val zeilen: List<List<String>> = emptyList(),
+    /** Team-ID je Zeile (`null`, wenn die Zeile keinen Verein verlinkt). */
+    val teamIds: List<Long?> = emptyList(),
+    /** Farbklasse (Qualifikation, Mittelfeld, ausgeschieden) je Zeile, parallel zu `zeilen`. */
+    val zeilenKlasse: List<InternationaleTabelleKlasse?> = emptyList(),
 ) {
     fun spalte(label: String): Int =
         header.indexOfFirst { it.contains(label, ignoreCase = true) }

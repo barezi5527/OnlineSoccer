@@ -17,7 +17,23 @@ data class InternationaleUiState(
     val ladend: Boolean = false,
     val fehler: String? = null,
     val ansicht: InternationaleAnsicht? = null,
-)
+    /** Name der zuletzt geladenen Ansicht; macht Rückkehr aus dem Kader erkennbar. */
+    val ansichtKey: String? = null,
+) {
+    /**
+     * Beim Zurückkehren aus dem Mannschaftskader wird der Bildschirm neu
+     * zusammengesetzt, das ViewModel lebt aber weiter. Solange dieselbe Ansicht
+     * geladen ist, darf sie nicht neu geladen werden – sonst gingen gewählte
+     * Tabelle, ZAT und Saison verloren.
+     */
+    fun istGeladen(key: String): Boolean = ansichtKey == key
+
+    /**
+     * Hebt die Zuordnung der geladenen Ansicht auf, damit das erneute Öffnen wieder
+     * frisch lädt. Die bereits geladenen Daten bleiben erhalten.
+     */
+    fun zurUebersicht(): InternationaleUiState = copy(ansichtKey = null)
+}
 
 @HiltViewModel
 class InternationaleViewModel @Inject constructor(
@@ -27,10 +43,10 @@ class InternationaleViewModel @Inject constructor(
     val uiState: StateFlow<InternationaleUiState> = _uiState.asStateFlow()
     private var ladeJob: Job? = null
 
-    fun lade(path: String, filter: InternationaleFilter = InternationaleFilter()) {
+    fun lade(key: String, path: String, filter: InternationaleFilter = InternationaleFilter()) {
         ladeJob?.cancel()
         ladeJob = viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(ladend = true, fehler = null, ansicht = null)
+            _uiState.value = _uiState.value.copy(ladend = true, fehler = null, ansicht = null, ansichtKey = key)
             _uiState.value = try {
                 _uiState.value.copy(ladend = false, ansicht = repository.lade(path, filter))
             } catch (e: Exception) {
@@ -40,5 +56,13 @@ class InternationaleViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /** siehe [InternationaleUiState.istGeladen]. */
+    fun istAnsichtGeladen(key: String): Boolean = _uiState.value.istGeladen(key)
+
+    /** siehe [InternationaleUiState.zurUebersicht]. */
+    fun verwerfeAnsicht() {
+        _uiState.value = _uiState.value.zurUebersicht()
     }
 }

@@ -760,6 +760,11 @@ private fun MainScaffold(
                         val route = buildBerichtRoute(sid, url) ?: return@InternationaleScreen
                         navController.navigate(route) { launchSingleTop = true }
                     },
+                    onTeamClick = { teamId ->
+                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
             composable(Routes.SPIELE) { SpieleScreen() }
