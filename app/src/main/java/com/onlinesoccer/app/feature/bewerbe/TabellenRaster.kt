@@ -137,6 +137,42 @@ private fun RowScope.spaltenBreite(spalte: TabellenSpalte): Modifier =
     if (spalte.gewicht != null) Modifier.weight(spalte.gewicht) else Modifier.width(spalte.breite)
 
 /**
+ * Spalten der Ranglisten genau so, wie `InternationaleRepository` sie liefert:
+ * `#`, `Lnd`, `Club`, `Sum` und die Saisons als `S23` … Der Verein ist die
+ * verlinkte Spalte. Erkannt wird die Vorlage an `Lnd`, das nur die Ranglisten
+ * haben – sonst bekämen sie die Ligatabelle-Spalten (`Sp.`, `Tore`, `Pkt.`), die
+ * es auf diesen Seiten gar nicht gibt.
+ */
+internal fun rankingTabellenSpalten(header: List<String>): List<TabellenSpalte>? {
+    if (header.none { it.equals("Lnd", ignoreCase = true) }) return null
+    return header.mapIndexed { stelle, kopf ->
+        val istPlatz = kopf.equals("#", ignoreCase = true)
+        val istClub = kopf.equals("Club", ignoreCase = true)
+        val istSumme = kopf.equals("Sum", ignoreCase = true)
+        TabellenSpalte(
+            kopf = kopf,
+            headIdx = stelle,
+            team = istClub,
+            breite = when {
+                istPlatz -> 44.dp
+                kopf.equals("Lnd", ignoreCase = true) -> 92.dp
+                istClub -> 150.dp
+                istSumme -> 76.dp
+                else -> 56.dp
+            },
+            gewicht = when {
+                istPlatz -> 0.8f
+                kopf.equals("Lnd", ignoreCase = true) -> 1.6f
+                istClub -> 3.0f
+                istSumme -> 1.4f
+                else -> 1.0f
+            },
+            wert = { getOrNull(stelle) ?: "–" },
+        )
+    }
+}
+
+/**
  * Kompakte Spalten für Ranglisten (`osranking`): Platz, Team bzw. Land und Summe.
  * Die vielen Saisonspalten der Website werden bewusst nicht übernommen.
  */

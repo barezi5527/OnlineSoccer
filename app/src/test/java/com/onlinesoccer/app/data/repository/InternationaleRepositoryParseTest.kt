@@ -2,7 +2,7 @@ package com.onlinesoccer.app.data.repository
 
 import com.onlinesoccer.app.data.model.InternationaleTabelleKlasse
 import com.onlinesoccer.app.feature.bewerbe.kompakteTabellenSpalten
-import com.onlinesoccer.app.feature.bewerbe.ranglistenTabellenSpalten
+import com.onlinesoccer.app.feature.bewerbe.rankingTabellenSpalten
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -174,8 +174,8 @@ class InternationaleRepositoryParseTest {
         )
 
         val tabelle = ansicht.tabellen.single()
-        assertEquals(listOf("Platz", "Summe", "Land", "Saison 23", "Saison 22", "Saison 21"), tabelle.header)
-        assertEquals(listOf("1.", "30.08", "Spanien", "9.75", "10.45", "9.88"), tabelle.zeilen.single())
+        assertEquals(listOf("#", "Lnd", "Sum", "S23", "S22", "S21"), tabelle.header)
+        assertEquals(listOf("1.", "Spanien", "30.08", "9.75", "10.45", "9.88"), tabelle.zeilen.single())
     }
 
     @Test
@@ -190,8 +190,8 @@ class InternationaleRepositoryParseTest {
         )
 
         val tabelle = ansicht.tabellen.single()
-        assertEquals(listOf("Platz", "Summe", "Land", "Club", "Saison 23", "Saison 22", "Saison 21"), tabelle.header)
-        assertEquals(listOf("1.", "14.136", "FLAG", "Club A", "8.833", "7.955", "0"), tabelle.zeilen.single())
+        assertEquals(listOf("#", "Lnd", "Club", "Sum", "S23", "S22", "S21"), tabelle.header)
+        assertEquals(listOf("1.", "FLAG", "Club A", "14.136", "8.833", "7.955", "0"), tabelle.zeilen.single())
         assertEquals(listOf(7L), tabelle.teamIds)
     }
 
@@ -234,43 +234,47 @@ class InternationaleRepositoryParseTest {
         assertTrue("Alle Spalten sind gewichtet, damit die Tabelle die Breite füllt", spalten.all { it.gewicht != null })
     }
 
+    /**
+     * Das Club-Ranking der Website hat je Saison zwei Zellen: Punkte und den
+     * Hover-Aufschluss. Angezeigt werden darf nur der Punktewert, und in der
+     * Reihenfolge der Seite: Platz, Land, Club, Summe, dann die Saisons.
+     */
     @Test
-    fun clubRankingZeigtNurPlatzTeamUndSumme() {
-        val tabelle = repository.parse(
-            """
-            <table class="osranking">
-              <tr><th>Platz</th><th colspan="2">Land</th><th>Saison 23</th><th></th><th>Saison 22</th><th></th><th>Saison 21</th><th></th><th>Summe</th></tr>
-              <tr><td>1.</td><td><img src="../images/flaggen/FLAG.gif" /></td><td><a href="../st.php?c=7">Club A</a></td><td>8.833</td><td>Details</td><td>7.955</td><td>Info</td><td>0</td><td>Info</td><td>14.1363333</td></tr>
-              <tr><td>2.</td><td><img src="../images/flaggen/FLAG.gif" /></td><td><a href="../st.php?c=8">Club B</a></td><td>8.000</td><td>Details</td><td>7.000</td><td>Info</td><td>0</td><td>Info</td><td>15.0000000</td></tr>
-            </table>
-            """.trimIndent(),
-        ).tabellen.single()
+    fun clubRankingZeigtPlatzLandClubSummeUndSaisons() {
+        val tabelle = repository.parse(File("src/test/resources/dumps/clubranking.html").readText())
+            .tabellen
+            .single()
 
-        val spalten = ranglistenTabellenSpalten(tabelle.header)!!
-        assertEquals(listOf("#", "Team", "Summe"), spalten.map { it.kopf })
-        assertTrue("Team-Spalte ist die einzige klickbare", spalten.single { it.team }.kopf == "Team")
-        assertEquals("1.", spalten[0].wert(tabelle.zeilen[0]))
-        assertEquals("Club A", spalten[1].wert(tabelle.zeilen[0]))
-        assertEquals("14.136", spalten[2].wert(tabelle.zeilen[0]))
-        assertEquals(listOf(7L, 8L), tabelle.teamIds)
+        assertEquals(listOf("#", "Lnd", "Club", "Sum", "S23", "S22", "S21"), tabelle.header)
+        assertEquals(
+            listOf("1.", "Ungarn", "Banyas Budapest", "14.136", "8.833", "7.955", "0"),
+            tabelle.zeilen.first(),
+        )
+        assertEquals(listOf(286L, 244L, 311L), tabelle.teamIds)
+        // Der Hover-Aufschluss der Website darf in keiner Spalte landen.
+        assertTrue(tabelle.zeilen.flatten().none { it.contains("info", true) || it.contains("Liga:") })
+
+        val spalten = rankingTabellenSpalten(tabelle.header)!!
+        assertEquals(listOf("#", "Lnd", "Club", "Sum", "S23", "S22", "S21"), spalten.map { it.kopf })
+        assertEquals("Club", spalten.single { it.team }.kopf)
+        assertEquals("Ungarn", spalten[1].wert(tabelle.zeilen.first()))
     }
 
     @Test
-    fun laenderRankingZeigtPlatzLandUndSumme() {
-        val tabelle = repository.parse(
-            """
-            <table class="osranking">
-              <tr><th>Platz</th><th>Land</th><th></th><th>Saison 23</th><th>Saison 22</th><th>Saison 21</th><th>Summe</th></tr>
-              <tr><td>1.</td><td><img src="../images/flaggen/AUT.gif" title="Oesterreich" /></td><td>Österreich</td><td>9.000</td><td>0</td><td>0</td><td>18.0000000</td></tr>
-            </table>
-            """.trimIndent(),
-        ).tabellen.single()
+    fun laenderRankingZeigtPlatzLandSummeUndSaisons() {
+        val tabelle = repository.parse(File("src/test/resources/dumps/osranking.html").readText())
+            .tabellen
+            .single()
 
-        val spalten = ranglistenTabellenSpalten(tabelle.header)!!
-        assertEquals(listOf("#", "Team", "Summe"), spalten.map { it.kopf })
-        assertEquals("Österreich", spalten[1].wert(tabelle.zeilen.single()))
-        assertEquals("18.0000000", spalten[2].wert(tabelle.zeilen.single()))
+        assertEquals(listOf("#", "Lnd", "Sum", "S23", "S22", "S21"), tabelle.header)
+        assertEquals(listOf("1.", "Spanien", "30.08", "9.75", "10.45", "9.88"), tabelle.zeilen.first())
+        assertEquals(3, tabelle.zeilen.size)
         assertTrue("Länder haben keine Vereins-ID", tabelle.teamIds.isEmpty())
+
+        val spalten = rankingTabellenSpalten(tabelle.header)!!
+        assertEquals(listOf("#", "Lnd", "Sum", "S23", "S22", "S21"), spalten.map { it.kopf })
+        assertTrue(spalten.none { it.team })
+        assertEquals("Spanien", spalten[1].wert(tabelle.zeilen.first()))
     }
 
     @Test

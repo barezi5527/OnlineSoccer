@@ -92,42 +92,60 @@ class InternationaleRepository @Inject constructor(
         )
     }
 
+    /**
+     * Ranglisten (`osranking` und `clubranking`, beide `table.osranking`).
+     *
+     * Die Kopfzeile nennt Platz, Land und die drei Saisons, aber nicht den Verein
+     * und nicht die Summenspalte an ihrer Stelle – beides steht nur in den
+     * Datenzeilen. clubranking hat zusaetzlich je Saison eine zweite Zelle mit
+     * dem Hover-Aufschluss (`div.info-box`), osranking nicht. Deshalb werden die
+     * Werte ueber feste Indizes geholt, die Spaltennamen aber aus der Kopfzeile
+     * der Seite abgeleitet: „Saison 23" wird zu „S23" und bleibt damit auch in
+     * der naechsten Saison korrekt.
+     *
+     * Angezeigt wird in der Reihenfolge `#`, Land, Club, Summe, Saisons.
+     */
     private fun parseOsRanking(table: org.jsoup.nodes.Element): com.onlinesoccer.app.data.model.WertTabelle {
         val rows = table.select("tr")
-        val istClubRanking = rows.drop(1).any { it.select("a[href*='st.php?c=']").isNotEmpty() }
-        val header = if (istClubRanking) {
-            listOf("Platz", "Summe", "Land", "Club", "Saison 23", "Saison 22", "Saison 21")
-        } else {
-            listOf("Platz", "Summe", "Land", "Saison 23", "Saison 22", "Saison 21")
+        val daten = rows.filter { it.select("td").isNotEmpty() }
+        val istClubRanking = daten.any { it.select("a[href*='st.php?c=']").isNotEmpty() }
+        val saisonen = rows.firstOrNull { it.select("th").isNotEmpty() }
+            ?.select("th")
+            ?.map { it.text().trim() }
+            ?.filter { it.startsWith("Saison ") }
+            .orEmpty()
+        // clubranking: Platz, Flagge, Club, dann je Saison Punkte und Hover-Info.
+        // osranking: Platz, Flagge, Land, dann je Saison ein Wert.
+        val saisonIndex = { stelle: Int -> if (istClubRanking) 3 + 2 * stelle else 3 + stelle }
+        val header = buildList {
+            add("#")
+            add("Lnd")
+            if (istClubRanking) add("Club")
+            add("Sum")
+            saisonen.forEach { add("S" + it.removePrefix("Saison").trim()) }
         }
-        val zeilen = rows.drop(1).map { row ->
+        val zeilen = daten.map { row ->
             val zellen = row.select("td").map { it.text().trim() }
-            if (istClubRanking) {
-                listOf(
-                    zellen.getOrElse(0) { "" },
-                    summe3(zellen.getOrElse(9) { "" }),
-                    flagCode(row),
-                    zellen.getOrElse(2) { "" },
-                    zellen.getOrElse(3) { "" },
-                    zellen.getOrElse(5) { "" },
-                    zellen.getOrElse(7) { "" },
-                )
-            } else {
-                listOf(
-                    zellen.getOrElse(0) { "" },
-                    zellen.getOrElse(6) { "" },
-                    zellen.getOrElse(2) { "" },
-                    zellen.getOrElse(3) { "" },
-                    zellen.getOrElse(4) { "" },
-                    zellen.getOrElse(5) { "" },
-                )
+            buildList {
+                add(zellen.getOrElse(0) { "" })
+                if (istClubRanking) {
+                    // Der Clubname steht in derselben Zelle wie der Link; beim Land
+                    // nimmt der Parser den Alt-Text der Flagge, weil es keinen
+                    // Klartext in der Zeile gibt.
+                    add(landBezeichnung(row))
+                    add(zellen.getOrElse(2) { "" })
+                } else {
+                    add(zellen.getOrElse(2) { "" })
+                }
+                add(summe3(zellen.lastOrNull().orEmpty()))
+                saisonen.indices.forEach { stelle -> add(zellen.getOrElse(saisonIndex(stelle)) { "" }) }
             }
         }
         return com.onlinesoccer.app.data.model.WertTabelle(
             header = header,
             zeilen = zeilen,
-            teamIds = if (istClubRanking) rows.drop(1).map(::teamIdAusZeile) else emptyList(),
-            zeilenKlasse = rows.drop(1).map {
+            teamIds = if (istClubRanking) daten.map(::teamIdAusZeile) else emptyList(),
+            zeilenKlasse = daten.map {
                 InternationaleTabelleKlasse.vonCssKlasse(it.attr("class"))
             },
         )
@@ -286,10 +304,17 @@ class InternationaleRepository @Inject constructor(
         }
     }
 
-    /** Club-Summe auf 3 Nachkommastellen runden (Server liefert 7+ Stellen). */
+    /**
+     * Summe auf höchstens drei Nachkommastellen kürzen. Die Website schreibt deutsch,
+     * der Punkt ist also Tausender- und Nachkommaptrennzeichen zugleich: aus
+     * `14.1363333` (Punkte 14.136,3333) wird `14.136`. Kürzere Werte bleiben
+     * unangetastet (`30.08`), damit Saison- und Summenspalte einer Zeile gleich
+     * aussehen.
+     */
     private fun summe3(text: String): String {
-        val wert = text.replace(",", ".").toDoubleOrNull() ?: return text
-        return String.format(java.util.Locale.US, "%.3f", wert)
+        val punkt = text.lastIndexOf('.')
+        if (punkt < 0 || text.length - punkt - 1 <= 3) return text
+        return text.substring(0, punkt + 4)
     }
 
     /**
@@ -335,12 +360,16 @@ class InternationaleRepository @Inject constructor(
         return gruppen
     }
 
-    private fun flagCode(row: org.jsoup.nodes.Element): String =
-        row.selectFirst("td img[src*='flaggen/']")?.attr("src")
-            ?.substringAfterLast('/')
-            ?.substringBeforeLast('.')
-            ?.uppercase()
-            .orEmpty()
+    /** Land der Zeile: der Alt-Text der Flagge („Ungarn"), sonst deren Dateicode („HUN“). */
+    private fun landBezeichnung(row: org.jsoup.nodes.Element): String {
+        val flagge = row.selectFirst("td img[src*='flaggen/']") ?: return ""
+        return flagge.attr("alt").trim().ifEmpty {
+            flagge.attr("src")
+                .substringAfterLast('/')
+                .substringBeforeLast('.')
+                .uppercase()
+        }
+    }
 
     private fun options(doc: org.jsoup.nodes.Document, name: String): List<InternationaleOption> =
         doc.select("select[name=$name] option").map {

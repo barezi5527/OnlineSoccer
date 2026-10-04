@@ -169,7 +169,6 @@ fun InternationaleScreen(
     var ansicht by rememberSaveable { mutableStateOf<InternationaleAnsichtId?>(null) }
     var zeigeTabelle by rememberSaveable { mutableStateOf(false) }
     var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
-    var ausgewaehltesRankingLand by rememberSaveable { mutableStateOf<String?>(null) }
     var gewaehlterZat by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(bereich, ansicht) {
@@ -178,7 +177,6 @@ fun InternationaleScreen(
         // das ViewModel lebt weiter. Ohne diese Prüfung würden Tabelle, ZAT und Saison
         // zurückgesetzt und die Ansicht wieder im Begegnungsmodus starten.
         if (viewModel.istAnsichtGeladen(ansicht!!.name)) return@LaunchedEffect
-        ausgewaehltesRankingLand = null
         zeigeTabelle = false
         ergebnisseSichtbar = false
         gewaehlterZat = null
@@ -239,8 +237,6 @@ val geladen = uiState.ansicht
                     zeigeTabelle = zeigeTabelle,
                     onZeigeTabelle = { zeigeTabelle = it },
                     ergebnisseSichtbar = ergebnisseSichtbar,
-                    ausgewaehltesLand = ausgewaehltesRankingLand,
-                    onRankingLand = { ausgewaehltesRankingLand = it },
                     gewaehlterZat = gewaehlterZat,
                     onZat = { gewaehlterZat = it },
                     onFilter = { viewModel.lade(ansicht!!.name, ansicht!!.path!!, it) },
@@ -374,8 +370,6 @@ private fun AnsichtInhalt(
     zeigeTabelle: Boolean,
     onZeigeTabelle: (Boolean) -> Unit,
     ergebnisseSichtbar: Boolean,
-    ausgewaehltesLand: String?,
-    onRankingLand: (String) -> Unit,
     gewaehlterZat: String?,
     onZat: (String?) -> Unit,
     onFilter: (InternationaleFilter) -> Unit,
@@ -423,9 +417,6 @@ private fun AnsichtInhalt(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (ansichtId == InternationaleAnsichtId.OS_RANKING) {
-            RankingHinweis("Tippe auf ein Land, um es in der Tabelle hervorzuheben.", ausgewaehltesLand)
-        }
         FilterLeiste(
             ansicht = ansicht,
             onFilter = onFilter,
@@ -523,26 +514,6 @@ private fun CheckboxZeile(text: String, checked: Boolean, onCheckedChange: (Bool
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.clickable { onCheckedChange(!checked) },
         )
-    }
-}
-
-@Composable
-private fun RankingHinweis(text: String, ausgewaehltesLand: String?) {
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-    ) {
-        Column(Modifier.padding(12.dp)) {
-            Text("Länderranking", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            Text(text, style = MaterialTheme.typography.bodySmall)
-            ausgewaehltesLand?.let { name ->
-                Text(
-                    "Ausgewählt: $name",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
     }
 }
 
@@ -769,7 +740,8 @@ private fun Tabelle(
     tabelle: WertTabelle,
     onTeamClick: (Long) -> Unit,
 ) {
-    val spalten = kompakteTabellenSpalten(tabelle.header)
+    val spalten = rankingTabellenSpalten(tabelle.header)
+        ?: kompakteTabellenSpalten(tabelle.header)
         ?: ranglistenTabellenSpalten(tabelle.header)
     if (spalten == null || tabelle.zeilen.isEmpty()) return
 
@@ -803,7 +775,11 @@ private fun TabelleMitFixerKopfzeile(
     modifier: Modifier = Modifier,
 ) {
     val spalten = tabellen
-        .firstNotNullOfOrNull { kompakteTabellenSpalten(it.header) ?: ranglistenTabellenSpalten(it.header) }
+        .firstNotNullOfOrNull {
+            rankingTabellenSpalten(it.header)
+                ?: kompakteTabellenSpalten(it.header)
+                ?: ranglistenTabellenSpalten(it.header)
+        }
         ?: return
     val zeilenFarben = tabellen.map { tabelle ->
         List(tabelle.zeilenKlasse.size) { internationaleTabellenZeilenHintergrund(tabelle.zeilenKlasse[it]) }
