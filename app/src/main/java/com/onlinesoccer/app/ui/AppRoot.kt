@@ -427,8 +427,11 @@ private fun MainScaffold(
                 onSelectTab = { tab ->
                     if (tab.route == Routes.DASHBOARD) dashboardRefreshTrigger++
                     navController.navigate(tab.route) {
-                        popUpTo(navController.graph.findStartDestination().id)
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
                         launchSingleTop = true
+                        restoreState = true
                     }
                 },
             )
@@ -459,8 +462,11 @@ private fun MainScaffold(
                     },
                     onZugabgabeClick = {
                         navController.navigate(Routes.ZAT) {
-                            popUpTo(navController.graph.findStartDestination().id)
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
+                            restoreState = true
                         }
                     },
                     onServerBereicheClick = {
