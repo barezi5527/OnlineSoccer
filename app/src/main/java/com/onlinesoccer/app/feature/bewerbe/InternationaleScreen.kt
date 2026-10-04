@@ -808,15 +808,18 @@ private fun TabelleMitFixerKopfzeile(
                     )
                 }
             }
-            TabellenKopfzeile(
-                spalten,
-                modifier = Modifier
+            Box(
+                Modifier
                     .fillMaxWidth()
                     .height(44.dp)
-                    .zIndex(1f)
+                    .zIndex(2f)
                     .background(MaterialTheme.colorScheme.surface),
-                horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } },
-            )
+            ) {
+                TabellenKopfzeile(
+                    spalten,
+                    horizontalScroll = horizontalScroll.takeIf { spalten.any { it.fest } },
+                )
+            }
         }
     }
 }
