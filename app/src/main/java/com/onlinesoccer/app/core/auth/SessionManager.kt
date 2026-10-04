@@ -59,17 +59,26 @@ class SessionManager @Inject constructor(
     private val _state = MutableStateFlow(AuthUiState.Restoring)
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
-    /** Beim App-Start: Vorhandenes `lc` versuchen still zu verwerten. */
+    /**
+     * Beim App-Start: Vorhandenes `lc` versuchen still zu verwerten.
+     *
+     * Läuft vollständig auf [Dispatchers.IO]: das Wiederherstellen der Cookies liest die
+     * verschlüsselte Ablage, die [com.onlinesoccer.app.core.storage.TokenStorage.waermeAuf]
+     * erst erzeugt. Auf dem Main-Thread würde das den ersten Frame blockieren.
+     */
     suspend fun restore() {
-        if (!cookieStore.hasSession()) {
-            _state.value = AuthUiState.SignedOut
-            return
-        }
-        _state.value = AuthUiState.Restoring
-        _state.value = if (verifySession() == VerifyResult.Ok) {
-            AuthUiState.SignedIn
-        } else {
-            AuthUiState.SignedOut
+        withContext(Dispatchers.IO) {
+            cookieStore.restore()
+            if (!cookieStore.hasSession()) {
+                _state.value = AuthUiState.SignedOut
+                return@withContext
+            }
+            _state.value = AuthUiState.Restoring
+            _state.value = if (verifySession() == VerifyResult.Ok) {
+                AuthUiState.SignedIn
+            } else {
+                AuthUiState.SignedOut
+            }
         }
     }
 

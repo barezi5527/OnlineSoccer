@@ -7,12 +7,18 @@ import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Verschlüsselte Ablage der Session-Tokens.
  *
  * `lc` ist wie ein Passwort zu behandeln: Der Server stellt darauf still eine neue
  * `os`-SID aus (stiller Relogin). Niemals loggen oder im Klartext speichern.
+ *
+ * Der `by lazy`-Block ist teuer (MasterKey anlegen, Datei entschlüsseln) und würde beim
+ * ersten Zugriff vom Main-Thread laufen, also vor dem ersten Frame blockieren. Deshalb
+ * muss [waermeAuf] laufen, bevor ein Main-Thread auf [lc], [os] oder [lastEmail] zugreift.
  */
 @Singleton
 class TokenStorage @Inject constructor(
@@ -47,7 +53,7 @@ class TokenStorage @Inject constructor(
         }
 
     /** Zuletzt verwendeter Login (für vorbefülltes Feld). */
-    var lastEmail: String?
+    private var lastEmail: String?
         get() = prefs.getString(KEY_EMAIL, null)
         set(value) {
             prefs.edit().putString(KEY_EMAIL, value).apply()
@@ -57,6 +63,24 @@ class TokenStorage @Inject constructor(
 
     fun clearSession() {
         prefs.edit().remove(KEY_LC).remove(KEY_OS).apply()
+    }
+
+    /**
+     * Erzeugt [prefs] einmalig im Hintergrund.
+     *
+     * Einzige Voraussetzung dafür, dass [lc], [os] und [lastEmail] danach auch vom
+     * Main-Thread sicher sind: ab diesem Zeitpunkt sind alle Werte im Speicher.
+     */
+    suspend fun waermeAuf() {
+        withContext(Dispatchers.IO) { prefs }
+    }
+
+    /** Liest den zuletzt verwendeten Login im Hintergrund. */
+    suspend fun lastEmailLaden(): String? = withContext(Dispatchers.IO) { lastEmail }
+
+    /** Speichert den zuletzt verwendeten Login im Hintergrund. */
+    suspend fun speichereLastEmail(email: String) {
+        withContext(Dispatchers.IO) { lastEmail = email }
     }
 
     private companion object {

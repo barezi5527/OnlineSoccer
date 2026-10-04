@@ -1,6 +1,8 @@
 package com.onlinesoccer.app.core.network
 
 import com.onlinesoccer.app.core.storage.TokenStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
@@ -22,9 +24,15 @@ class OsCookieStore @Inject constructor(
 
     private val cookies = CopyOnWriteArrayList<Cookie>()
 
-    init {
-        restorePersisted()
-    }
+    /**
+     * Übernimmt die persistierten Cookies in den Haushalt.
+     *
+     * Bewusst kein `init`: der Singleton wird beim ersten Zugriff auf den OkHttpClient
+     * erzeugt, also auf dem Main-Thread — die Ablage wäre dort blockierendes
+     * Keystore-I/O vor dem ersten Frame. Der Aufrufer muss vorher
+     * [com.onlinesoccer.app.core.storage.TokenStorage.waermeAuf] ausgeführt haben.
+     */
+    suspend fun restore() = withContext(Dispatchers.IO) { restorePersisted() }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
         val now = System.currentTimeMillis()

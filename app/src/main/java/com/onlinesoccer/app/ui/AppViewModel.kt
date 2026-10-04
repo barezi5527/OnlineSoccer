@@ -220,7 +220,9 @@ class AppViewModel @Inject constructor(
 
     val authState: StateFlow<AuthUiState> = sessionManager.state
 
-    private val _email = MutableStateFlow(tokenStorage.lastEmail.orEmpty())
+    // Nicht in der Initialisierung lesen: das würde die verschlüsselte Ablage beim
+    // Erzeugen des ViewModels auf dem Main-Thread aufbauen. Wird im `init` gefüllt.
+    private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
     private val _password = MutableStateFlow("")
@@ -292,6 +294,11 @@ class AppViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            // Erste Nutzung der verschlüsselten Ablage: erzeugt sie im Hintergrund, damit
+            // kein Keystore-I/O den ersten Frame blockiert. Erst danach sind alle Zugriffe
+            // reine Speicherzugriffe. Der Splash deckt diesen Schritt ab.
+            tokenStorage.waermeAuf()
+            _email.value = tokenStorage.lastEmailLaden().orEmpty()
             sessionManager.restore()
             if (sessionManager.state.value == AuthUiState.SignedIn) {
                 pruefeVertragslaufzeiten()
@@ -564,7 +571,7 @@ class AppViewModel @Inject constructor(
             _loginError.value = null
             _serverUnavailable.value = false
             dashboardRepository.invalidate()
-            tokenStorage.lastEmail = email
+            tokenStorage.speichereLastEmail(email)
             when (val result = sessionManager.login(email, password)) {
                 is LoginResult.Success -> {
                     pruefeVertragslaufzeiten()
