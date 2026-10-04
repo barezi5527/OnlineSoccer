@@ -78,5 +78,18 @@ object NetworkModule {
             }
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
+            // Obergrenze für den **gesamten** Aufruf, nicht nur pro Socket-Operation:
+            // `readTimeout` greift je Lesevorgang, ein Server, der alle 29 s ein Byte
+            // schickt, hält den Aufruf damit unbegrenzt offen — und der Aufrufer wartet
+            // endlos (der Teamwechsel-Toggle bliebe so dauerhaft gesperrt).
+            //
+            // 60 s liegen bewusst über connectTimeout + readTimeout (15 + 30 = 45 s):
+            // der Gesamttimeout greift also nur, wenn wirklich etwas festhängt, und
+            // schneidet nie einen einzelnen legitimen langsamen Lesevorgang ab.
+            //
+            // Greift er, wirft OkHttp eine `InterruptedIOException("timeout")` – eine
+            // Unterklasse von `IOException`, die von den bestehenden `catch`-Blöcken
+            // bereits unverändert behandelt wird.
+            .callTimeout(60, TimeUnit.SECONDS)
             .build()
 }
