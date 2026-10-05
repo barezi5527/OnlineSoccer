@@ -1,0 +1,36 @@
+<html>
+<body>
+<form method="POST">
+  <input type="hidden" name="ziehmich" value="123456">
+
+  <p><b>Jugendspieler ins A-Team berufen</b></p>
+  <p><b>Du willst einen Spieler aus dem Jugendteam in das A-Team berufen. Vorher musst du dem Spieler jedoch noch einen Namen zuordnen und einen gültigen Vertrag geben</b></p>
+  <p><b>Die Eckdaten des Spielers sind:</b></p>
+  <p><b>Skillschnitt: 23.24</b></p>
+
+  <table border="0">
+    <tr><td>Pos</td><td>Opt.</td><td>Marktwert</td></tr>
+    <tr><td>ABW</td><td>24.11</td><td align="right">311.377</td><td><input type="radio" name="pos" value="2"></td></tr>
+    <tr><td>DMI</td><td>28.85</td><td align="right">421.634</td><td><input type="radio" name="pos" value="3"></td></tr>
+    <tr><td>MIT</td><td>29.59</td><td align="right">439.538</td><td><input type="radio" name="pos" value="4"></td></tr>
+    <tr><td>OMI</td><td>27.81</td><td align="right">398.474</td><td><input type="radio" name="pos" value="5"></td></tr>
+    <tr><td>STU</td><td>22.63</td><td align="right">282.693</td><td><input type="radio" name="pos" value="6"></td></tr>
+  </table>
+
+  <p><b>Nationalität: Kroatien</b></p>
+  <select name="name">
+    <option value="200001">Spielername Eins</option>
+    <option value="200002">Spielername Zwei</option>
+  </select>
+
+  <p><b>Die möglichen Verträge lauten:</b></p>
+  <p><b>24 Monate Laufzeit: 3.500 Euro <input type="radio" name="vertrag" value="24"><br>
+  36 Monate Laufzeit: 3.579 Euro <input type="radio" name="vertrag" value="36"><br>
+  48 Monate Laufzeit: 4.115 Euro <input type="radio" name="vertrag" value="48"><br>
+  60 Monate Laufzeit: 4.733 Euro <input type="radio" name="vertrag" value="60"><br>
+  72 Monate Laufzeit: 5.332 Euro <input type="radio" name="vertrag" value="72"></b></p>
+
+  <input type="submit" name="transfer" value="   Spieler ins A-Team befördern   ">
+</form>
+</body>
+</html>

@@ -142,10 +142,19 @@ data class ZatLiga(
     val spiele: List<LigaSpiel>,
 )
 
+/** Unterreiter einer Seite (z. B. Jugendteam: Teamübersicht/Spielereinzelwerte/…). */
+data class SeitenTab(
+    val label: String,
+    val path: String,
+    val aktiv: Boolean = false,
+)
+
 /** Allgemeine, rein lesende Seitenansicht (Absätze + Tabellen oder gegliederte Abschnitte). */
 data class SeitenAnsicht(
     val titel: String? = null,
     val absaetze: List<String> = emptyList(),
     val tabellen: List<WertTabelle> = emptyList(),
     val abschnitte: List<UebersichtAbschnitt> = emptyList(),
+    /** Unterreiter (Reihenfolge = Website-Menü). Nur angezeigt, wenn mehr als einer. */
+    val tabs: List<SeitenTab> = emptyList(),
 )

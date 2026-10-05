@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.onlinesoccer.app.core.auth.AuthUiState
 import com.onlinesoccer.app.core.auth.LoginResult
 import com.onlinesoccer.app.core.auth.SessionManager
+import com.onlinesoccer.app.core.storage.JugendHinweisStore
 import com.onlinesoccer.app.core.storage.TokenStorage
 import com.onlinesoccer.app.data.model.TeamIds
 import com.onlinesoccer.app.data.model.TeamwechselErgebnis
@@ -210,6 +211,7 @@ internal fun zweitTeamIdAus(ids: TeamIds?): Long? = when {
 class AppViewModel @Inject constructor(
     private val sessionManager: SessionManager,
     private val tokenStorage: TokenStorage,
+    private val jugendHinweisStore: JugendHinweisStore,
     private val teamRepository: TeamRepository,
     private val pmRepository: PmRepository,
     private val dashboardRepository: DashboardRepository,
@@ -574,6 +576,7 @@ class AppViewModel @Inject constructor(
             tokenStorage.speichereLastEmail(email)
             when (val result = sessionManager.login(email, password)) {
                 is LoginResult.Success -> {
+                    jugendHinweisStore.zuruecksetzen()
                     pruefeVertragslaufzeiten()
                     aktualisiereUngelesene()
                 }
@@ -592,7 +595,7 @@ class AppViewModel @Inject constructor(
             _serverUnavailable.value = false
             dashboardRepository.invalidate()
             when (val result = sessionManager.guestLogin()) {
-                LoginResult.Success -> Unit
+                LoginResult.Success -> jugendHinweisStore.zuruecksetzen()
                 is LoginResult.Failure -> _loginError.value = result.message
                 LoginResult.ServerUnavailable -> _serverUnavailable.value = true
             }
@@ -603,6 +606,7 @@ class AppViewModel @Inject constructor(
     fun logout() {
         _vertragsWarnung.value = emptyList()
         _ungeleseneNachrichten.value = 0
+        jugendHinweisStore.zuruecksetzen()
         // Nicht persistiert (Regel 1) — der Wert gehört zur alten Anmeldung.
         teamwechselZuruecksetzen()
         viewModelScope.launch {

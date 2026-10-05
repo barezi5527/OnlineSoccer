@@ -24,7 +24,6 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -36,10 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -68,22 +64,9 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var jugendHinweisGesehen by remember { mutableStateOf(false) }
-    val hinweis = (uiState as? DashboardUiState.Ready)?.data?.jugendHinweis
 
     LaunchedEffect(refreshTrigger) {
         if (refreshTrigger > 0) viewModel.refresh()
-    }
-
-    if (hinweis != null && !jugendHinweisGesehen) {
-        AlertDialog(
-            onDismissRequest = { jugendHinweisGesehen = true },
-            title = { Text("Jugendspieler", fontWeight = FontWeight.Bold) },
-            text = { Text(hinweis) },
-            confirmButton = {
-                TextButton(onClick = { jugendHinweisGesehen = true }) { Text("Verstanden") }
-            },
-        )
     }
 
     when (val state = uiState) {
@@ -91,6 +74,8 @@ fun DashboardScreen(
         is DashboardUiState.Error -> ErrorState(state.message, viewModel::refresh)
         is DashboardUiState.Ready -> DashboardContent(
             state.data,
+            state.jugendHinweisAusgeblendet,
+            viewModel::jugendHinweisSchliessen,
             viewModel::refresh,
             onLiveClick,
             onBerichtClick,
@@ -137,6 +122,8 @@ private fun ErrorState(message: String, onRetry: () -> Unit) {
 @Composable
 private fun DashboardContent(
     data: DashboardData,
+    jugendHinweisAusgeblendet: Boolean,
+    onJugendHinweisSchliessen: () -> Unit,
     onRefresh: () -> Unit,
     onLiveClick: () -> Unit,
     onBerichtClick: (String?) -> Unit,
@@ -157,6 +144,12 @@ private fun DashboardContent(
 
         if (data.zugabgabeStatus != null) {
             ZugabgabeStatusCard(data, onZugabgabeClick)
+        }
+
+        if (!jugendHinweisAusgeblendet) {
+            data.jugendHinweis?.let { hinweis ->
+                JugendHinweisCard(hinweis, onJugendHinweisSchliessen)
+            }
         }
 
         data.naechstesSpiel?.let { next ->
@@ -197,6 +190,29 @@ private fun DashboardContent(
             Icon(Icons.Default.Refresh, contentDescription = null)
             Spacer(Modifier.padding(start = 4.dp))
             Text("Aktualisieren")
+        }
+    }
+}
+
+@Composable
+private fun JugendHinweisCard(hinweis: String, onSchliessen: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Jugendspieler", fontWeight = FontWeight.Bold)
+                Text(
+                    hinweis,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+            TextButton(onClick = onSchliessen) { Text("Schließen") }
         }
     }
 }

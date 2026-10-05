@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -104,6 +108,7 @@ fun SeiteScreen(
                 trainerVorschau = uiState.trainerVorschau,
                 onTrainerVorschauLaden = viewModel::ladeTrainerVorschau,
                 onTrainerVorschauZuruecksetzen = viewModel::trainerVorschauZuruecksetzen,
+                onTabClick = viewModel::wechsleTab,
             )
         }
 
@@ -114,7 +119,7 @@ fun SeiteScreen(
 
     uiState.dialogFormular?.let { form ->
         Dialog(onDismissRequest = viewModel::schliesseDialog) {
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth().heightIn(max = 720.dp)) {
                 Column(
                     Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -124,11 +129,15 @@ fun SeiteScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
-                    AktionFormView(
-                        form = form,
-                        onSende = viewModel::sendeAktion,
-                        onFormularOeffnen = viewModel::ladeFormular,
-                    )
+                    Box(Modifier.fillMaxWidth().heightIn(max = 560.dp)) {
+                        AktionFormView(
+                            form = form,
+                            onSende = viewModel::sendeAktion,
+                            onFormularOeffnen = viewModel::ladeFormular,
+                            fehler = uiState.aktioFehler,
+                            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                        )
+                    }
                     OutlinedButton(onClick = viewModel::schliesseDialog) {
                         Text("Abbrechen")
                     }
@@ -154,6 +163,7 @@ private fun SeitenAnsicht(
     trainerVorschau: TrainerAktionVorschauUi? = null,
     onTrainerVorschauLaden: (String, List<Pair<String, String>>) -> Unit = { _, _ -> },
     onTrainerVorschauZuruecksetzen: () -> Unit = {},
+    onTabClick: (String) -> Unit = {},
 ) {
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -170,6 +180,23 @@ private fun SeitenAnsicht(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
+            }
+        }
+
+        if (ansicht.tabs.size > 1) {
+            item {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                ) {
+                    items(ansicht.tabs, key = { it.path }) { tab ->
+                        FilterChip(
+                            selected = tab.aktiv,
+                            onClick = { onTabClick(tab.path) },
+                            label = { Text(tab.label) },
+                        )
+                    }
+                }
             }
         }
 
@@ -532,12 +559,20 @@ private fun StadionnameKarte(
     }
 }
 
+private data class AktionFormBestaetigung(
+    val button: com.onlinesoccer.app.data.model.AktionsButton,
+    val felder: List<Pair<String, String>>,
+    val zusammenfassung: List<String>,
+)
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AktionFormView(
     form: AktionForm,
     onSende: (String, List<Pair<String, String>>) -> Unit,
     onFormularOeffnen: (String) -> Unit,
+    fehler: String? = null,
+    modifier: Modifier = Modifier,
 ) {
     val felder: List<AktionFeld> = remember(form) { form.felder + form.zeilen.flatMap { it.felder } }
     val werte = remember(form) {
@@ -545,11 +580,15 @@ private fun AktionFormView(
             felder.forEach { if (it.name.isNotBlank()) put(it.name, it.standard) }
         }
     }
-    var zuSendendes by remember(form) {
-        mutableStateOf<Pair<com.onlinesoccer.app.data.model.AktionsButton, List<Pair<String, String>>>?>(null)
-    }
+    var zuSendendes by remember(form) { mutableStateOf<AktionFormBestaetigung?>(null) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        form.hinweise.forEach { hinweis ->
+            Text(hinweis, style = MaterialTheme.typography.bodySmall)
+        }
+        fehler?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        }
         form.felder.forEach { feld ->
             FeldControl(feld, werte[feld.name] ?: "", onChange = { werte[feld.name] = it })
         }
@@ -594,18 +633,16 @@ private fun AktionFormView(
         form.buttons.forEach { button ->
             Button(
                 onClick = {
-                    val feldListe = buildList {
-                        felder.forEach { feld ->
-                            when (feld.typ) {
-                                AktionFeldTyp.VERSTECKT -> add(feld.name to feld.standard)
-                                else -> (werte[feld.name] ?: "").takeIf { it.isNotBlank() }
-                                    ?.let { add(feld.name to it) }
-                            }
-                        }
-                        if (!button.name.isNullOrBlank()) add(button.name to button.text)
-                    }
+                    val feldListe = formularFelder(felder, werte, button)
                     if (button.bestaetigung) {
-                        zuSendendes = button to feldListe
+                        val zusammenfassung = felder.mapNotNull { feld ->
+                            if (feld.typ == AktionFeldTyp.VERSTECKT) return@mapNotNull null
+                            val wert = werte[feld.name].orEmpty()
+                            if (wert.isBlank()) return@mapNotNull null
+                            val anzeige = feld.optionen.firstOrNull { it.wert == wert }?.label ?: wert
+                            "${feld.label.ifBlank { feld.name }}: $anzeige"
+                        }
+                        zuSendendes = AktionFormBestaetigung(button, feldListe, zusammenfassung)
                     } else {
                         onSende(form.ziel, feldListe)
                     }
@@ -613,21 +650,26 @@ private fun AktionFormView(
                 enabled = !globalRadioOffen,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(button.text)
+                Text(button.text.trim())
             }
         }
     }
 
-    zuSendendes?.let { (button, feldListe) ->
+    zuSendendes?.let { bestaetigung ->
         AlertDialog(
             onDismissRequest = { zuSendendes = null },
-            title = { Text("Aktion ausführen?") },
-            text = { Text("Soll „${button.text}“ wirklich ausgeführt werden?") },
+            title = { Text("Aktion abschließend bestätigen?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Soll „${bestaetigung.button.text.trim()}“ wirklich ausgeführt werden?")
+                    bestaetigung.zusammenfassung.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
                         zuSendendes = null
-                        onSende(form.ziel, feldListe)
+                        onSende(form.ziel, bestaetigung.felder)
                     },
                 ) {
                     Text("Ausführen")

@@ -18,6 +18,7 @@ import com.onlinesoccer.app.data.model.SaisonhistorieEintrag
 import com.onlinesoccer.app.data.model.SaisonplanDaten
 import com.onlinesoccer.app.data.model.SaisonplanEintrag
 import com.onlinesoccer.app.data.model.SeitenAnsicht
+import com.onlinesoccer.app.data.model.SeitenTab
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
 import com.onlinesoccer.app.data.model.SpielerKarte
 import com.onlinesoccer.app.data.model.SpielerPosition
@@ -44,6 +45,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import okhttp3.FormBody
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
@@ -235,22 +237,220 @@ class TeamRepository @Inject constructor(
         }
     }
 
-    /** Sendet ausschließlich das Formular der bereits angezeigten Schlussbestätigung. */
-    suspend fun fuehreAktionAus(ziel: String, felder: List<Pair<String, String>>): Boolean =
+    /**
+ * Ergebnis eines Formular-POSTs.
+ *
+ * `erfolg` allein ist zu wenig: eine serverseitige Ablehnung sieht im
+ * Antwort-HTML nicht wie ein Fehlerbanner aus. Statt „nicht die Login-Seite“
+ * genügt daher nicht als Erfolgsnachweis – der POST kann annehmbar beantwortet
+ * werden und trotzdem nichts bewirken. `meldung` nennt den Grund, wenn die App
+ * einen erkennt, sonst `null`.
+ */
+data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
+
+/** Sendet ausschließlich das Formular der bereits angezeigten Schlussbestätigung. */
+    suspend fun fuehreAktionAus(ziel: String, felder: List<Pair<String, String>>): AktionErgebnis =
         withContext(Dispatchers.IO) {
             val body = FormBody.Builder().apply { felder.forEach { (name, wert) -> add(name, wert) } }.build()
             val trainerSchlussbestaetigung = ziel.substringBefore('?').endsWith("trainer.php") &&
                 felder.any { it.first == "te" || it.first == "tf" }
             try {
                 val bytes = client.newCall(Request.Builder().url(ziel).post(body).build()).execute().use { response ->
-                    response.body?.bytes() ?: return@withContext false
+                    response.body?.bytes() ?: return@withContext AktionErgebnis(false)
                 }
-                !SessionGuard.isLoginView(bytes) &&
-                    (!trainerSchlussbestaetigung || !hatTrainerSchlussbestaetigung(bytes.toString(Charsets.UTF_8)))
+                val html = bytes.toString(Charsets.UTF_8)
+                if (SessionGuard.isLoginView(bytes)) return@withContext AktionErgebnis(false, MELDUNG_SESSION)
+                if (trainerSchlussbestaetigung && !hatTrainerSchlussbestaetigung(html)) {
+                    return@withContext AktionErgebnis(false)
+                }
+                unveraenderteWirkung(html, felder)?.let { unveraendert ->
+                    return@withContext AktionErgebnis(false, unveraendert)
+                }
+                AktionErgebnis(true)
             } catch (e: IOException) {
-                false
+                AktionErgebnis(false)
             }
         }
+
+    /**
+     * Schickt den ersten Schritt der Jugendberufung und liest das vom Server
+     * zurückgelieferte Positions-/Namens-/Vertragsformular. Dieser POST beruft
+     * den Spieler noch nicht; die finalen Submit-Felder kommen aus der Antwort.
+     */
+    suspend fun ladeJugendBerufungsFormular(
+        ziel: String,
+        felder: List<Pair<String, String>>,
+    ): AktionForm? = withContext(Dispatchers.IO) {
+        try {
+            val response = client.newCall(
+                Request.Builder()
+                    .url(ziel)
+                    .post(FormBody.Builder().apply { felder.forEach { (name, wert) -> add(name, wert) } }.build())
+                    .build(),
+            ).execute()
+            response.use {
+                val html = it.body?.bytes()?.toString(Charsets.UTF_8) ?: return@withContext null
+                if (!it.isSuccessful || SessionGuard.isLoginView(html.toByteArray())) return@withContext null
+                parseJugendBerufungsFormular(html, it.request.url.toString())
+            }
+        } catch (e: IOException) {
+            null
+        }
+    }
+
+    /** Parst das serverseitige zweite Formular; Positionen, Namen und Verträge bleiben dynamisch. */
+    internal fun parseJugendBerufungsFormular(html: String, ziel: String): AktionForm? {
+        val doc = Jsoup.parse(html)
+        val form = doc.select("form").firstOrNull { kandidat ->
+            kandidat.select("input[type=radio], select, input[type=submit], button[type=submit]").isNotEmpty()
+        } ?: return null
+        val formularZiel = form.attr("action").takeIf { it.isNotBlank() }
+            ?.let { ziel.toHttpUrl().resolve(it)?.toString() }
+            ?: ziel
+        val felder = mutableListOf<AktionFeld>()
+        val radioIndex = mutableMapOf<String, Int>()
+        form.select("input, select, textarea").forEach { control ->
+            val name = control.attr("name").trim()
+            if (name.isBlank()) return@forEach
+            when {
+                control.tagName() == "select" -> {
+                    val feld = selectFeld(control).copy(label = formularFeldLabel(control))
+                    felder += feld
+                }
+
+                control.tagName() == "textarea" -> felder += AktionFeld(
+                    name = name,
+                    typ = AktionFeldTyp.TEXT,
+                    label = formularFeldLabel(control),
+                    standard = control.text(),
+                )
+
+                control.tagName() == "input" -> when (control.attr("type").lowercase()) {
+                    "hidden" -> felder += AktionFeld(
+                        name = name,
+                        typ = AktionFeldTyp.VERSTECKT,
+                        standard = control.attr("value"),
+                    )
+
+                    "radio" -> {
+                        val option = AktionsOption(control.attr("value"), radioOptionsLabel(control))
+                        val vorhandenerIndex = radioIndex[name]
+                        if (vorhandenerIndex == null) {
+                            radioIndex[name] = felder.size
+                            felder += AktionFeld(
+                                name = name,
+                                typ = AktionFeldTyp.RADIO,
+                                label = formularFeldLabel(control),
+                                optionen = listOf(option),
+                                standard = control.takeIf { it.hasAttr("checked") }?.attr("value").orEmpty(),
+                            )
+                        } else {
+                            val vorher = felder[vorhandenerIndex]
+                            felder[vorhandenerIndex] = vorher.copy(
+                                optionen = vorher.optionen + option,
+                                standard = control.takeIf { it.hasAttr("checked") }?.attr("value")
+                                    ?: vorher.standard,
+                            )
+                        }
+                    }
+
+                    "text", "number", "email", "tel", "password" -> felder += AktionFeld(
+                        name = name,
+                        typ = if (control.attr("type").equals("number", ignoreCase = true)) {
+                            AktionFeldTyp.NUMMER
+                        } else {
+                            AktionFeldTyp.TEXT
+                        },
+                        label = formularFeldLabel(control),
+                        standard = control.attr("value"),
+                        min = control.attr("min").toIntOrNull(),
+                        max = control.attr("max").toIntOrNull(),
+                    )
+                }
+            }
+        }
+        val buttons = form.select("input[type=submit], button[type=submit]").map { button ->
+            AktionsButton(
+                name = button.attr("name").takeIf { it.isNotBlank() },
+                text = if (button.tagName() == "input") button.attr("value") else button.text(),
+            )
+        }
+        if (buttons.isEmpty() || felder.isEmpty()) return null
+
+        val titel = form.selectFirst("h1, h2, h3, p b")?.text()?.trim()?.takeIf { it.isNotBlank() }
+        val hinweise = form.select("p")
+            .filter { it.select("input, select, textarea").isEmpty() }
+            .map { it.text().trim() }
+            .filter { it.isNotBlank() && it != titel }
+            .distinct()
+        return AktionForm(
+            ziel = formularZiel,
+            felder = felder,
+            buttons = buttons,
+            titel = titel,
+            hinweise = hinweise,
+        )
+    }
+
+    /** Ermittelt ein sichtbares Feldlabel aus dem HTML; Feldnamen sind nur Rückfallwerte. */
+    private fun formularFeldLabel(control: Element): String {
+        val doc = control.ownerDocument()
+        control.id().takeIf { it.isNotBlank() }?.let { id ->
+            doc?.selectFirst("label[for=$id]")?.text()?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
+        }
+        val feldname = control.attr("name")
+        when (feldname.lowercase()) {
+            "pos" -> return "Position"
+            "name" -> return "Spielername"
+            "vertrag" -> return "Vertragslaufzeit"
+        }
+        control.closest("fieldset")?.selectFirst("legend")?.text()?.trim()?.takeIf { it.isNotBlank() }
+            ?.let { return it }
+        return feldname.replace(Regex("[_\\[\\]]+"), " ").trim().replaceFirstChar { it.uppercase() }
+    }
+
+    /** Baut je Radio-Option ein Label aus Tabellenkopf/-zeile oder dem Text davor. */
+    private fun radioOptionsLabel(input: Element): String {
+        val row = input.closest("tr")
+        if (row != null) {
+            val headers = row.closest("table")?.selectFirst("tr")?.select("th, td")
+                ?.map { it.text().trim() }.orEmpty()
+            val values = row.select("th, td").map { it.text().trim() }
+            val parts = values.take(headers.size).mapIndexedNotNull { index, value ->
+                if (value.isBlank()) return@mapIndexedNotNull null
+                val header = headers.getOrNull(index).orEmpty()
+                if (index == 0 || header.isBlank()) value else "$header $value"
+            }
+            if (parts.isNotEmpty()) return parts.joinToString(" · ")
+        }
+        val davor = generateSequence(input.previousSibling()) { it.previousSibling() }
+            .takeWhile { it.nodeName() != "br" }
+            .toList()
+            .asReversed()
+            .joinToString("") { it.outerHtml() }
+        return Jsoup.parseBodyFragment(davor).text().trim().ifBlank { input.attr("value") }
+    }
+
+    /**
+     * Wirkungskontrolle für Auswahl-Aktionen wie „Spieler ins A-Team berufen“.
+     *
+     * Bietet die Antwort den gerade gewählten Wert **weiterhin** als Radio-Option an,
+     * ist die Aktion nicht durchgekommen. Bewusst nur für `input[type=radio]`: eine
+     * `<select>`-Liste (Trainer, Heizung …) führt ihre Optionen dauerhaft, dort wäre
+     * die Prüfung bedeutungslos und würde Erfolg als Scheitern melden.
+     *
+     * Am 05.10.2026 live geschehen: Der POST ging raus, die Seite wurde neu geladen,
+     * der Spieler stand weiter im Jugendteam – die App meldete Erfolg, weil sie nur
+     * die Login-Seite ausgeschlossen hat. Genau das fängt diese Prüfung ab.
+     */
+    internal fun unveraenderteWirkung(html: String, felder: List<Pair<String, String>>): String? {
+        val radios = Jsoup.parse(html).select("input[type=radio]")
+        val weiterhin = felder.firstOrNull { (name, wert) ->
+            wert.isNotBlank() && radios.any { it.attr("name") == name && it.attr("value") == wert }
+        } ?: return null
+        val (name, wert) = weiterhin
+        return "Die Website hat die Aktion nicht ausgeführt – „$name=$wert“ ist dort weiterhin auswählbar."
+    }
 
     /** Liest den Serverhinweis und die exakten Felder für die noch nicht abgesendete Bestätigung. */
     internal fun parseTrainerAktionVorschau(
@@ -313,17 +513,22 @@ class TeamRepository @Inject constructor(
         JUGEND, JUGENDSCOUT, TRAINING, TRAINER, VERTRAEGE, STADION, KONTO, STEUER, TEAM;
 
         companion object {
-            fun vonPfad(pfad: String): TeamSeite? = when {
-                pfad.endsWith("ju.php") -> JUGEND
-                pfad.endsWith("juscout.php") -> JUGENDSCOUT
-                pfad.endsWith("training.php") -> TRAINING
-                pfad.endsWith("trainer.php") -> TRAINER
-                pfad.endsWith("vt.php") -> VERTRAEGE
-                pfad.endsWith("osneu/stadion") -> STADION
-                pfad.endsWith("ka.php") -> KONTO
-                pfad.endsWith("steuer.php") -> STEUER
-                pfad.contains("showteam.php") -> TEAM
-                else -> null
+            fun vonPfad(pfad: String): TeamSeite? {
+                // Jugendteam nutzt Unterreiter via `?page=` – der Query-Teil muss
+                // für die Zuordnung abgetrennt werden (`ju.php?page=2` ist JUGEND).
+                val p = pfad.substringBefore('?')
+                return when {
+                    p.endsWith("ju.php") -> JUGEND
+                    p.endsWith("juscout.php") -> JUGENDSCOUT
+                    p.endsWith("training.php") -> TRAINING
+                    p.endsWith("trainer.php") -> TRAINER
+                    p.endsWith("vt.php") -> VERTRAEGE
+                    p.endsWith("osneu/stadion") -> STADION
+                    p.endsWith("ka.php") -> KONTO
+                    p.endsWith("steuer.php") -> STEUER
+                    p.contains("showteam.php") -> TEAM
+                    else -> null
+                }
             }
         }
     }
@@ -331,7 +536,7 @@ class TeamRepository @Inject constructor(
     private fun parseTeamSeite(pfad: String, html: String): SeitenAnsicht {
         val ziel = seiteUrl(pfad)
         return when (TeamSeite.vonPfad(pfad)) {
-            TeamSeite.JUGEND -> parseJugend(html, ziel)
+            TeamSeite.JUGEND -> parseJugendSeite(pfad, html, ziel)
             TeamSeite.JUGENDSCOUT -> parseJugendscouting(html, ziel)
             TeamSeite.TRAINING -> parseTraining(html, ziel)
             TeamSeite.TRAINER -> parseTrainer(html, ziel)
@@ -354,6 +559,27 @@ class TeamRepository @Inject constructor(
             ?: select.select("option").firstOrNull()?.let { it.attr("value").ifEmpty { it.text() } }.orEmpty(),
     )
 
+    /** Jugendteam (`ju.php`): Unterreiter-Nummer aus `?page=` (Standard 1 = Teamübersicht). */
+    private fun jugendPage(pfad: String): Int =
+        pfad.substringAfter("page=", "1").substringBefore('&').toIntOrNull() ?: 1
+
+    /** Unterreiter des Jugendteams in der Reihenfolge der Website-Navigation. */
+    private fun jugendTabs(aktiv: Int): List<SeitenTab> = listOf(
+        SeitenTab("Teamübersicht", "ju.php", aktiv == 1),
+        SeitenTab("Spielereinzelwerte", "ju.php?page=2", aktiv == 2),
+        SeitenTab("Opt. Skill", "ju.php?page=3", aktiv == 3),
+        SeitenTab("Optionen", "ju.php?page=4", aktiv == 4),
+    )
+
+    /** Verteilt `ju.php` auf die vier Unterreiter (`?page=1..4`). */
+    internal fun parseJugendSeite(pfad: String, html: String, ziel: String): SeitenAnsicht =
+        when (jugendPage(pfad)) {
+            2 -> parseJugendEinzelwerte(html)
+            3 -> parseJugendOptSkill(html)
+            4 -> parseJugendOptionen(html, ziel)
+            else -> parseJugend(html, ziel)
+        }
+
     /** Jugendteam (`ju.php`): Gruppen je Jahrgang plus „ins A-Team berufen“-Auswahl. */
     internal fun parseJugend(html: String, ziel: String = ""): SeitenAnsicht {
         val doc = Jsoup.parse(html)
@@ -363,13 +589,14 @@ class TeamRepository @Inject constructor(
             abschnitte += UebersichtAbschnitt(titel = "Bitte beachten", punkte = punkte)
         }
         val tabelle = doc.select("table").maxByOrNull { it.select("tr").size }
-            ?: return SeitenAnsicht(titel = TITEL_JUGEND, abschnitte = abschnitte)
+            ?: return SeitenAnsicht(titel = TITEL_JUGEND, abschnitte = abschnitte, tabs = jugendTabs(1))
         var gruppe = "Jugendteam"
         val zeilen = mutableListOf<UebersichtZeile>()
         val ziehmich = mutableListOf<AktionsOption>()
+        val gruppen = mutableListOf<Pair<String, List<UebersichtZeile>>>()
         fun flushGruppe() {
             if (zeilen.isNotEmpty()) {
-                abschnitte += UebersichtAbschnitt(titel = gruppe, zeilen = zeilen.toList())
+                gruppen += gruppe to zeilen.toList()
                 zeilen.clear()
             }
         }
@@ -402,26 +629,213 @@ class TeamRepository @Inject constructor(
             )
         }
         flushGruppe()
-        if (ziel.isNotBlank() && ziehmich.isNotEmpty()) {
+        // Submit-Button aus dem HTML lesen, **nicht** fest verdrahten: Wert und Name
+        // gehören zum ersten Schritt, der das serverseitige Folgeformular öffnet.
+        // Die Website liefert den value mit umgebenden Leerzeichen; unverändert
+        // weiterzugeben vermeidet Abweichungen vom Browserformular. Der Fallback
+        // greift nur, falls die Seite einmal gar keinen Submit mehr enthält.
+        val zieheSubmit = tabelle.selectFirst("input[type=submit]")
+        val zieheButton = zieheSubmit
+            ?.let { AktionsButton(it.attr("name"), it.attr("value")) }
+            ?: AktionsButton("ziehen", "Markierten Spieler ins A-Team berufen")
+        val zieheForm = if (ziel.isNotBlank() && ziehmich.isNotEmpty()) {
+            AktionForm(
+                ziel = ziel,
+                felder = listOf(
+                    AktionFeld(
+                        name = "ziehmich",
+                        typ = AktionFeldTyp.RADIO,
+                        label = "Spieler auswählen",
+                        optionen = ziehmich,
+                    ),
+                ),
+                buttons = listOf(zieheButton),
+            )
+        } else {
+            null
+        }
+        // Das Berufungsformular haengt an den Jahrgangsabschnitten und nicht an einem
+        // eigenen Abschnitt: `SeiteScreen` verknuepft Zeile und Aktion nur innerhalb
+        // desselben Abschnitts, sonst bekaeme keine Zeile ihr ⋮-Menue. Ein eigener
+        // Abschnitt wuerde die Radioliste zusaetzlich als Vollformular anzeigen –
+        // deshalb wird er hier nicht mehr angelegt.
+        gruppen.forEach { (titel, gruppeZeilen) ->
+            val berufbar = zieheForm?.takeIf { form ->
+                gruppeZeilen.any { !it.aktionSchluessel.isNullOrBlank() }
+            }
             abschnitte += UebersichtAbschnitt(
-                titel = "Ins A-Team berufen",
+                titel = titel,
+                zeilen = gruppeZeilen,
+                aktionen = listOfNotNull(berufbar),
+            )
+        }
+        return SeitenAnsicht(titel = TITEL_JUGEND, abschnitte = abschnitte, tabs = jugendTabs(1))
+    }
+
+    /**
+     * Jugendteam „Spielereinzelwerte“ (`ju.php?page=2`): je Spieler die 17
+     * Einzelskills (SCH…EIN) als Chips. Ohne Spielername – die Zeile wird nur über
+     * Alter und Nation identifiziert. Spalten: Land (Flag + Kürzel + leer), U,
+     * Alter, dann die Skills aus der Kopfzeile.
+     */
+    internal fun parseJugendEinzelwerte(html: String): SeitenAnsicht {
+        val doc = Jsoup.parse(html)
+        val tabelle = doc.select("table").maxByOrNull { it.select("tr").size }
+            ?: return SeitenAnsicht(titel = TITEL_JUGEND, tabs = jugendTabs(2))
+        // Kopfzeile: [Land (colspan 3), U, Alter, SCH, BAK, … EIN] → Skills ab Index 3.
+        val skills = tabelle.selectFirst("tr")?.select("td,th")?.map { it.text().trim() }
+            ?.drop(3).orEmpty()
+        val abschnitte = mutableListOf<UebersichtAbschnitt>()
+        var gruppe = "Jugendteam"
+        val zeilen = mutableListOf<UebersichtZeile>()
+        fun flush() {
+            if (zeilen.isNotEmpty()) {
+                abschnitte += UebersichtAbschnitt(titel = gruppe, zeilen = zeilen.toList())
+                zeilen.clear()
+            }
+        }
+        tabelle.select("tr").forEach { tr ->
+            val kopf = tr.selectFirst("td b")?.text()?.trim()
+            if (kopf != null && kopf.startsWith("Jahrgang")) {
+                flush(); gruppe = kopf; return@forEach
+            }
+            val zellen = tr.select("td")
+            if (zellen.size < 6) return@forEach
+            // Datenzeile: 0 Flag, 1 Kürzel, 2 leer, 3 U, 4 Alter, 5.. Skills.
+            val alter = zellen[4].text().trim()
+            if (alter.toIntOrNull() == null) return@forEach
+            val land = zellen[1].text().trim()
+            val werte = buildList {
+                skills.forEachIndexed { index, label ->
+                    val wert = zellen.getOrNull(5 + index)?.text()?.trim().orEmpty()
+                    if (wert.isNotBlank() && label.isNotBlank()) add(label to wert)
+                }
+            }
+            zeilen += UebersichtZeile(ueberschrift = "$alter Jahre · $land", werte = werte)
+        }
+        flush()
+        return SeitenAnsicht(titel = TITEL_JUGEND, abschnitte = abschnitte, tabs = jugendTabs(2))
+    }
+
+    /**
+     * Jugendteam „Opt. Skill“ (`ju.php?page=3`): je Spieler der Skillschnitt plus
+     * der optimale Skill je Position (TOR/ABW/DMI/MIT/OMI/STU). Spalten: Land
+     * (Flag + Kürzel), U, Alter, Skill, dann die Positionswerte.
+     */
+    internal fun parseJugendOptSkill(html: String): SeitenAnsicht {
+        val doc = Jsoup.parse(html)
+        val tabelle = doc.select("table").maxByOrNull { it.select("tr").size }
+            ?: return SeitenAnsicht(titel = TITEL_JUGEND, tabs = jugendTabs(3))
+        // Kopfzeile: [Land (colspan 2), U, Alter, Skill, TOR, ABW, DMI, MIT, OMI, STU].
+        val positionen = tabelle.selectFirst("tr")?.select("td,th")?.map { it.text().trim() }
+            ?.drop(4).orEmpty()
+        val abschnitte = mutableListOf<UebersichtAbschnitt>()
+        var gruppe = "Jugendteam"
+        val zeilen = mutableListOf<UebersichtZeile>()
+        fun flush() {
+            if (zeilen.isNotEmpty()) {
+                abschnitte += UebersichtAbschnitt(titel = gruppe, zeilen = zeilen.toList())
+                zeilen.clear()
+            }
+        }
+        tabelle.select("tr").forEach { tr ->
+            val kopf = tr.selectFirst("td b")?.text()?.trim()
+            if (kopf != null && kopf.startsWith("Jahrgang")) {
+                flush(); gruppe = kopf; return@forEach
+            }
+            val zellen = tr.select("td")
+            if (zellen.size < 5) return@forEach
+            // Datenzeile: 0 Flag, 1 Kürzel, 2 U, 3 Alter, 4 Skill, 5.. Positionen.
+            val alter = zellen[3].text().trim()
+            if (alter.toIntOrNull() == null) return@forEach
+            val land = zellen[1].text().trim()
+            val werte = buildList {
+                zellen[4].text().trim().takeIf { it.isNotBlank() }?.let { add("Skill" to it) }
+                positionen.forEachIndexed { index, label ->
+                    val wert = zellen.getOrNull(5 + index)?.text()?.trim().orEmpty()
+                    if (wert.isNotBlank() && label.isNotBlank()) add(label to wert)
+                }
+            }
+            zeilen += UebersichtZeile(ueberschrift = "$alter Jahre · $land", werte = werte)
+        }
+        flush()
+        return SeitenAnsicht(titel = TITEL_JUGEND, abschnitte = abschnitte, tabs = jugendTabs(3))
+    }
+
+    /**
+     * Jugendteam „Optionen“ (`ju.php?page=4`): zwei Formulare – Jugendförderung
+     * (Betrag je ZAT und Spieler) und Jugendschranke (Alterslimit). Die
+     * Absende-Buttons tragen keinen `name`; es wird nur der gewählte Feldwert
+     * übertragen, die Schranke zusätzlich über den Bestätigungsdialog abgesichert.
+     */
+    internal fun parseJugendOptionen(html: String, ziel: String): SeitenAnsicht {
+        val doc = Jsoup.parse(html)
+        val abschnitte = mutableListOf<UebersichtAbschnitt>()
+
+        val foerderungSelect = doc.selectFirst("select[name=foerderung]")
+        if (foerderungSelect != null) {
+            val optionen = foerderungSelect.select("option").map { option ->
+                AktionsOption(option.attr("value").ifEmpty { option.text() }, option.text())
+            }
+            val standard = foerderungSelect.select("option[selected]").firstOrNull()
+                ?.attr("value").orEmpty().ifEmpty { optionen.firstOrNull()?.wert.orEmpty() }
+            abschnitte += UebersichtAbschnitt(
+                titel = "Allgemeine Optionen",
                 aktionen = listOf(
                     AktionForm(
                         ziel = ziel,
                         felder = listOf(
                             AktionFeld(
-                                name = "ziehmich",
-                                typ = AktionFeldTyp.RADIO,
-                                label = "Spieler auswählen",
-                                optionen = ziehmich,
+                                name = "foerderung",
+                                typ = AktionFeldTyp.AUSWAHL,
+                                label = "Jugendförderung pro ZAT und Spieler (Euro)",
+                                optionen = optionen,
+                                standard = standard,
                             ),
                         ),
-                        buttons = listOf(AktionsButton("ziehen", "Markierten Spieler ins A-Team berufen")),
+                        buttons = listOf(AktionsButton(name = null, text = "speichern")),
                     ),
                 ),
             )
         }
-        return SeitenAnsicht(titel = TITEL_JUGEND, abschnitte = abschnitte)
+
+        val schrankeRadios = doc.select("input[name=schranke]")
+        if (schrankeRadios.isNotEmpty()) {
+            val optionen = schrankeRadios.map { radio ->
+                val wert = radio.attr("value")
+                val label = when (wert) {
+                    "1" -> "Jahrgang Saison 24 und jüngere nur minimal fördern"
+                    "2" -> "Jahrgang Saison 23 und ältere nur minimal fördern"
+                    else -> "Keine Jugendschranke setzen"
+                }
+                AktionsOption(wert, label)
+            }
+            val standard = schrankeRadios.firstOrNull { it.hasAttr("checked") }?.attr("value").orEmpty()
+            abschnitte += UebersichtAbschnitt(
+                titel = "Jugendschranke",
+                punkte = listOf(
+                    "Die Jugendschranke fördert einen Teil der Jugendlichen nur minimal, während der Rest je nach Einstellung gefördert wird.",
+                    "Das Alterslimit steigt mit jeder neuen Saison automatisch um ein Jahr.",
+                ),
+                aktionen = listOf(
+                    AktionForm(
+                        ziel = ziel,
+                        felder = listOf(
+                            AktionFeld(
+                                name = "schranke",
+                                typ = AktionFeldTyp.RADIO,
+                                label = "Alterslimit",
+                                optionen = optionen,
+                                standard = standard,
+                            ),
+                        ),
+                        buttons = listOf(AktionsButton(name = null, text = "Jugendschranke setzen")),
+                    ),
+                ),
+            )
+        }
+
+        return SeitenAnsicht(titel = TITEL_JUGEND, abschnitte = abschnitte, tabs = jugendTabs(4))
     }
 
     /** Skandiert die Hinweisabsätze unter „Bitte beachten:“ (vor der ersten Tabelle). */
@@ -1812,6 +2226,7 @@ class TeamRepository @Inject constructor(
     }
 
     private companion object {
+        const val MELDUNG_SESSION = "Die Anmeldung ist nicht mehr gültig – bitte neu anmelden und erneut versuchen."
         const val TITEL_JUGEND = "Jugendteam"
         const val TITEL_JUGENDSCOUT = "Jugendscouting"
         const val TITEL_TRAINING = "Training"

@@ -140,4 +140,34 @@ class ZeilenAktionenTest {
 
         assertTrue(zeilenAktionen(zeile, listOf(form)).isEmpty())
     }
+
+    @Test
+    fun zeilenBestaetigungstext_nenntSpielerUndAktion() {
+        assertEquals(
+            "„18 Jahre · Geb. 12“ wirklich ins A-Team berufen?",
+            zeilenBestaetigungstext("18 Jahre · Geb. 12", "Ins A-Team berufen"),
+        )
+    }
+
+    /** Fehlt der Aktionstitel, bleibt der Text verständlich statt halbfertig. */
+    @Test
+    fun zeilenBestaetigungstext_ohneTitelNenntNurDieZeile() {
+        assertEquals(
+            "Aktion für „18 Jahre“ wirklich ausführen?",
+            zeilenBestaetigungstext("18 Jahre", null),
+        )
+        assertEquals(
+            "Aktion für „18 Jahre“ wirklich ausführen?",
+            zeilenBestaetigungstext("18 Jahre", "   "),
+        )
+    }
+
+    /** Deutscher Anfangsbuchstabe: „Über …“ darf nicht zu „über …“ verkleinert werden. */
+    @Test
+    fun zeilenBestaetigungstext_kleinertNurDenErstenBuchstaben() {
+        assertEquals(
+            "„Rekordspieler“ wirklich übernehmen?",
+            zeilenBestaetigungstext("Rekordspieler", "Übernehmen"),
+        )
+    }
 }

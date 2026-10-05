@@ -37,7 +37,11 @@ Legende Zugriff ohne Login: ✅ = öffentlich / Demo-Daten · 🔒 = geschützt 
 - Tabellenplätze-Verlauf (Bild-Grafik) – `tplatz.php?t=` / `tabellenplatz.php?t=&s=` ✅
 
 ### Jugend
-- Jugendteam (`ju.php`) 🔒
+- Jugendteam (`ju.php`) 🔒 – **vier Unterreiter** über `?page=` (ohne Parameter = Teamübersicht). Die Seite führt **keine Spielernamen**, Spieler sind nur über Jahrgang + Nation erkennbar.
+  - `ju.php` bzw. `?page=1` **Teamübersicht** (Default) – Gruppen je Jahrgang: Alter, Geburtstag, Land, U, Skill, Talent, Aufwertung; pro Spielerzeile das erste Berufungsformular (Radio `ziehmich` mit der Spieler-ID + Submit `ziehen`). Dieser POST beruft noch nicht: die Serverantwort liefert dynamisch Positionen (`pos`), Spielernamen (`name`), Vertragslaufzeiten/-kosten (`vertrag`) sowie den finalen Submit. Die finale Berufung erfolgt erst mit diesem zweiten Formular und Button. Das erste Formular hängt an **jedem** Jahrgang mit ziehbaren Spielern – steht es in einem eigenen Abschnitt, verliert die Zeile ihr ⋮-Menü (Aktion und Zeile müssen im selben Abschnitt liegen).
+  - `?page=2` **Spielereinzelwerte** – je Spieler die 17 Einzelskills (SCH…EIN); die Kopfzeile **nennt** die Skillnamen. Kopfzeile: `[Land (colspan 3), U, Alter, SCH…EIN]`, Datenzeile: `0 Flagge, 1 Kürzel, 2 leer, 3 U, 4 Alter, 5… Skills`.
+  - `?page=3` **Opt. Skill** – je Spieler Skillschnitt und Opt-Skill je Position. Kopfzeile: `[Land (colspan 2), U, Alter, Skill, TOR, ABW, DMI, MIT, OMI, STU]`, Datenzeile: `0 Flagge, 1 Kürzel, 2 U, 3 Alter, 4 Skill, 5… Positionen`.
+  - `?page=4` **Optionen** – zwei Formulare: „Jugendförderung“ (`foerderung`, Euro je ZAT und Spieler, 500…10000 in 500er-Schritten) und „Jugendschranke“ (`schranke`, Alterslimit; steigt je Saison automatisch um ein Jahr und ist **nicht rückgängig** zu machen). Die Absende-Buttons tragen **keinen** `name`, übertragen wird nur der Feldwert.
 - Jugendscouting + Gebot auf Talent (`juscout.php`; `juscout.php?g=<id>`) 🔒
 
 ### Trainer / Training / Taktik 🔒
@@ -155,7 +159,7 @@ Online Soccer 2.0
 │   └── Zusatzfeatures                    → zfeatures.php
 ├── Team
 │   ├── Mannschaft                        → showteam.php (Tabs s=0..10)
-│   ├── Jugendteam                        → ju.php
+│   ├── Jugendteam                        → ju.php (Unterreiter ?page=1..4)
 │   ├── Jugendscouting                    → juscout.php
 │   ├── Stadionausbau                     → osneu/stadion
 │   ├── Taktik-Editor                     → taktiken.php
@@ -385,6 +389,9 @@ Allgemeines Muster: einfache GET- oder POST-Formulare ohne CSRF-Token. Ändernde
 | Gebot TM | (Feldnamen unklar, geschützt) | `gebot.php?s=` | Meldung; Gebot unter VM/status |
 | Gebot VM | (Feldnamen unklar, geschützt) | `vmgebot.php?s=` | Meldung |
 | Gebot Jugend | (Feldnamen unklar, geschützt) | `juscout.php?g=` | Meldung |
+| Jugendspieler ins A-Team berufen | Schritt 1: `ziehmich` (Spieler-ID, Radio) + `ziehen`; Schritt 2: Serverformular mit dynamischem `pos`, `name`, `vertrag` und finalem Submit | zwei POSTs `ju.php` | Spieler steht im A-Team-Kader (`showteam.php?s=0`) |
+| Jugendförderung | `foerderung` (Euro je ZAT und Spieler, 500…10000) | POST `ju.php?page=4` | Wert im Formular voreingestellt; wirkt im ZAT-Report als „Jugendförderung“ |
+| Jugendschranke | `schranke` (`1` = Jahrgang aktuelle Saison und jüngere, `2` = Jahrgang und älter, `0` = keine) | POST `ju.php?page=4` | keine Rücknahme möglich – irreversible Einstellung |
 | Leihspieler | (unklar, geschützt) | `leihspieler.php` | Meldung |
 | Stadionausbau | (unklar, geschützt) | `osneu/stadion` | Meldung; direkt in Teaminfo sichtbar |
 | Freundschaftsspiele | (unklar, geschützt) | `friendly.php`, `osneu/friendlies` | Meldung |
@@ -393,7 +400,7 @@ Allgemeines Muster: einfache GET- oder POST-Formulare ohne CSRF-Token. Ändernde
 | EM-Tipp abgeben | (unklar, geschützt) | `emtipp.php` | Meldung |
 
 **Erfolgserkennung allgemein:** Seitenmeldungen (grüne `.success`-Boxen im /osneu, rote `.error`-Boxen), Fehlertexte (Info-/Warning/-Validation-Boxen), Zurückrendern der geänderten Liste, HTTP-Umleitungen. Fehler: Meldungsbox mit Farbklasse, „Falsche Eingabe“-Hinweise, bei abgelaufener Session die oben genannten Guard-Texte bzw. Fake-„404“.
-**Hinweis:** Die genauen Feldnamen der geschützten „Schreib“-Formulare **konnten ohne Login nicht ermittelt werden** → müssen nach dem ersten Login (mit eigenen Daten) im Betriebsmodus dokumentiert werden (Klassifikation D).
+**Hinweis:** Die genauen Feldnamen der geschützten „Schreib“-Formulare **konnten ohne Login nicht ermittelt werden** → müssen nach dem ersten Login (mit eigenen Daten) im Betriebsmodus dokumentiert werden (Klassifikation D). **Stand 06.10.2026:** für `ju.php` (Jugendteam, alle vier Unterreiter) nach Login verifiziert – inklusive zweistufiger A-Team-Berufung; Optionen/Preise werden aus dem serverseitigen Folgeformular gelesen.
 
 ### Auswertung der öffentlich sichtbaren Filterformulare (Anzeigen-Funktionen, auch so nativ umsetzbar)
 - **Transfermarkt/VM:** POST `tm.php|viewvm.php` mit `alter(0–9)`, `skill(0–6)`, `marktwert(0–8)`, `position(0–6)`, `sortierung` (oder GET als URL). 
@@ -424,7 +431,8 @@ Klassifikation: **A** nativ (statische/klare Daten) · **B** über HTTP/API (ink
 | Team-/Vereins-/Transfer-/Leih-/Saisonhistorie | st.php?s=7–10 | **B** | |
 | Spielerprofil | sp.php?s= (HTML) | **B** | klar strukturiert, Face-Bild separat laden |
 | Tabellenplätze-Grafik | tabellenplatz.php (Bild) | **B/C** | Bild einbinden; alternativ eigener Chart |
-| Jugendteam/-scouting | ju.php, juscout.php | **D** | geschützt, nach Login prüfen |
+| Jugendteam | ju.php, ju.php?page=1..4 | **B** | nach Login verifiziert (04.10.2026): vier Unterreiter, reguläre Tabellen, zwei Schreibformulare (`ziehmich`, `foerderung`, `schranke`) |
+| Jugendscouting | juscout.php, juscout.php?g= | **D** | geschützt; Formularfelder des Gebots noch unklar |
 | Trainer | trainer.php | **D** | geschützt |
 | Training | training.php | **D** | geschützt |
 | Taktik-Editor | taktiken.php | **C/D** | wahrscheinlich JS-lastig (Aufstellung) |
@@ -535,4 +543,6 @@ Hybrider Ansatz, **„nativ-first, WebView wo nötig“**, mit einem zentralen *
 - Gruppenphase (`osneu/oscgp?season=23`): `#international` enthält `<h2>ZAT …</h2>` für jeden Spieltag; Tabelle `table.intTabelle` hat 36 Zeilen mit den Klassen `top` (Plätze 1–8), `middle` (9–24), `bottom` (25–36). Farben laut `osneu/css/style.css`: `top` = darkgreen, `middle` = rgb(139,134,78), `bottom` = rgb(178,34,34). Die Seite selbst enthält **keine** Textlegende – die Beschriftung (Finalrunde/Mittelfeld/Ausgeschieden) ist eine App-Interpretation der Klassen.
 - Turnierbaum (`osneu/oscfr`/`osefr` mit `runde=99`, nur per POST): Überschrift „OSC Finalrunde - Turnierbaum", Runden als `div.tableau-runde` mit `<h3>`, Paarungen als `div.tableau-paarung` mit `style="grid-row: n"`, darin 1–2 `div.tableau-team` (Wappen, `st.php?c=<id>`, Klassen `stu` und `tableau-freilos`, fetter Sieger, bei `ergebnisse=1` `<span class="tableau-tore">`). **Kein** `#international`, **keine** `<table>` – ohne eigenen Parser bleibt die Ansicht leer (Saison 24 ist der Baum noch leer). Die Option wird deshalb in `InternationaleRepository` aus dem Runde-Filter entfernt.
 - Ranglisten (`osneu/osranking`, `osneu/clubranking`, beide `table.osranking`, ohne Zeilenklassen): Die Kopfzeile kennt weder die Vereinsspalte noch die Summenspalte an ihrer Stelle, `Land` steht mit `colspan="2"` über Flagge und Namen. clubranking-Zeile: Platz, Flagge (`alt` = Landname), Club (`st.php?c=<id>`), je Saison Punkte **und** eine zweite Zelle mit `div.info-wrapper > div.info-box` (Liga/Pokal/International und Titel) – dieser Aufschluss wird nicht angezeigt; osranking-Zeile: Platz, Flagge, Landname (`lt.php?...`), je Saison ein Wert, am Ende die Summe. Punkte sind deutsch formatiert (`14.1363333` = 14.136,3333), angezeigt werden höchstens drei Nachkommastellen.
+- Jugendteam (`ju.php`, nach Login 04.10.2026): Unterreiter-Menü als vier `<a href="?page=n">` (`Teamübersicht`, `Spielereinzelwerte`, `Opt. Skill`, `Optionen`); `page=1` ist der Default ohne Parameter. Alle vier Seiten tragen **keine Spielernamen**. `?page=2` und `?page=3` nutzen die erste Tabellenzeile als Kopfzeile (Spaltennamen `SCH…EIN` bzw. `TOR…STU`) – die Skillnamen stehen **nur** dort, nicht als `class`/`title`. `?page=4` hat zwei `<form>`-Blöcke; deren Submit-Buttons haben **keinen** `name`, es wird je Formular nur ein Feldwert übertragen (`foerderung`, `schranke`).
+- A-Team-Berufung (nach Login 06.10.2026): erster POST `ziehmich=<Spieler-ID>&ziehen=<Website-Buttonwert>` liefert noch kein Ergebnis, sondern ein Folgeformular mit `input[type=radio][name=pos]`, `select[name=name]`, `input[type=radio][name=vertrag]` und finalem Submit. Positionen, Spielernamen, Vertragslaufzeiten und Kosten sind in der Antwort dynamisch; weder IDs noch Preise als App-Konstanten behandeln. Der finale Submit führt die Berufung aus.
 - Forum = WoltLab 6.2.7, Wiki = MediaWiki 1.39, Bug = MantisBT (500), Shop = PrestaShop (503).

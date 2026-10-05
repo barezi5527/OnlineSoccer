@@ -35,6 +35,8 @@ data class AktionForm(
     val zeilen: List<AktionZeile> = emptyList(),
     val buttons: List<AktionsButton> = emptyList(),
     val titel: String? = null,
+    /** Dynamische Hinweise des Servers oberhalb des Formulars (z. B. Eckdaten Jugendspieler). */
+    val hinweise: List<String> = emptyList(),
 )
 
 /** Serverseitiger Kostenhinweis samt Formularfeldern für die Schlussbestätigung. */

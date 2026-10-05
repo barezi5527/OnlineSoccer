@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.onlinesoccer.app.data.model.AktionFeld
 import com.onlinesoccer.app.data.model.AktionFeldTyp
 import com.onlinesoccer.app.data.model.AktionForm
+import com.onlinesoccer.app.data.model.AktionsButton
 import com.onlinesoccer.app.data.model.AktionZeile
 import com.onlinesoccer.app.data.model.UebersichtZeile
 
@@ -112,6 +113,53 @@ internal fun istTrainerFeuerFormular(form: AktionForm, felder: List<AktionFeld>)
             button.text.contains("Trainer", ignoreCase = true) && button.text.contains("feuern", ignoreCase = true)
     }
     return trainerZiel && trainerFeld && feuernButton
+}
+
+/**
+ * Satz für die Schlussbestätigung einer Zeilen-Aktion, die nur aus einem
+ * vorbelegten Radio besteht (Jugend: „ins A-Team berufen“).
+ *
+ * Bewusst als reine Funktion: der Text ist die eigentliche Sicherheitsaussage des
+ * Dialogs („welcher Spieler wird berufen?“) und soll ohne Android testbar sein.
+ * Ohne bekannten Aktionstitel bleibt der neutrale Rückfalltext.
+ */
+internal fun zeilenBestaetigungstext(zeilenName: String, aktionsTitel: String?): String {
+    val name = zeilenName.trim()
+    return if (aktionsTitel.isNullOrBlank()) {
+        "Aktion für „$name“ wirklich ausführen?"
+    } else {
+        "„$name“ wirklich ${aktionsTitel.trim().replaceFirstChar { it.lowercase() }}?"
+    }
+}
+
+/**
+ * Baut die Feldliste für den POST aus den Formularfeldern, den aktuell gewählten
+ * Werten und dem gedrückten Button.
+ *
+ * Bewusst als reine Funktion: das ist die sicherheitskritische Stelle des Dialogs,
+ * denn hier steht, **was** tatsächlich an den Server geht. Zwei Regeln, beide aus
+ * der Website abgeleitet:
+ *  - **Leere Werte werden nicht mitgesendet.** Ein unberührtes Auswahlfeld darf
+ *    keinen Parameter mit leerem Wert schicken.
+ *  - **Ein Button ohne `name` trägt nichts bei** (`ju.php?page=4`: die Absende-
+ *    Buttons haben keinen Namen). Sonst schickte die App einen Parameter, den das
+ *    Formular gar nicht kennt.
+ *
+ * Ohne Android testbar – der Test prüft den echten POST-Body gegen einen
+ * aufzeichnenden OkHttp-Interceptor.
+ */
+internal fun formularFelder(
+    felder: List<AktionFeld>,
+    werte: Map<String, String>,
+    button: AktionsButton,
+): List<Pair<String, String>> = buildList {
+    felder.forEach { feld ->
+        when (feld.typ) {
+            AktionFeldTyp.VERSTECKT -> add(feld.name to feld.standard)
+            else -> (werte[feld.name] ?: "").takeIf { it.isNotBlank() }?.let { add(feld.name to it) }
+        }
+    }
+    if (!button.name.isNullOrBlank()) add(button.name to button.text)
 }
 
 /**
@@ -219,6 +267,7 @@ fun AktionsFaehigeKarte(
             aktion = aktion,
             zeilenName = zeile.ueberschrift,
             zeilenSchluessel = zeile.aktionSchluessel,
+            zeilenAktionTitel = zeile.aktionTitel,
             trainerVorschau = trainerVorschau,
             onTrainerVorschauLaden = onTrainerVorschauLaden,
             onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
@@ -237,6 +286,7 @@ private fun ZeilenAktionDialog(
     aktion: ZeilenAktion,
     zeilenName: String,
     zeilenSchluessel: String?,
+    zeilenAktionTitel: String?,
     trainerVorschau: TrainerAktionVorschauUi?,
     onTrainerVorschauLaden: (String, List<Pair<String, String>>) -> Unit,
     onTrainerVorschauZuruecksetzen: () -> Unit,
@@ -266,6 +316,8 @@ private fun ZeilenAktionDialog(
             ?.let { werte[globalesRadio.name] = it.wert }
     }
     val nurBestaetigung = globalesRadio != null && felder.size == 1
+    val jugendBerufungsStart = form.ziel.substringBefore('?').endsWith("ju.php", ignoreCase = true) &&
+        globalesRadio?.name == "ziehmich" && form.buttons.any { it.name == "ziehen" }
     val trainerEinstellung = istTrainerEinstellFormular(form, felder)
     val trainerFeuern = istTrainerFeuerFormular(form, felder)
     val trainerAktion = trainerEinstellung || trainerFeuern
@@ -275,16 +327,6 @@ private fun ZeilenAktionDialog(
         it.trainerNr == trainerNr && it.aktionName == submitName
     }
     val serverVorschau = vorschauStatus?.vorschau
-
-    fun formularFelder(button: com.onlinesoccer.app.data.model.AktionsButton): List<Pair<String, String>> = buildList {
-        felder.forEach { feld ->
-            when (feld.typ) {
-                AktionFeldTyp.VERSTECKT -> add(feld.name to feld.standard)
-                else -> (werte[feld.name] ?: "").takeIf { it.isNotBlank() }?.let { add(feld.name to it) }
-            }
-        }
-        if (!button.name.isNullOrBlank()) add(button.name to button.text)
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -324,7 +366,15 @@ private fun ZeilenAktionDialog(
                         }
                     }
                 } else if (nurBestaetigung) {
-                    Text("Aktion für „$zeilenName“ wirklich ausführen?")
+                    if (jugendBerufungsStart) {
+                        Text(
+                            "Für „${zeilenName.trim()}“ werden zunächst die verfügbaren Positionen, " +
+                                "Spielernamen und Vertragslaufzeiten vom Server geladen. Die Berufung erfolgt " +
+                                "erst nach der weiteren Auswahl und Bestätigung.",
+                        )
+                    } else {
+                        Text(zeilenBestaetigungstext(zeilenName, zeilenAktionTitel))
+                    }
                 } else {
                     felder.forEach { feld ->
                         when (feld.typ) {
@@ -362,9 +412,9 @@ private fun ZeilenAktionDialog(
                                 onDismiss()
                                 onSende(form.ziel, serverVorschau.felder)
                             } else if (trainerAktion) {
-                                onTrainerVorschauLaden(form.ziel, formularFelder(button))
+                                onTrainerVorschauLaden(form.ziel, formularFelder(felder, werte, button))
                             } else {
-                                val feldListe = formularFelder(button)
+                                val feldListe = formularFelder(felder, werte, button)
                                 onDismiss()
                                 onSende(form.ziel, feldListe)
                             }
@@ -379,6 +429,11 @@ private fun ZeilenAktionDialog(
                                 trainerAktion && vorschauStatus?.ladend == true -> "Bitte warten …"
                                 trainerFeuern -> "Abfindung anzeigen"
                                 trainerEinstellung -> if (vorschauStatus?.fehler != null) "Erneut prüfen" else "Kosten anzeigen"
+                                jugendBerufungsStart -> "Auswahl laden"
+                                // Nur Anzeigetext: der Serverwert bleibt `button.text`.
+                                // „Markierten Spieler …“ waere in einer Zeilen-Bestätigung
+                                // falsch, weil genau ein Spieler berufen wird.
+                                nurBestaetigung && !zeilenAktionTitel.isNullOrBlank() -> zeilenAktionTitel
                                 else -> button.text
                             },
                         )

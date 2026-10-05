@@ -3,6 +3,9 @@ package com.onlinesoccer.app.feature.team
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.onlinesoccer.app.core.state.TEAMWECHSEL_VERWORFEN
+import com.onlinesoccer.app.core.state.TeamGeneration
+import com.onlinesoccer.app.core.state.schreibvorgangErlaubt
 import com.onlinesoccer.app.core.storage.StadionnameStore
 import com.onlinesoccer.app.data.model.AktionForm
 import com.onlinesoccer.app.data.model.SeitenAnsicht
@@ -64,10 +67,27 @@ class SeiteViewModel @Inject constructor(
     private val bewerbeRepository: BewerbeRepository,
     private val dashboardRepository: DashboardRepository,
     private val stadionnameStore: StadionnameStore,
+    private val teamGeneration: TeamGeneration,
 ) : ViewModel() {
 
-    private val path: String = savedStateHandle["path"] ?: ""
+    private var path: String = savedStateHandle["path"] ?: ""
     private val istStadionseite: Boolean = path.trimEnd('/').endsWith("osneu/stadion")
+
+    /**
+     * Generation, unter der die zuletzt geladene Seite geholt wurde.
+     *
+     * Betrifft **alle** Schreibaktionen dieses Screens (Jugendspieler berufen,
+     * Jugendförderung, Jugendschranke, Trainer, Verträge, Training). Nach einem
+     * Teamwechsel gehören die auf der Seite angezeigten Werte zum vorherigen Team;
+     * ein POST würde sie dem neuen Team schreiben. Deshalb Gate vor dem Senden
+     * (Plan T36, Muster wie `ZugabgabeViewModel`/`TaktikViewModel`).
+     */
+    private var geladeneGeneration = teamGeneration.current()
+
+    private fun gate(): String? {
+        if (schreibvorgangErlaubt(geladeneGeneration, teamGeneration.current())) return null
+        return TEAMWECHSEL_VERWORFEN
+    }
 
     private val _uiState = MutableStateFlow(SeiteUiState())
     val uiState: StateFlow<SeiteUiState> = _uiState.asStateFlow()
@@ -77,9 +97,20 @@ class SeiteViewModel @Inject constructor(
         lade()
     }
 
+    /**
+     * Wechselt auf einen Unterreiter (z. B. Jugendteam `?page=2`). Der Wechsel
+     * bleibt innerhalb desselben Screens und lädt die Seite unter dem neuen Pfad.
+     */
+    fun wechsleTab(pfad: String) {
+        if (pfad == path) return
+        path = pfad
+        lade()
+    }
+
     fun lade() {
         viewModelScope.launch {
             _uiState.value = SeiteUiState(ladend = true)
+            geladeneGeneration = teamGeneration.current()
             val saison = ladeAktuelleSaison()
             _uiState.value = try {
                 val ansicht = repository.ladeSeite(path)
@@ -211,18 +242,49 @@ class SeiteViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(trainerVorschau = null)
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(sendend = true, aktioFehler = null)
-            val ok = repository.fuehreAktionAus(ziel, felder)
-            if (ok) {
+            // Gate vor dem POST: die Formularwerte stammen von der zuletzt geladenen
+            // Seite. Nach einem Teamwechsel gehören sie zum vorherigen Team.
+            gate()?.let { abgelehnt ->
+                _uiState.value = _uiState.value.copy(sendend = false, aktioFehler = abgelehnt)
+                return@launch
+            }
+            if (istErsterJugendBerufungsschritt(ziel, felder)) {
+                val formular = repository.ladeJugendBerufungsFormular(ziel, felder)
+                if (formular != null) {
+                    _uiState.value = _uiState.value.copy(
+                        sendend = false,
+                        dialogFormular = formular,
+                        aktioFehler = null,
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        sendend = false,
+                        aktioFehler = "Die Positions-, Namens- und Vertragsauswahl konnte nicht geladen werden. Es wurde nichts berufen.",
+                    )
+                }
+                return@launch
+            }
+            val ergebnis = repository.fuehreAktionAus(ziel, felder)
+            if (ergebnis.erfolg) {
                 _uiState.value = _uiState.value.copy(sendend = false, dialogFormular = null)
                 lade()
             } else {
+                // Serverseitige Ablehnung zeigen statt die Seite still neu zu laden:
+                // am 05.10.2026 hat ein wirkungsloser POST scheinbar Erfolg gemeldet.
                 _uiState.value = _uiState.value.copy(
                     sendend = false,
-                    aktioFehler = "Aktion fehlgeschlagen – bitte anmelden und erneut versuchen.",
+                    aktioFehler = ergebnis.meldung
+                        ?: "Aktion fehlgeschlagen – bitte anmelden und erneut versuchen.",
                 )
             }
         }
     }
+
+    /** Der erste POST öffnet nur das Serverformular, er ist noch nicht die Berufung. */
+    private fun istErsterJugendBerufungsschritt(ziel: String, felder: List<Pair<String, String>>): Boolean =
+        ziel.substringBefore('?').endsWith("ju.php", ignoreCase = true) &&
+            felder.any { it.first == "ziehmich" } &&
+            felder.any { it.first == "ziehen" }
 
     /** Holt den unverbindlichen Abfindungs-/Kostenhinweis der Website. */
     fun ladeTrainerVorschau(ziel: String, felder: List<Pair<String, String>>) {

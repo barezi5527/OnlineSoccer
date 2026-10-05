@@ -1,6 +1,7 @@
 package com.onlinesoccer.app.data.repository
 
 import com.onlinesoccer.app.data.model.AktionFeldTyp
+import com.onlinesoccer.app.feature.team.zeilenAktionen
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -267,7 +268,8 @@ class TeamSeitenParseTest {
     fun jugend_bautZieheInsATeamAktion() {
         val ansicht = repo.parseJugend(dump("ju"), "https://os.ongapo.com/ju.php")
 
-        val form = ansicht.abschnitte.first { it.titel == "Ins A-Team berufen" }.aktionen.single()
+        // Dasselbe Formular wird von mehreren Jahrgangsgruppen geteilt.
+        val form = ansicht.abschnitte.flatMap { it.aktionen }.distinct().single()
         assertEquals("https://os.ongapo.com/ju.php", form.ziel)
         val feld = form.felder.single()
         assertEquals("ziehmich", feld.name)
@@ -277,6 +279,153 @@ class TeamSeitenParseTest {
         val button = form.buttons.single()
         assertEquals("ziehen", button.name)
         assertTrue(button.text.contains("A-Team"))
+    }
+
+    /**
+     * Jeder ziehbare Jugendspieler braucht sein eigenes ⋮-Menü. `SeiteScreen`
+     * verknüpft Zeile und Formular nur innerhalb desselben Abschnitts – lag das
+     * Berufungsformular in einem eigenen Abschnitt, bekam keine Zeile eine Aktion.
+     */
+    @Test
+    fun jugend_berufungLiegtInDerJahrgangsgruppeDesSpielers() {
+        val ansicht = repo.parseJugend(dump("ju"), "https://os.ongapo.com/ju.php")
+
+        val jahrgang18 = ansicht.abschnitte.first { it.titel == "Jahrgang Saison 18" }
+        assertEquals(1, jahrgang18.aktionen.size)
+        jahrgang18.zeilen.forEach { zeile ->
+            val aktionen = zeilenAktionen(zeile, jahrgang18.aktionen)
+            assertEquals(
+                "Zeile „${zeile.ueberschrift}“ ohne Berufungsaktion",
+                listOf("Ins A-Team berufen"),
+                aktionen.map { it.titel },
+            )
+        }
+        // Das Formular gehört dem Jahrgang, nicht einer Einzelzeile: es liefert
+        // keine Zeilen-Zuordnung und damit keinen Vollformular-Abschnitt.
+        assertTrue(jahrgang18.aktionen.single().zeilen.isEmpty())
+    }
+
+    /** Zu junge Spieler haben kein `ziehmich`-Feld – dort darf keine Aktion erscheinen. */
+    @Test
+    fun jugend_ohneZiehbarenSpielerLiefertKeineAktion() {
+        val ansicht = repo.parseJugend(dump("ju"), "https://os.ongapo.com/ju.php")
+
+        val jahrgang20 = ansicht.abschnitte.first { it.titel == "Jahrgang Saison 20" }
+        assertTrue(jahrgang20.zeilen.isNotEmpty())
+        assertTrue(jahrgang20.zeilen.none { !it.aktionSchluessel.isNullOrBlank() })
+        assertTrue("Zu junge Jahrgänge ohne Berufungsformular", jahrgang20.aktionen.isEmpty())
+        jahrgang20.zeilen.forEach { zeile ->
+            assertTrue(zeilenAktionen(zeile, jahrgang20.aktionen).isEmpty())
+        }
+    }
+
+    /**
+     * Ohne eigenes Formular gibt es auch keine zweite Radioliste am Seitenende –
+     * die Berufung läuft ausschließlich über das ⋮-Menü der Zeile.
+     */
+    @Test
+    fun jugend_zeigtKeineZusaetzlicheRadioliste() {
+        val ansicht = repo.parseJugend(dump("ju"), "https://os.ongapo.com/ju.php")
+
+        assertFalse(
+            "Abschnitt mit reiner Radioliste vorhanden",
+            ansicht.abschnitte.any { it.titel == "Ins A-Team berufen" },
+        )
+        assertTrue(
+            "Jede Radiogruppe gehört zu einer Gruppe mit Spielern",
+            ansicht.abschnitte.all { abschnitt ->
+                abschnitt.aktionen.all { form ->
+                    form.felder.none { it.typ == AktionFeldTyp.RADIO } || abschnitt.zeilen.isNotEmpty()
+                }
+            },
+        )
+    }
+
+    /** Alle vier Unterreiter sind vorhanden; Teamübersicht (page 1) ist aktiv. */
+    @Test
+    fun jugend_liefertUnterreiterMitAktiverTeamuebersicht() {
+        val ansicht = repo.parseJugend(dump("ju"), "https://os.ongapo.com/ju.php")
+
+        assertEquals(
+            listOf("Teamübersicht", "Spielereinzelwerte", "Opt. Skill", "Optionen"),
+            ansicht.tabs.map { it.label },
+        )
+        assertEquals(listOf("ju.php", "ju.php?page=2", "ju.php?page=3", "ju.php?page=4"), ansicht.tabs.map { it.path })
+        assertEquals(ansicht.tabs.first { it.path == "ju.php" }.aktiv, true)
+    }
+
+    @Test
+    fun jugendEinzelwerte_liefertSkillsAlsChips() {
+        val ansicht = repo.parseJugendEinzelwerte(dump("ju_einzelwerte"))
+
+        val jahrgang18 = ansicht.abschnitte.first { it.titel == "Jahrgang Saison 18" }
+        assertEquals(3, jahrgang18.zeilen.size)
+        val erster = jahrgang18.zeilen.first()
+        assertEquals("18 Jahre · GER", erster.ueberschrift)
+        val werte = erster.werte.toMap()
+        assertEquals("30", werte["SCH"])
+        assertEquals("12", werte["BAK"])
+        assertEquals("61", werte["EIN"])
+        assertTrue("17 Einzelskills als Chips", werte.size == 17)
+        // Keine Berufungsaktion auf der Einzelwerte-Seite.
+        assertTrue(ansicht.abschnitte.all { it.aktionen.isEmpty() })
+        assertTrue(ansicht.tabs.first { it.path == "ju.php?page=2" }.aktiv)
+    }
+
+    @Test
+    fun jugendOptSkill_liefertSkillUndPositionen() {
+        val ansicht = repo.parseJugendOptSkill(dump("ju_opt_skill"))
+
+        val jahrgang19 = ansicht.abschnitte.first { it.titel == "Jahrgang Saison 19" }
+        val uzb = jahrgang19.zeilen.first { it.ueberschrift == "18 Jahre · UZB" }
+        val werte = uzb.werte.toMap()
+        assertEquals("30.47", werte["Skill"])
+        assertEquals("43.78", werte["TOR"])
+        // Spieler ohne optimierten Positionswert führen diese Position nicht.
+        val jahrgang18 = ansicht.abschnitte.first { it.titel == "Jahrgang Saison 18" }
+        val ger = jahrgang18.zeilen.first { it.ueberschrift == "18 Jahre · GER" }
+        assertEquals("28.53", ger.werte.toMap()["Skill"])
+        assertFalse(ger.werte.toMap().containsKey("TOR"))
+        assertTrue(ansicht.tabs.first { it.path == "ju.php?page=3" }.aktiv)
+    }
+
+    @Test
+    fun jugendOptionen_liefertFoerderungUndSchranke() {
+        val ansicht = repo.parseJugendOptionen(dump("ju_optionen"), "https://os.ongapo.com/ju.php?page=4")
+
+        assertEquals(listOf("Allgemeine Optionen", "Jugendschranke"), ansicht.abschnitte.map { it.titel })
+
+        val foerderung = ansicht.abschnitte.first { it.titel == "Allgemeine Optionen" }.aktionen.single()
+        assertEquals("https://os.ongapo.com/ju.php?page=4", foerderung.ziel)
+        val select = foerderung.felder.single()
+        assertEquals("foerderung", select.name)
+        assertEquals(AktionFeldTyp.AUSWAHL, select.typ)
+        assertEquals("500", select.standard)
+        assertEquals("10000", select.optionen.last().wert)
+
+        val schranke = ansicht.abschnitte.first { it.titel == "Jugendschranke" }.aktionen.single()
+        val radio = schranke.felder.single()
+        assertEquals("schranke", radio.name)
+        assertEquals(AktionFeldTyp.RADIO, radio.typ)
+        assertEquals(listOf("1", "2", "0"), radio.optionen.map { it.wert })
+        assertEquals("0", radio.standard)
+        // Absende-Buttons tragen keinen Namen – es wird nur der Feldwert übertragen.
+        assertTrue(foerderung.buttons.single().name == null)
+        assertTrue(schranke.buttons.single().name == null)
+        assertTrue(ansicht.tabs.first { it.path == "ju.php?page=4" }.aktiv)
+    }
+
+    /** `ju.php?page=2` muss weiterhin als Jugend-Seite erkannt werden (Query-Strip). */
+    @Test
+    fun jugend_mitQueryWirdAlsJugendSeiteErkannt() {
+        val ansicht = repo.parseJugendSeite("ju.php?page=3", dump("ju_opt_skill"), "https://os.ongapo.com/ju.php?page=3")
+
+        assertEquals(
+            listOf("Teamübersicht", "Spielereinzelwerte", "Opt. Skill", "Optionen"),
+            ansicht.tabs.map { it.label },
+        )
+        assertTrue("Opt. Skill ist aktiv", ansicht.tabs.first { it.path == "ju.php?page=3" }.aktiv)
+        assertTrue("Opt-Skill-Zeilen vorhanden", ansicht.abschnitte.isNotEmpty())
     }
 
     @Test
