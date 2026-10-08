@@ -680,7 +680,7 @@ private fun QualifikationsPaarungsKarte(
                     }
                 }
             }
-            if (qualifiziert != null) {
+            if (ergebnisseSichtbar && qualifiziert != null) {
                 Text(
                     "✓ Weiter: $qualifiziert",
                     Modifier
@@ -691,7 +691,9 @@ private fun QualifikationsPaarungsKarte(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                 )
-            } else if (paarung.rueckspiel == null || paarung.rueckspiel.vorschauUrl != null) {
+            } else if (ergebnisseSichtbar &&
+                (paarung.rueckspiel == null || paarung.rueckspiel.vorschauUrl != null)
+            ) {
                 Text(
                     "Entscheidung offen",
                     Modifier.padding(horizontal = 4.dp),
