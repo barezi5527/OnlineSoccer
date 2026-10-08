@@ -21,7 +21,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -34,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -172,8 +175,10 @@ fun InternationaleScreen(
     var zeigeTabelle by rememberSaveable { mutableStateOf(false) }
     var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
     var gewaehlterZat by rememberSaveable { mutableStateOf<String?>(null) }
+    var clubSuche by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(bereich, ansicht) {
+        if (ansicht != InternationaleAnsichtId.CLUB_RANKING) clubSuche = ""
         val pfad = ansicht?.path ?: return@LaunchedEffect
         // Rückkehr aus dem Mannschaftskader: derselbe Bildschirm wird neu zusammengesetzt,
         // das ViewModel lebt weiter. Ohne diese Prüfung würden Tabelle, ZAT und Saison
@@ -241,6 +246,8 @@ val geladen = uiState.ansicht
                     ergebnisseSichtbar = ergebnisseSichtbar,
                     gewaehlterZat = gewaehlterZat,
                     onZat = { gewaehlterZat = it },
+                    clubSuche = clubSuche,
+                    onClubSuche = { clubSuche = it },
                     onFilter = { viewModel.lade(ansicht!!.name, ansicht!!.path!!, it) },
                     onSpielbericht = onSpielbericht,
                     onTeamClick = onTeamClick,
@@ -374,6 +381,8 @@ private fun AnsichtInhalt(
     ergebnisseSichtbar: Boolean,
     gewaehlterZat: String?,
     onZat: (String?) -> Unit,
+    clubSuche: String,
+    onClubSuche: (String) -> Unit,
     onFilter: (InternationaleFilter) -> Unit,
     onSpielbericht: (String?, String?) -> Unit,
     onTeamClick: (Long) -> Unit,
@@ -444,13 +453,35 @@ private fun AnsichtInhalt(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                 )
-                spiele.forEach { spiel ->
-                    BegegnungCard(spiel, ergebnisseSichtbar, onSpielbericht, onTeamClick)
+                if (ansichtId == InternationaleAnsichtId.OSC_QUALI ||
+                    ansichtId == InternationaleAnsichtId.OSE_QUALI
+                ) {
+                    qualifikationsPaarungen(spiele).forEach { paarung ->
+                        QualifikationsPaarungsKarte(
+                            paarung = paarung,
+                            ergebnisseSichtbar = ergebnisseSichtbar,
+                            onSpielbericht = onSpielbericht,
+                            onTeamClick = onTeamClick,
+                        )
+                    }
+                } else {
+                    spiele.forEach { spiel ->
+                        BegegnungCard(spiel, ergebnisseSichtbar, onSpielbericht, onTeamClick)
+                    }
                 }
             }
             // In der Gruppenphase gibt es den Umschalter "Tabelle"; die Tabelle dort
             // nicht noch einmal unter den Begegnungen ausgeben.
-            if (!ansichtId.mitTabelle) {
+            if (ansichtId == InternationaleAnsichtId.CLUB_RANKING) {
+                ansicht.tabellen.firstOrNull()?.let { tabelle ->
+                    ClubRankingTabelle(
+                        tabelle = tabelle,
+                        suchtext = clubSuche,
+                        onSuchtext = onClubSuche,
+                        onTeamClick = onTeamClick,
+                    )
+                }
+            } else if (!ansichtId.mitTabelle) {
                 ansicht.tabellen.forEach { tabelle ->
                     Tabelle(tabelle = tabelle, onTeamClick = onTeamClick)
                 }
@@ -625,6 +656,110 @@ private fun BegegnungCard(
     }
 }
 
+/** Gemeinsame Karte der beiden Qualifikationsspiele einer Paarung. */
+@Composable
+private fun QualifikationsPaarungsKarte(
+    paarung: InternationalePaarung,
+    ergebnisseSichtbar: Boolean,
+    onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            val qualifiziertTeamId = paarung.hinspiel.qualifiziertTeamId
+                ?: paarung.rueckspiel?.qualifiziertTeamId
+            val qualifiziert = qualifiziertTeamId?.let { teamId ->
+                listOfNotNull(paarung.hinspiel, paarung.rueckspiel).firstNotNullOfOrNull { spiel ->
+                    when (teamId) {
+                        spiel.heimTeamId -> spiel.heim
+                        spiel.gastTeamId -> spiel.gast
+                        else -> null
+                    }
+                }
+            }
+            if (qualifiziert != null) {
+                Text(
+                    "✓ Weiter: $qualifiziert",
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            } else if (paarung.rueckspiel == null || paarung.rueckspiel.vorschauUrl != null) {
+                Text(
+                    "Entscheidung offen",
+                    Modifier.padding(horizontal = 4.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            QualifikationsSpielZeile(
+                titel = "Hinspiel",
+                spiel = paarung.hinspiel,
+                ergebnisseSichtbar = ergebnisseSichtbar,
+                onSpielbericht = onSpielbericht,
+                onTeamClick = onTeamClick,
+            )
+            HorizontalDivider()
+            QualifikationsSpielZeile(
+                titel = "Rückspiel",
+                spiel = paarung.rueckspiel,
+                ergebnisseSichtbar = ergebnisseSichtbar,
+                onSpielbericht = onSpielbericht,
+                onTeamClick = onTeamClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun QualifikationsSpielZeile(
+    titel: String,
+    spiel: InternationaleSpiel?,
+    ergebnisseSichtbar: Boolean,
+    onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(titel, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        if (spiel == null) {
+            Text("Noch nicht angesetzt", style = MaterialTheme.typography.bodySmall)
+            return
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            MannschaftText(spiel.heim, spiel.heimTeamId, Modifier.weight(1f), TextAlign.Start, onTeamClick)
+            val resultat = spiel.ergebnis?.takeIf { ergebnisseSichtbar }
+                ?: if (spiel.vorschauUrl != null) "offen" else "vs."
+            Text(
+                resultat,
+                Modifier.padding(horizontal = 8.dp),
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = if (spiel.ergebnis != null && ergebnisseSichtbar) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+            MannschaftText(spiel.gast, spiel.gastTeamId, Modifier.weight(1f), TextAlign.End, onTeamClick)
+        }
+        spiel.berichtUrl?.let { url ->
+            TextButton(
+                onClick = { onSpielbericht(null, url) },
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text("Spielbericht öffnen")
+            }
+        }
+    }
+}
+
 @Composable
 private fun MannschaftText(
     name: String,
@@ -761,6 +896,52 @@ private fun Tabelle(
                 onTeamClick = onTeamClick,
                 zeilenHintergrund = { index -> zeilenFarben.getOrNull(index) ?: Color.Transparent },
             )
+        }
+    }
+}
+
+/** Club-Ranking mit lokaler Suche, damit ein einzelner Verein in der langen Liste auffindbar ist. */
+@Composable
+private fun ClubRankingTabelle(
+    tabelle: WertTabelle,
+    suchtext: String,
+    onSuchtext: (String) -> Unit,
+    onTeamClick: (Long) -> Unit,
+) {
+    val gefiltert = remember(tabelle, suchtext) { clubRankingGefiltert(tabelle, suchtext) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(
+            value = suchtext,
+            onValueChange = onSuchtext,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            label = { Text("Verein suchen") },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            trailingIcon = {
+                if (suchtext.isNotEmpty()) {
+                    IconButton(onClick = { onSuchtext("") }) {
+                        Icon(Icons.Filled.Close, contentDescription = "Suche leeren")
+                    }
+                }
+            },
+        )
+        if (suchtext.isNotBlank()) {
+            if (gefiltert.zeilen.isEmpty()) {
+                Text(
+                    "Kein Verein gefunden.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Text(
+                    "${gefiltert.zeilen.size} von ${tabelle.zeilen.size} Vereinen",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (gefiltert.zeilen.isNotEmpty()) {
+            Tabelle(tabelle = gefiltert, onTeamClick = onTeamClick)
         }
     }
 }

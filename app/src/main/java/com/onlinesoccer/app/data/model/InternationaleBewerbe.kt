@@ -46,6 +46,10 @@ data class InternationaleSpiel(
     val gast: String,
     val ergebnis: String? = null,
     val berichtUrl: String? = null,
+    /** Vorschau-Link für eine noch nicht gespielte Begegnung. */
+    val vorschauUrl: String? = null,
+    /** Team, das die Website in der Qualifikation als weitergekommen hervorhebt. */
+    val qualifiziertTeamId: Long? = null,
     val heimTeamId: Long? = null,
     val gastTeamId: Long? = null,
     /** Spieltag laut Website-Überschrift (`ZAT 17`), nur in der Gruppenphase vorhanden. */

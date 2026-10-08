@@ -52,8 +52,10 @@ class InternationaleRepository @Inject constructor(
             gruppe = selectedValue(doc, "gruppe"),
             ergebnisse = selectedValue(doc, "ergebnisse"),
         )
+        val titel = doc.select("h1,h2,h3").firstOrNull()?.text()?.trim()
         val international = doc.selectFirst("#international")
-        val spiele = international?.let(::parseSpiele).orEmpty()
+        val istQualifikation = titel?.contains("Qualifikation", ignoreCase = true) == true
+        val spiele = international?.let { parseSpiele(it, istQualifikation) }.orEmpty()
         val teilnehmer = parseTeilnehmer(doc)
 
         val tabellen = doc.selectFirst("table.osranking")?.let(::parseOsRanking)
@@ -70,7 +72,7 @@ class InternationaleRepository @Inject constructor(
             }
 
         return InternationaleAnsicht(
-            titel = doc.select("h1,h2,h3").firstOrNull()?.text()?.trim(),
+            titel = titel,
             saisonen = options(doc, "season"),
             runden = options(doc, "runde").filterNot { it.wert == RUNDE_TURNIERBAUM },
             gruppen = options(doc, "gruppe"),
@@ -152,7 +154,10 @@ class InternationaleRepository @Inject constructor(
     }
 
     /** OSC/OSE-Paarungen sind auf der Website als fortlaufende Span-Gruppen gerendert. */
-    private fun parseSpiele(container: org.jsoup.nodes.Element): List<InternationaleSpiel> {
+    private fun parseSpiele(
+        container: org.jsoup.nodes.Element,
+        istQualifikation: Boolean,
+    ): List<InternationaleSpiel> {
         val gruppen = mutableListOf<Paarungsgruppe>()
         var aktuelleGruppe = mutableListOf<org.jsoup.nodes.Element>()
         var aktuellesZat: String? = null
@@ -177,25 +182,21 @@ class InternationaleRepository @Inject constructor(
                     link.text().trim() to teamId(link)
                 }
             if (teams.size < 2) return@flatMap emptyList()
+            val qualifiziertTeamId = if (istQualifikation) {
+                elemente.flatMap { it.select("a[href*='st.php'], a[onclick*='teaminfo']") }
+                    .take(2)
+                    .firstOrNull { it.selectFirst("b") != null }
+                    ?.let(::teamId)
+            } else {
+                null
+            }
 
             val berichte = elemente.flatMap {
                 it.select("a[href*='rep/saison'], a[href*='os_bericht'], a[onclick*='os_bericht']")
             }
             val ergebnisse = elemente.map { it.text().trim() }
                 .filter { Regex("^\\d+\\s*:\\s*\\d+$").matches(it) }
-            if (berichte.isEmpty()) {
-                return@flatMap listOf(
-                    InternationaleSpiel(
-                        heim = teams[0].first,
-                        gast = teams[1].first,
-                        ergebnis = ergebnisse.firstOrNull(),
-                        heimTeamId = teams[0].second,
-                        gastTeamId = teams[1].second,
-                        zat = zat,
-                    ),
-                )
-            }
-            berichte.mapIndexed { index, link ->
+            val paarungsSpiele = berichte.mapIndexed { index, link ->
                 val berichtTeams = reportTeams(link)
                 val paarung = berichtTeams?.let { (heimId, gastId) ->
                     when {
@@ -213,7 +214,50 @@ class InternationaleRepository @Inject constructor(
                     gastTeamId = paarung.second.second,
                     zat = zat,
                 )
+            }.toMutableList()
+
+            // Bei einer noch offenen Qualifikationspaarung gibt es für das Rückspiel
+            // noch keinen Spielbericht. Die Website stellt es bis dahin als Vorschau
+            // mit vertauschter Heim-/Gast-Reihenfolge dar.
+            val vorschauen = elemente.flatMap { it.select("a[href*='spielpreview.php']") }
+            vorschauen.forEach { link ->
+                val heimId = queryParameter(link.attr("href"), "t1")?.toLongOrNull()
+                val gastId = queryParameter(link.attr("href"), "t2")?.toLongOrNull()
+                val heim = teams.firstOrNull { it.second == heimId } ?: return@forEach
+                val gast = teams.firstOrNull { it.second == gastId } ?: return@forEach
+                val bereitsErfasst = paarungsSpiele.any {
+                    it.heimTeamId == heimId && it.gastTeamId == gastId
+                }
+                if (!bereitsErfasst) {
+                    paarungsSpiele += InternationaleSpiel(
+                        heim = heim.first,
+                        gast = gast.first,
+                        vorschauUrl = absoluteUrl(link.attr("href")),
+                        heimTeamId = heimId,
+                        gastTeamId = gastId,
+                        zat = zat,
+                    )
+                }
             }
+
+            if (paarungsSpiele.isEmpty()) {
+                paarungsSpiele += InternationaleSpiel(
+                    heim = teams[0].first,
+                    gast = teams[1].first,
+                    ergebnis = ergebnisse.firstOrNull(),
+                    heimTeamId = teams[0].second,
+                    gastTeamId = teams[1].second,
+                    zat = zat,
+                )
+            }
+            if (qualifiziertTeamId != null) {
+                paarungsSpiele.indices.forEach { index ->
+                    paarungsSpiele[index] = paarungsSpiele[index].copy(
+                        qualifiziertTeamId = qualifiziertTeamId,
+                    )
+                }
+            }
+            paarungsSpiele
         }
         if (spiele.isNotEmpty()) return spiele.distinctBy { it.berichtUrl ?: (it.heim to it.gast) }
 
@@ -394,6 +438,12 @@ class InternationaleRepository @Inject constructor(
 
     private fun selectedValue(doc: org.jsoup.nodes.Document, name: String): String? =
         doc.select("select[name=$name] option[selected]").firstOrNull()?.attr("value")
+
+    private fun queryParameter(url: String, name: String): String? =
+        Regex("(?:[?&])${Regex.escape(name)}=([^&]+)")
+            .find(url)
+            ?.groupValues
+            ?.get(1)
 
     private fun safeGet(url: String): String? = request(Request.Builder().url(url).get().build())
 

@@ -142,6 +142,42 @@ class InternationaleRepositoryParseTest {
     }
 
     @Test
+    fun rueckspielVorschauWirdAlsNochOffeneBegegnungGeparst() {
+        val ansicht = repository.parse(
+            File("src/test/resources/dumps/oscq_rueckspiel_vorschau.html").readText(),
+        )
+
+        assertEquals(2, ansicht.spiele.size)
+        val hinspiel = ansicht.spiele[0]
+        assertEquals(11L, hinspiel.heimTeamId)
+        assertEquals(22L, hinspiel.gastTeamId)
+        assertEquals("2:0", hinspiel.ergebnis)
+        assertNotNull(hinspiel.berichtUrl)
+
+        val rueckspiel = ansicht.spiele[1]
+        assertEquals(22L, rueckspiel.heimTeamId)
+        assertEquals(11L, rueckspiel.gastTeamId)
+        assertEquals(null, rueckspiel.ergebnis)
+        assertEquals(null, rueckspiel.berichtUrl)
+        assertEquals(
+            "https://os.ongapo.com/spielpreview.php?t1=22&t2=11&type=4",
+            rueckspiel.vorschauUrl,
+        )
+        assertEquals(null, rueckspiel.qualifiziertTeamId)
+    }
+
+    @Test
+    fun qualifiziertesTeamWirdAusDerWebsiteHervorhebungUebernommen() {
+        val ansicht = repository.parse(
+            File("src/test/resources/dumps/oscq_entschieden.html").readText(),
+        )
+
+        assertEquals(2, ansicht.spiele.size)
+        assertEquals(listOf(22L, 22L), ansicht.spiele.map { it.qualifiziertTeamId })
+        assertEquals(listOf("0:0", "1:1"), ansicht.spiele.map { it.ergebnis })
+    }
+
+    @Test
     fun filterUndTabelleWerdenGelesen() {
         val ansicht = repository.parse(
             """

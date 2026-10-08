@@ -294,6 +294,12 @@ private fun MainScaffold(
     LaunchedEffect(appViewModel) {
         appViewModel.teamwechselAusgefuehrt.collect {
             dashboardRefreshTrigger = 0
+            // Tab-Wechsel speichern seit Txx die jeweiligen Backstacks samt
+            // ViewModels. `popUpTo(..., inclusive = true)` entfernt nur den
+            // aktiven Stack; ohne dieses Leeren könnte beim nächsten Tabwechsel
+            // noch der Kader bzw. die Zugabgabe des vorherigen Teams restauriert
+            // werden.
+            bottomTabs.forEach { tab -> navController.clearBackStack(tab.route) }
             navController.navigate(Routes.DASHBOARD) {
                 popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
                 launchSingleTop = true
@@ -426,12 +432,17 @@ private fun MainScaffold(
                 currentRoute = currentRoute,
                 onSelectTab = { tab ->
                     if (tab.route == Routes.DASHBOARD) dashboardRefreshTrigger++
+                    // Gespeicherte Backstacks können Unterseiten restaurieren.
+                    // Beim Antippen eines Hauptbereichs soll aber immer dessen
+                    // Startansicht erscheinen – auch beim erneuten Antippen des
+                    // bereits ausgewählten Bereichs.
+                    navController.clearBackStack(tab.route)
                     navController.navigate(tab.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                            saveState = false
                         }
                         launchSingleTop = true
-                        restoreState = true
+                        restoreState = false
                     }
                 },
             )
