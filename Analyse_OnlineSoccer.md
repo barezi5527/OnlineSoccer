@@ -46,7 +46,7 @@ Legende Zugriff ohne Login: ✅ = öffentlich / Demo-Daten · 🔒 = geschützt 
 
 ### Trainer / Training / Taktik 🔒
 - Trainer einstellen/verwalten (`trainer.php`)
-- Training einstellen (`training.php`)
+- Training einstellen (`training.php`): Das Formular führt je Spieler zwei Selects `tr1<pid>` (Trainer) und `tr2<pid>` (trainierter Skill). Der Browser sendet **alle** Spielerzeilen; fehlt eine Zeile im POST, setzt der Server die Trainingsauswahl dieses Spielers auf „---“. Die App sendet deshalb immer das komplette Formular (`TrainingFormView`), auch wenn nur ein Spieler geändert wurde.
 - Taktik-Editor (`taktiken.php`)
 - Team-Editor: Rückennummern per Drag&Drop (`te.php`, POST `pnr`; ohne Login möglich ⚠️) + Wappen-Upload (aktuell deaktiviert)
 - Verträge verlängern (`vt.php`)
@@ -63,6 +63,11 @@ Legende Zugriff ohne Login: ✅ = öffentlich / Demo-Daten · 🔒 = geschützt 
 - Internationale Teilnehmer
 - OSC Qualifikation, Championscup Gruppenphase (GP), Finalrunde (FR)
 - OSE Qualifikation, Europacup GP, FR
+  - Qualifikationspaarungen (`oscq`, `oseq`): Beide Ergebnisse stehen in der
+    Reihenfolge der Paarung (erstes Team : zweites Team), nicht zwingend
+    Heim : Gast. Der Berichtslink des Rückspiels dreht Heim und Gast. Der Sieger
+    ist mit `<b>` markiert, die Website liefert die Markierung nur bei
+    `ergebnisse=1`.
 - Supercup
 - Alt (bis Saison 22): Championscup Hauptrunde/Zwischenrunde (`oschr.php`, `osczr.php`)
 - Konferenz-/Livegame-Integration, Tableaus per JS

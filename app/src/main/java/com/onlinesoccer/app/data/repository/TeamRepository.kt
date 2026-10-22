@@ -914,12 +914,26 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
         val doc = Jsoup.parse(html)
         val abschnitte = mutableListOf<UebersichtAbschnitt>()
         val tabellen = doc.select("table")
-        val betreuung = tabellen.firstOrNull()?.select("td")?.mapNotNull { z ->
+        val trainerZellen = tabellen.firstOrNull()?.select("td").orEmpty()
+        val betreuung = trainerZellen.mapNotNull { z ->
             val m = Regex("^Trainer (\\d+): (\\d+) Spieler$").find(z.text().trim())
-            m?.let { "Trainer ${it.groupValues[1]}" to "${it.groupValues[2]} Spieler" }
-        }.orEmpty()
-        if (betreuung.isNotEmpty()) {
-            abschnitte += UebersichtAbschnitt(titel = "Trainer-Betreuung", infoZeilen = betreuung)
+            m?.let { "Trainer ${it.groupValues[1]}" to it.groupValues[2] }
+        }
+        // Die Website meldet, wenn ein Trainer mehr als fünf Spieler betreut. Der
+        // Hinweis steckt in einer per CSS versteckten Tabellenzeile und wird nur
+        // vom Browser-JS eingeblendet. Deshalb wird er hier ausgewertet, sobald
+        // ein Trainerzähler tatsächlich über 5 liegt – nicht über den (immer
+        // vorhandenen) versteckten Text.
+        val betreuungsWarnung = trainerZellen
+            .map { it.text().trim() }
+            .firstOrNull { it.contains("mehr als 5 Spieler", ignoreCase = true) }
+            ?.takeIf { betreuung.any { (_, anzahl) -> (anzahl.toIntOrNull() ?: 0) > 5 } }
+        if (betreuung.isNotEmpty() || betreuungsWarnung != null) {
+            abschnitte += UebersichtAbschnitt(
+                titel = "Trainer-Betreuung",
+                infoZeilen = betreuung,
+                punkte = listOfNotNull(betreuungsWarnung),
+            )
         }
 
         val speicherFormulare = mutableListOf<AktionForm>()
@@ -989,6 +1003,7 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
             val skillSelect = tr.select("select").getOrNull(1)
             val skill = skillSelect?.selectFirst("option[selected]")?.text()?.trim()
                 ?: skillSelect?.selectFirst("option")?.text()?.trim().orEmpty()
+            val skillWert = zellen.getOrNull(6)?.text()?.trim().orEmpty()
             val chance = zellen.getOrNull(7)?.text()?.trim().orEmpty()
             val pid = Regex("spielerinfo\\((\\d+)\\)").find(nameEl.outerHtml())?.groupValues?.get(1) ?: return@forEach
             val klasse = nameEl.parent()?.className().orEmpty()
@@ -1006,6 +1021,7 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
                 werte = listOf(
                     "Trainer" to trainer,
                     "trainierter Skill" to skill,
+                    "Skillwert" to skillWert,
                     "Chance" to chance,
                 ),
                 aktionSchluessel = pid,
@@ -1910,11 +1926,10 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
             val berichtUrl = when {
                 iBericht < 0 -> null
                 else -> zellen.getOrNull(iBericht)?.selectFirst("a")?.attr("href")?.let { href ->
-                    if (href.startsWith("javascript:os_bericht")) {
-                        Regex("os_bericht\\(([^)]+)\\)").find(href)?.groupValues?.get(1)
-                    } else {
-                        null
-                    }
+                    Regex("os_bericht\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)")
+                        .find(href)?.destructured?.let { (heim, gast, zat, saison) ->
+                            "${OsApi.BASE_URL}/rep/saison/$saison/$zat/$heim-$gast.html"
+                        }
                 }
             }
             SaisonplanEintrag(
