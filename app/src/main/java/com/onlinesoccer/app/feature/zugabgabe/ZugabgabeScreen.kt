@@ -57,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -79,12 +80,16 @@ import com.onlinesoccer.app.data.model.ERSATZTORWART_BANK_INDEX
 import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.feature.taktik.TaktikEditor
 import com.onlinesoccer.app.feature.taktik.TaktikViewModel
+import kotlin.math.acos
+import kotlin.math.min
 
 private enum class ZugabgabeModus { AUFSTELLUNG, TAKTIK }
 
 // Die Beta-Zugabgabe verwendet dieses feste Online-Soccer-Raster.
 private const val FELD_ZEILEN = 15
 private const val FELD_SPALTEN = 11
+// T ist keine Feldzeile des 15x11-Rasters, sondern die Sonderzeile darunter.
+private const val TORWART_SPALTE = 5
 
 private val spielerPositionFilter = listOf(
     SpielerPosition.TOR,
@@ -247,7 +252,7 @@ private fun AufstellungAnsicht(
                  spielerAuswahl = false
              },
              onTorwartTippen = {
-                 aktiveZelle = RasterZelle(FELD_ZEILEN - 1, FELD_SPALTEN / 2, torwart = true)
+                 aktiveZelle = RasterZelle(FELD_ZEILEN, TORWART_SPALTE, torwart = true)
                  spielerAuswahl = false
              },
          )
@@ -691,7 +696,7 @@ private fun FeldView(
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .aspectRatio(11f / 16f)
+            .aspectRatio(11f / 17f)
             .background(Color(0xFF1B5E20)),
     ) {
         val aktivePositionen = aufstellung.rasterPositionen.values
@@ -708,89 +713,182 @@ private fun FeldView(
         val textMeasurer = rememberTextMeasurer()
         // Rand für die Matrix-Beschriftung (außerhalb des Spielfelds)
         val randLinks = w * 0.10f
-        val randOben = h * 0.08f
+        val randOben = h * 0.07f
+        val tZeileHoehe = (h - randOben) / (FELD_ZEILEN + 1f)
+        val feldHoehe = (h - randOben) - tZeileHoehe
 
         Canvas(Modifier.fillMaxSize()) {
-            val line = Color.White
-            val r = size.width / 11f
-            val feldLinks = randLinks.toPx()
-            val feldOben = randOben.toPx()
-            val feldW = size.width - feldLinks
-            val feldH = size.height - feldOben
+            val feldLinksPx = randLinks.toPx()
+            val feldObenPx = randOben.toPx()
+            val feldWpx = (w - randLinks).toPx()
+            val feldHpx = feldHoehe.toPx()
+            val tHoehePx = tZeileHoehe.toPx()
+            val feldGesamtHpx = feldHpx + tHoehePx
+            val zeilenHoehePx = feldHpx / FELD_ZEILEN
 
-            // Spielfeld (etwas verkleinert)
+            // Ursprüngliches Grün aus der Release-Version, ohne Zonenfarben.
+            drawRect(Color(0xFF1B5E20), Offset(feldLinksPx, feldObenPx), Size(feldWpx, feldGesamtHpx))
+
+            // Zellenraster: weißes, dezentes Gitter für die Matrix (z. B. N8, J3).
             val gitter = Color.White.copy(alpha = 0.22f)
             for (i in 1..10) {
-                drawLine(gitter, Offset(feldLinks + feldW * i / 11f, feldOben), Offset(feldLinks + feldW * i / 11f, feldOben + feldH), 1f)
+                drawLine(gitter, Offset(feldLinksPx + feldWpx * i / 11f, feldObenPx), Offset(feldLinksPx + feldWpx * i / 11f, feldObenPx + feldHpx), 1f)
             }
             for (j in 1..14) {
-                drawLine(gitter, Offset(feldLinks, feldOben + feldH * j / 15f), Offset(feldLinks + feldW, feldOben + feldH * j / 15f), 1f)
+                drawLine(gitter, Offset(feldLinksPx, feldObenPx + feldHpx * j / 15f), Offset(feldLinksPx + feldWpx, feldObenPx + feldHpx * j / 15f), 1f)
             }
+            drawLine(gitter, Offset(feldLinksPx, feldObenPx + feldHpx), Offset(feldLinksPx + feldWpx, feldObenPx + feldHpx), 1f)
 
-            drawRect(color = line, topLeft = Offset(feldLinks + r * 0.2f, feldOben + r * 0.2f), size = Size(feldW - r * 0.4f, feldH - r * 0.4f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
-            drawLine(line, Offset(feldLinks, feldOben + feldH / 2), Offset(feldLinks + feldW, feldOben + feldH / 2), 2f)
-            drawCircle(color = line, radius = r * 1.5f, center = Offset(feldLinks + feldW / 2, feldOben + feldH / 2), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
-            drawRect(color = line, topLeft = Offset(feldLinks + feldW * 0.2f, feldOben + r * 0.2f), size = Size(feldW * 0.6f, r * 1.8f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
-            drawRect(color = line, topLeft = Offset(feldLinks + feldW * 0.2f, feldOben + feldH - r * 2f), size = Size(feldW * 0.6f, r * 1.8f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
-            drawRect(color = line, topLeft = Offset(feldLinks + feldW * 0.4f, feldOben), size = Size(feldW * 0.2f, r * 0.7f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
-            drawRect(color = line, topLeft = Offset(feldLinks + feldW * 0.4f, feldOben + feldH - r * 0.7f), size = Size(feldW * 0.2f, r * 0.7f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
+            // Spielfeldmarkierungen in Weiß, passend zum ursprünglichen Grün.
+            val linienFarbe = Color.White.copy(alpha = 0.88f)
+            val linienBreite = 1.4.dp.toPx()
+            val linienStroke = Stroke(width = linienBreite)
+            val links = feldLinksPx
+            val rechts = feldLinksPx + feldWpx
+            val oben = feldObenPx
+            val unten = feldObenPx + feldGesamtHpx
+            val mitteX = feldLinksPx + feldWpx / 2f
+            val mitteY = feldObenPx + feldGesamtHpx / 2f
 
-            // Matrix-Beschriftung außerhalb des Spielfelds, größer (Sturm oben rechts, Abwehr unten)
+            // Außenlinie bis einschließlich T-Zone
+            drawRect(linienFarbe, Offset(links, oben), Size(feldWpx, feldGesamtHpx), style = linienStroke)
+
+            // Mittellinie, Mittelkreis, Anstoßpunkt
+            drawLine(linienFarbe, Offset(links, mitteY), Offset(rechts, mitteY), linienBreite)
+            val mittelkreisRadius = min(feldWpx, feldGesamtHpx) * 0.13f
+            drawCircle(linienFarbe, radius = mittelkreisRadius, center = Offset(mitteX, mitteY), style = linienStroke)
+            drawCircle(linienFarbe, radius = 2.5.dp.toPx(), center = Offset(mitteX, mitteY))
+
+            // Strafraum (16er) und Torraum
+            val strafraumW = feldWpx * 0.62f
+            val strafraumH = feldGesamtHpx * 0.16f
+            val torraumW = feldWpx * 0.30f
+            val torraumH = feldGesamtHpx * 0.055f
+            val strafraumX = mitteX - strafraumW / 2f
+            val torraumX = mitteX - torraumW / 2f
+            drawRect(linienFarbe, Offset(torraumX, oben), Size(torraumW, torraumH), style = linienStroke)
+            drawRect(linienFarbe, Offset(strafraumX, oben), Size(strafraumW, strafraumH), style = linienStroke)
+            drawRect(linienFarbe, Offset(torraumX, unten - torraumH), Size(torraumW, torraumH), style = linienStroke)
+            drawRect(linienFarbe, Offset(strafraumX, unten - strafraumH), Size(strafraumW, strafraumH), style = linienStroke)
+
+            // Elfmeterpunkte
+            val elfmeterAbstand = feldGesamtHpx * 0.11f
+            val elfmeterOben = Offset(mitteX, oben + elfmeterAbstand)
+            val elfmeterUnten = Offset(mitteX, unten - elfmeterAbstand)
+            drawCircle(linienFarbe, radius = 2.2.dp.toPx(), center = elfmeterOben)
+            drawCircle(linienFarbe, radius = 2.2.dp.toPx(), center = elfmeterUnten)
+
+            // Strafraumbögen: nur der Teil des Kreises außerhalb des 16ers
+            val bogenRadius = feldGesamtHpx * 0.0875f
+            val halbeBreite = Math.toDegrees(
+                acos(((strafraumH - elfmeterAbstand) / bogenRadius).coerceIn(-1f, 1f).toDouble()),
+            ).toFloat()
+            drawArc(
+                color = linienFarbe,
+                startAngle = 90f - halbeBreite,
+                sweepAngle = 2f * halbeBreite,
+                useCenter = false,
+                topLeft = Offset(elfmeterOben.x - bogenRadius, elfmeterOben.y - bogenRadius),
+                size = Size(bogenRadius * 2f, bogenRadius * 2f),
+                style = Stroke(width = linienBreite),
+            )
+            drawArc(
+                color = linienFarbe,
+                startAngle = 270f - halbeBreite,
+                sweepAngle = 2f * halbeBreite,
+                useCenter = false,
+                topLeft = Offset(elfmeterUnten.x - bogenRadius, elfmeterUnten.y - bogenRadius),
+                size = Size(bogenRadius * 2f, bogenRadius * 2f),
+                style = Stroke(width = linienBreite),
+            )
+
+            // Tore (Torlinie/Tornetz-Andeutung)
+            val torW = feldWpx * 0.18f
+            val torT = feldGesamtHpx * 0.018f
+            drawRect(linienFarbe, Offset(mitteX - torW / 2f, oben), Size(torW, torT), style = linienStroke)
+            drawRect(linienFarbe, Offset(mitteX - torW / 2f, unten - torT), Size(torW, torT), style = linienStroke)
+
+            // Eckbögen
+            val eckRadius = feldWpx * 0.03f
+            drawArc(linienFarbe, 0f, 90f, false, Offset(links, oben), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+            drawArc(linienFarbe, 90f, 90f, false, Offset(rechts - eckRadius * 2f, oben), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+            drawArc(linienFarbe, 180f, 90f, false, Offset(rechts - eckRadius * 2f, unten - eckRadius * 2f), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+            drawArc(linienFarbe, 270f, 90f, false, Offset(links, unten - eckRadius * 2f), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+
+            // Matrix-Beschriftung: O bis A links, T darunter; 1-11 oben
             val labelStyle = TextStyle(
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.95f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
             )
             for (spalte in 1..11) {
-                val cx = feldLinks + feldW * (spalte - 0.5f) / 11f
+                val cx = feldLinksPx + feldWpx * (spalte - 0.5f) / 11f
                 val layout = textMeasurer.measure(spalte.toString(), labelStyle)
                 drawText(
                     layout,
-                    topLeft = Offset(cx - layout.size.width / 2f, (feldOben - layout.size.height) / 2f),
+                    topLeft = Offset(cx - layout.size.width / 2f, (feldObenPx - layout.size.height) / 2f),
                 )
             }
-            for (zeile in 1..15) {
-                val cy = feldOben + feldH * (zeile - 0.5f) / 15f
-                val layout = textMeasurer.measure(('A' + 15 - zeile).toChar().toString(), labelStyle)
+            for (zeile in 0 until FELD_ZEILEN) {
+                val cy = feldObenPx + zeilenHoehePx * (zeile + 0.5f)
+                val zeichen = ('O' - zeile).toString()
+                val layout = textMeasurer.measure(zeichen, labelStyle)
                 drawText(
                     layout,
-                    topLeft = Offset((feldLinks - layout.size.width) / 2f, cy - layout.size.height / 2f),
+                    topLeft = Offset((feldLinksPx - layout.size.width) / 2f, cy - layout.size.height / 2f),
                 )
             }
+            val tLayout = textMeasurer.measure("T", labelStyle)
+            val tCy = feldObenPx + feldHpx + tHoehePx / 2f
+            drawText(
+                tLayout,
+                topLeft = Offset((feldLinksPx - tLayout.size.width) / 2f, tCy - tLayout.size.height / 2f),
+            )
         }
 
-        // Das Raster bleibt das technische Online-Soccer-Raster. Die transparenten
-        // Touch-Flächen liegen über dem Feld, die Trikotmarker darüber.
+        // Touch-Flächen: 15 Feldzeilen O-A + separate T-Zeile
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(start = randLinks, top = randOben),
         ) {
-            repeat(FELD_ZEILEN) { zeile ->
-                Row(Modifier.weight(1f).fillMaxWidth()) {
-                    repeat(FELD_SPALTEN) { spalte ->
-                        val position = zeile to spalte
-                        val istFreieAktiveZelle = position in aktivePositionen && position !in belegtePositionen
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .background(
-                                    if (istFreieAktiveZelle) Color(0xFFFFB74D).copy(alpha = 0.82f) else Color.Transparent,
-                                    RoundedCornerShape(4.dp),
-                                )
-                                .clickable(enabled = istFreieAktiveZelle) { onZelleTippen(zeile, spalte) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (istFreieAktiveZelle) {
-                                Text(
-                                    aktiveBuchstaben[position].orEmpty(),
-                                    color = Color(0xFF4E342E),
-                                    fontWeight = FontWeight.Bold,
-                                )
+            Column(Modifier.weight(FELD_ZEILEN.toFloat()).fillMaxWidth()) {
+                repeat(FELD_ZEILEN) { zeile ->
+                    Row(Modifier.weight(1f).fillMaxWidth()) {
+                        repeat(FELD_SPALTEN) { spalte ->
+                            val position = zeile to spalte
+                            val istFreieAktiveZelle = position in aktivePositionen && position !in belegtePositionen
+                            Box(
+                                Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .background(
+                                        if (istFreieAktiveZelle) Color(0xFFFFB74D).copy(alpha = 0.82f) else Color.Transparent,
+                                        RoundedCornerShape(4.dp),
+                                    )
+                                    .clickable(enabled = istFreieAktiveZelle) { onZelleTippen(zeile, spalte) },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (istFreieAktiveZelle) {
+                                    Text(
+                                        aktiveBuchstaben[position].orEmpty(),
+                                        color = Color(0xFF4E342E),
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
                             }
                         }
                     }
+                }
+            }
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+                repeat(FELD_SPALTEN) { spalte ->
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .then(if (spalte == TORWART_SPALTE) Modifier.clickable { onTorwartTippen() } else Modifier),
+                    )
                 }
             }
         }
@@ -799,22 +897,21 @@ private fun FeldView(
         aufstellung.feldspieler.forEach { spieler ->
             val slot = spieler.slot as AufstellungSlot.Feld
             val x = randLinks + (w - randLinks) * ((slot.spalte + 0.5f) / 11f) - markerSize / 2f
-            val y = randOben + (h - randOben) * ((slot.zeile + 0.5f) / 15f) - markerSize / 2f
-                Trikot(
-                    label = spieler.raSlot ?: aktiveBuchstaben[slot.zeile to slot.spalte] ?: spieler.nummer,
+            val y = randOben + feldHoehe * ((slot.zeile + 0.5f) / FELD_ZEILEN) - markerSize / 2f
+            Trikot(
+                label = spieler.raSlot ?: aktiveBuchstaben[slot.zeile to slot.spalte] ?: spieler.nummer,
                 farbe = trikotFarbe(spieler.position),
                 ausgewaehlt = false,
-                    modifier = Modifier
-                        .offset { IntOffset(x.toPx().toInt(), y.toPx().toInt()) }
-                        .size(markerSize)
-                        .clickable { onZelleTippen(slot.zeile, slot.spalte) },
+                modifier = Modifier
+                    .offset { IntOffset(x.toPx().toInt(), y.toPx().toInt()) }
+                    .size(markerSize)
+                    .clickable { onZelleTippen(slot.zeile, slot.spalte) },
             )
         }
 
-        // Torwart positioniert fix auf A6 (unterste Feldzeile, mittlere Spalte).
-        // Ist kein Torwart aufgestellt, bleibt eine gestrichelte "T"-Fläche zum Nachbesetzen.
-        val twX = randLinks + (w - randLinks) * ((5 + 0.5f) / 11f) - markerSize / 2f
-        val twY = randOben + (h - randOben) * ((FELD_ZEILEN - 1 + 0.5f) / FELD_ZEILEN) - markerSize / 2f
+        // Torwart positioniert fix auf T6 (separate Zeile unter dem Feld).
+        val twX = randLinks + (w - randLinks) * ((TORWART_SPALTE + 0.5f) / 11f) - markerSize / 2f
+        val twY = randOben + feldHoehe + tZeileHoehe / 2f - markerSize / 2f
         val torwart = aufstellung.torwart
         if (torwart != null) {
             Trikot(
