@@ -1,22 +1,23 @@
 package com.onlinesoccer.app.feature.bewerbe
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -52,15 +53,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.math.acos
+import kotlin.math.min
 import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -492,6 +502,10 @@ private fun Aufstellung(
     }
 }
 
+private const val BERICHT_FELD_ZEILEN = 15
+private const val BERICHT_FELD_SPALTEN = 11
+private const val BERICHT_TORWART_SPALTE = 5
+
 @Composable
 private fun FormationSpielfeld(
     aufstellung: BerichtAufstellung?,
@@ -506,88 +520,175 @@ private fun FormationSpielfeld(
         val column = player.feldspalte ?: return@mapNotNull null
         Triple(row, column, player)
     }
-    Column(
+    val feldMarker = marker.filter { it.first in 0 until BERICHT_FELD_ZEILEN }
+    val torwart = marker.firstOrNull { it.first == BERICHT_FELD_ZEILEN }?.third
+    BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .aspectRatio(11f / 15f)
-            .background(Color(0xFF176B2C), RoundedCornerShape(12.dp))
-            .border(1.dp, Color(0xFFB8E0BD), RoundedCornerShape(12.dp))
-            .padding(4.dp),
+            .aspectRatio(11f / 17f)
+            .background(Color(0xFF1B5E20)),
     ) {
-        Row(Modifier.fillMaxWidth().height(20.dp)) {
-            Spacer(Modifier.width(24.dp))
-            repeat(11) { column ->
-                Text("${column + 1}", Modifier.weight(1f), textAlign = TextAlign.Center, color = Color.White, style = MaterialTheme.typography.labelSmall)
+        val w = maxWidth
+        val h = maxHeight
+        val textMeasurer = rememberTextMeasurer()
+        val randLinks = w * 0.10f
+        val randOben = h * 0.07f
+        val tZeileHoehe = (h - randOben) / (BERICHT_FELD_ZEILEN + 1f)
+        val feldHoehe = (h - randOben) - tZeileHoehe
+        val labelStyle = TextStyle(
+            color = Color.White.copy(alpha = 0.95f),
+            fontSize = (w.value * 0.04f).coerceIn(9f, 12f).sp,
+            fontWeight = FontWeight.Bold,
+        )
+
+        Canvas(Modifier.fillMaxSize()) {
+            val feldLinksPx = randLinks.toPx()
+            val feldObenPx = randOben.toPx()
+            val feldWpx = (w - randLinks).toPx()
+            val feldHpx = feldHoehe.toPx()
+            val tHoehePx = tZeileHoehe.toPx()
+            val feldGesamtHpx = feldHpx + tHoehePx
+            val zeilenHoehePx = feldHpx / BERICHT_FELD_ZEILEN
+
+            drawRect(Color(0xFF1B5E20), Offset(feldLinksPx, feldObenPx), Size(feldWpx, feldGesamtHpx))
+
+            val gitter = Color.White.copy(alpha = 0.22f)
+            for (i in 1..10) {
+                drawLine(gitter, Offset(feldLinksPx + feldWpx * i / 11f, feldObenPx), Offset(feldLinksPx + feldWpx * i / 11f, feldObenPx + feldHpx), 1f)
+            }
+            for (j in 1..14) {
+                drawLine(gitter, Offset(feldLinksPx, feldObenPx + feldHpx * j / 15f), Offset(feldLinksPx + feldWpx, feldObenPx + feldHpx * j / 15f), 1f)
+            }
+            drawLine(gitter, Offset(feldLinksPx, feldObenPx + feldHpx), Offset(feldLinksPx + feldWpx, feldObenPx + feldHpx), 1f)
+
+            val linienFarbe = Color.White.copy(alpha = 0.88f)
+            val linienBreite = 1.4.dp.toPx()
+            val linienStroke = Stroke(width = linienBreite)
+            val links = feldLinksPx
+            val rechts = feldLinksPx + feldWpx
+            val oben = feldObenPx
+            val unten = feldObenPx + feldGesamtHpx
+            val mitteX = feldLinksPx + feldWpx / 2f
+            val mitteY = feldObenPx + feldGesamtHpx / 2f
+
+            drawRect(linienFarbe, Offset(links, oben), Size(feldWpx, feldGesamtHpx), style = linienStroke)
+
+            drawLine(linienFarbe, Offset(links, mitteY), Offset(rechts, mitteY), linienBreite)
+            val mittelkreisRadius = min(feldWpx, feldGesamtHpx) * 0.13f
+            drawCircle(linienFarbe, radius = mittelkreisRadius, center = Offset(mitteX, mitteY), style = linienStroke)
+            drawCircle(linienFarbe, radius = 2.5.dp.toPx(), center = Offset(mitteX, mitteY))
+
+            val strafraumW = feldWpx * 0.62f
+            val strafraumH = feldGesamtHpx * 0.16f
+            val torraumW = feldWpx * 0.30f
+            val torraumH = feldGesamtHpx * 0.055f
+            val strafraumX = mitteX - strafraumW / 2f
+            val torraumX = mitteX - torraumW / 2f
+            drawRect(linienFarbe, Offset(torraumX, oben), Size(torraumW, torraumH), style = linienStroke)
+            drawRect(linienFarbe, Offset(strafraumX, oben), Size(strafraumW, strafraumH), style = linienStroke)
+            drawRect(linienFarbe, Offset(torraumX, unten - torraumH), Size(torraumW, torraumH), style = linienStroke)
+            drawRect(linienFarbe, Offset(strafraumX, unten - strafraumH), Size(strafraumW, strafraumH), style = linienStroke)
+
+            val elfmeterAbstand = feldGesamtHpx * 0.11f
+            val elfmeterOben = Offset(mitteX, oben + elfmeterAbstand)
+            val elfmeterUnten = Offset(mitteX, unten - elfmeterAbstand)
+            drawCircle(linienFarbe, radius = 2.2.dp.toPx(), center = elfmeterOben)
+            drawCircle(linienFarbe, radius = 2.2.dp.toPx(), center = elfmeterUnten)
+
+            val bogenRadius = feldGesamtHpx * 0.0875f
+            val halbeBreite = Math.toDegrees(
+                acos(((strafraumH - elfmeterAbstand) / bogenRadius).coerceIn(-1f, 1f).toDouble()),
+            ).toFloat()
+            drawArc(
+                color = linienFarbe,
+                startAngle = 90f - halbeBreite,
+                sweepAngle = 2f * halbeBreite,
+                useCenter = false,
+                topLeft = Offset(elfmeterOben.x - bogenRadius, elfmeterOben.y - bogenRadius),
+                size = Size(bogenRadius * 2f, bogenRadius * 2f),
+                style = Stroke(width = linienBreite),
+            )
+            drawArc(
+                color = linienFarbe,
+                startAngle = 270f - halbeBreite,
+                sweepAngle = 2f * halbeBreite,
+                useCenter = false,
+                topLeft = Offset(elfmeterUnten.x - bogenRadius, elfmeterUnten.y - bogenRadius),
+                size = Size(bogenRadius * 2f, bogenRadius * 2f),
+                style = Stroke(width = linienBreite),
+            )
+
+            val torW = feldWpx * 0.18f
+            val torT = feldGesamtHpx * 0.018f
+            drawRect(linienFarbe, Offset(mitteX - torW / 2f, oben), Size(torW, torT), style = linienStroke)
+            drawRect(linienFarbe, Offset(mitteX - torW / 2f, unten - torT), Size(torW, torT), style = linienStroke)
+
+            val eckRadius = feldWpx * 0.03f
+            drawArc(linienFarbe, 0f, 90f, false, Offset(links, oben), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+            drawArc(linienFarbe, 90f, 90f, false, Offset(rechts - eckRadius * 2f, oben), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+            drawArc(linienFarbe, 180f, 90f, false, Offset(rechts - eckRadius * 2f, unten - eckRadius * 2f), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+            drawArc(linienFarbe, 270f, 90f, false, Offset(links, unten - eckRadius * 2f), Size(eckRadius * 2f, eckRadius * 2f), style = Stroke(width = linienBreite))
+
+            for (spalte in 1..11) {
+                val cx = feldLinksPx + feldWpx * (spalte - 0.5f) / 11f
+                val layout = textMeasurer.measure(spalte.toString(), labelStyle)
+                drawText(
+                    layout,
+                    topLeft = Offset(cx - layout.size.width / 2f, (feldObenPx - layout.size.height) / 2f),
+                )
+            }
+            for (zeile in 0 until BERICHT_FELD_ZEILEN) {
+                val cy = feldObenPx + zeilenHoehePx * (zeile + 0.5f)
+                val zeichen = ('O' - zeile).toString()
+                val layout = textMeasurer.measure(zeichen, labelStyle)
+                drawText(
+                    layout,
+                    topLeft = Offset((feldLinksPx - layout.size.width) / 2f, cy - layout.size.height / 2f),
+                )
+            }
+            val tLayout = textMeasurer.measure("T", labelStyle)
+            val tCy = feldObenPx + feldHpx + tHoehePx / 2f
+            drawText(
+                tLayout,
+                topLeft = Offset((feldLinksPx - tLayout.size.width) / 2f, tCy - tLayout.size.height / 2f),
+            )
+        }
+
+        val markerSize = (w * 0.09f).coerceIn(14.dp, 26.dp)
+        feldMarker.forEach { (row, column, player) ->
+            val x = randLinks + (w - randLinks) * ((column + 0.5f) / BERICHT_FELD_SPALTEN) - markerSize / 2f
+            val y = randOben + feldHoehe * ((row + 0.5f) / BERICHT_FELD_ZEILEN) - markerSize / 2f
+            Box(
+                Modifier
+                    .offset { IntOffset(x.toPx().toInt(), y.toPx().toInt()) }
+                    .size(markerSize)
+                    .background(markerColor(player.position), RoundedCornerShape(5.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    player.nummer ?: "?",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 9.sp,
+                )
             }
         }
-        Row(Modifier.weight(1f).fillMaxWidth()) {
-            Column(Modifier.width(24.dp).fillMaxSize()) {
-                "ONMLKJIHGFEDCBA".forEach { rowLabel ->
-                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(rowLabel.toString(), color = Color.White, style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-            Column(Modifier.weight(1f).fillMaxSize()) {
-                repeat(15) { row ->
-                    Row(Modifier.weight(1f).fillMaxWidth()) {
-                        repeat(11) { column ->
-                            val marker = marker.firstOrNull { it.first == row && it.second == column }
-                            val player = marker?.third
-                            Box(
-                                Modifier
-                                    .weight(1f)
-                                    .fillMaxSize()
-                                    .border(0.5.dp, Color(0x6688BB8C)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                player?.let {
-                                    Box(
-                                        Modifier
-                                            .sizeIn(minWidth = 18.dp, minHeight = 18.dp)
-                                            .background(markerColor(it.position), RoundedCornerShape(5.dp)),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(
-                                            it.nummer ?: "?",
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.labelSmall,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        marker.firstOrNull { it.first == 15 }?.third?.let { goalkeeper ->
-            Row(Modifier.fillMaxWidth().height(28.dp)) {
-                Spacer(Modifier.width(24.dp))
-                repeat(11) { column ->
-                    Box(
-                        Modifier.weight(1f).fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (column == 5) {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(3.dp)
-                                    .background(markerColor(goalkeeper.position), RoundedCornerShape(5.dp)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    goalkeeper.nummer ?: "T",
-                                    color = Color.Black,
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                            }
-                        }
-                    }
-                }
+        torwart?.let { goalkeeper ->
+            val x = randLinks + (w - randLinks) * ((BERICHT_TORWART_SPALTE + 0.5f) / BERICHT_FELD_SPALTEN) - markerSize / 2f
+            val y = randOben + feldHoehe + tZeileHoehe / 2f - markerSize / 2f
+            Box(
+                Modifier
+                    .offset { IntOffset(x.toPx().toInt(), y.toPx().toInt()) }
+                    .size(markerSize)
+                    .background(markerColor(goalkeeper.position), RoundedCornerShape(5.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    goalkeeper.nummer ?: "T",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 9.sp,
+                )
             }
         }
     }
