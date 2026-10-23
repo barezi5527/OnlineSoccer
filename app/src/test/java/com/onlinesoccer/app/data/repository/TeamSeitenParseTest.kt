@@ -1,6 +1,15 @@
 package com.onlinesoccer.app.data.repository
 
+import com.onlinesoccer.app.data.model.AktionFeld
 import com.onlinesoccer.app.data.model.AktionFeldTyp
+import com.onlinesoccer.app.data.model.AktionsOption
+import com.onlinesoccer.app.data.model.UebersichtZeile
+import com.onlinesoccer.app.feature.team.SKILLWERT_PREFIX
+import com.onlinesoccer.app.feature.team.istTrainingFormular
+import com.onlinesoccer.app.feature.team.skillWertFeld
+import com.onlinesoccer.app.feature.team.skillWerte
+import com.onlinesoccer.app.feature.team.skillWerteAusIndex
+import com.onlinesoccer.app.feature.team.trainingFormularFelder
 import com.onlinesoccer.app.feature.team.zeilenAktionen
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -76,18 +85,49 @@ class TeamSeitenParseTest {
         assertEquals("Training", ansicht.titel)
         val betreuung = ansicht.abschnitte.firstOrNull { it.titel == "Trainer-Betreuung" }
         assertEquals("Trainer 1", betreuung?.infoZeilen?.first()?.first)
-        assertEquals("0 Spieler", betreuung?.infoZeilen?.first()?.second)
+        assertEquals("0", betreuung?.infoZeilen?.first()?.second)
         assertEquals("6 Trainerplätze", 6, betreuung?.infoZeilen?.size)
+        assertTrue(
+            "Ohne überzähligen Trainer keine Warnung (versteckte Serverzeile wird ignoriert)",
+            betreuung?.punkte.isNullOrEmpty(),
+        )
 
         val spieler = ansicht.abschnitte.first { it.titel == "Spieler-Training" }.zeilen
         assertTrue("Spieler vorhanden", spieler.size >= 20)
         val vincez = spieler.first { it.ueberschrift == "Lars Vincez" }
         assertEquals("Torwart · 33 Jahre · Opti 89.37", vincez.untertitel)
-        assertEquals("---", vincez.werte.toMap()["Trainer"])
-        assertEquals("---", vincez.werte.toMap()["trainierter Skill"])
-        assertEquals("0.00 %", vincez.werte.toMap()["Chance"])
+        assertEquals("T 1 60", vincez.werte.toMap()["Trainer"])
+        assertEquals("STB", vincez.werte.toMap()["trainierter Skill"])
+        assertEquals("58", vincez.werte.toMap()["Skillwert"])
+        assertEquals("12.50 %", vincez.werte.toMap()["Chance"])
         assertTrue("Trainings-Schlüssel gesetzt", vincez.aktionSchluessel?.toIntOrNull() != null)
         assertEquals("Training bearbeiten", vincez.aktionTitel)
+
+        val kehrer = spieler.first { it.ueberschrift == "Heiko Kehrer" }
+        assertEquals("", kehrer.werte.toMap()["Skillwert"])
+    }
+
+    @Test
+    fun training_warnungBeiMehrAlsFuenfBetreutenSpielern() {
+        val html = """
+            <html><body>
+            <table border="0" width="405">
+            <tr><td>Trainer 1: 6 Spieler</td><td>Trainer 2: 5 Spieler</td><td>Trainer 3: 0 Spieler</td></tr>
+            <tr><td>Trainer 4: 0 Spieler</td><td>Trainer 5: 0 Spieler</td><td>Trainer 6: 0 Spieler</td></tr>
+            <tr style="display:none"><td class="STU" colspan="3">Ein oder mehr Trainer betreuen mehr als 5 Spieler! Bitte reduziere diese Anzahl, ansonsten werden nur die ersten 5 Spieler von diesem Trainer trainiert!</td></tr>
+            </table>
+            </body></html>
+        """.trimIndent()
+
+        val betreuung = repo.parseTraining(html).abschnitte
+            .firstOrNull { it.titel == "Trainer-Betreuung" }
+
+        assertEquals("Trainer 1", betreuung?.infoZeilen?.first()?.first)
+        assertEquals("6", betreuung?.infoZeilen?.first()?.second)
+        assertTrue(
+            "Warnung sichtbar, sobald ein Trainer mehr als 5 Spieler betreut",
+            betreuung?.punkte?.any { it.contains("mehr als 5 Spieler") } == true,
+        )
     }
 
     @Test
@@ -479,6 +519,101 @@ class TeamSeitenParseTest {
         assertEquals(AktionFeldTyp.AUSWAHL, skill.typ)
         assertEquals("Trainierter Skill", skill.label)
         assertEquals(listOf("trainingspeichern"), form.buttons.map { it.name })
+    }
+
+    /**
+     * Regression: Wird nur die geänderte Zeile gesendet, entfernt der Server das
+     * Training aller übrigen Spieler. Der POST muss daher alle `tr1`/`tr2`-Felder
+     * enthalten – auch die unveränderten.
+     */
+    @Test
+    fun training_formularSendetAlleSpielerfelder() {
+        val ansicht = repo.parseTraining(dump("training"), "https://os.ongapo.com/training.php")
+        val form = ansicht.abschnitte.first { it.titel == "Spieler-Training" }.aktionen.single()
+        assertTrue(istTrainingFormular(form))
+
+        val werte = form.zeilen.flatMap { it.felder }.associate { it.name to it.standard }.toMutableMap()
+        val erster = form.zeilen.first()
+        val anderer = form.zeilen[1]
+        werte[erster.felder.first { it.name.startsWith("tr1") }.name] = "0"
+        werte[anderer.felder.first { it.name.startsWith("tr1") }.name] = "2"
+
+        val felder = trainingFormularFelder(form, werte)
+
+        assertEquals("Zwei Auswahlfelder je Spieler plus Speichern-Button", form.zeilen.size * 2 + 1, felder.size)
+        form.zeilen.forEach { zeile ->
+            zeile.felder.forEach { feld ->
+                assertTrue(
+                    "Feld ${feld.name} fehlt im POST",
+                    felder.any { it.first == feld.name },
+                )
+            }
+        }
+        assertTrue(
+            "Unveränderte Spielerwahl bleibt im POST",
+            felder.any { it.first == anderer.felder.first { feld -> feld.name.startsWith("tr1") }.name && it.second == "2" },
+        )
+        assertEquals("trainingspeichern" to "Trainingseinstellung speichern", felder.last())
+    }
+
+    @Test
+    fun training_skillwerteAusEinzelwertenWerdenAngezeigt() {
+        val feld = skillWertFeld("97944")
+        assertEquals(SKILLWERT_PREFIX + "97944", feld)
+
+        // Der s=2-String steht in Spaltenreihenfolge (inkl. FUQ/ERF/WID/SEL/DIS/EIN).
+        val werte = skillWerteAusIndex(
+            "SCH 60 BAK 74 KOB 68 ZWK 55 DEC 71 GES 73 FUQ 1 ERF 2 AGG 82 " +
+                "PAS 67 AUS 79 UEB 68 WID 3 SEL 4 DIS 5 ZUV 84 EIN 6",
+            listOf("SCH", "BAK", "KOB", "ZWK", "DEC", "GES", "FUQ", "ERF", "AGG", "PAS", "AUS", "UEB", "WID", "SEL", "DIS", "ZUV", "EIN"),
+        )
+        assertEquals("60", werte["SCH"])
+        assertEquals("55", werte["ZWK"])
+        assertEquals("82", werte["AGG"])
+        assertEquals("84", werte["ZUV"])
+    }
+
+    /**
+     * Regression: `AuswahlFeld` schlägt die Zusatzanzeige über `option.wert` nach.
+     * Gleichzeitig ist der Optionswert die **Position** des Skills in der
+     * `s=2`-Spaltenreihenfolge (Torwart und Feldspieler nutzen dieselben Spalten).
+     * Belegt an Bonciucov: Option `STS` (Wert 2) → Spalte 2 = `BAK` = 46 = die
+     * Skillspalte der Trainingsseite.
+     */
+    @Test
+    fun training_skillwerteWerdenProOptionswertZugeordnet() {
+        val zeile = UebersichtZeile(
+            ueberschrift = "Evghenii Bonciucov",
+            untertitel = "Torwart · 23 Jahre · Opti 73.33",
+            werte = listOf(
+                skillWertFeld("149061") to
+                    "SCH 26 BAK 46 KOB 73 ZWK 76 DEC 74 GES 85 FUQ 8 ERF 18 AGG 29 " +
+                    "PAS 12 AUS 23 UEB 30 WID 30 SEL 86 DIS 82 ZUV 23 EIN 27",
+            ),
+        )
+        val feld = AktionFeld(
+            name = "tr2149061",
+            label = "Trainierter Skill",
+            optionen = listOf(
+                AktionsOption("0", "---"),
+                AktionsOption("1", "ABS"),
+                AktionsOption("2", "STS"),
+                AktionsOption("3", "FAN"),
+                AktionsOption("4", "STB"),
+                AktionsOption("7", "AGG"),
+                AktionsOption("11", "ZUV"),
+            ),
+        )
+
+        val werte = skillWerte(zeile, feld)
+
+        // Im Drilldown steht nur der Wert; das Kürzel kommt aus dem Options-Label.
+        assertEquals("26", werte["1"])
+        assertEquals("46", werte["2"])
+        assertEquals("76", werte["4"])
+        assertEquals("29", werte["7"])
+        assertEquals("23", werte["11"])
+        assertFalse("Unbekannte Option bleibt ohne Zusatz", werte.containsKey("0"))
     }
 
     @Test

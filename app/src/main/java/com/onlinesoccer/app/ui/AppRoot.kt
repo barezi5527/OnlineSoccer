@@ -612,8 +612,8 @@ private fun MainScaffold(
                             launchSingleTop = true
                         }
                     },
-                    onBerichtClick = { sid ->
-                        buildBerichtRoute(sid, null)?.let { route ->
+                    onBerichtClick = { url ->
+                        buildBerichtRoute(null, url)?.let { route ->
                             navController.navigate(route) { launchSingleTop = true }
                         }
                     },

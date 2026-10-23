@@ -73,6 +73,9 @@ class SeiteViewModel @Inject constructor(
     private var path: String = savedStateHandle["path"] ?: ""
     private val istStadionseite: Boolean = path.trimEnd('/').endsWith("osneu/stadion")
 
+    /** Training zeigt je Spieler erst mit den Einzelwerten (`s=2`) den aktuellen Skillwert. */
+    private val istTrainingsseite: Boolean = path.contains("training.php")
+
     /**
      * Generation, unter der die zuletzt geladene Seite geholt wurde.
      *
@@ -132,7 +135,41 @@ class SeiteViewModel @Inject constructor(
             } catch (e: Exception) {
                 SeiteUiState(ladend = false, fehler = e.message ?: "Seite konnte nicht geladen werden.", saison = saison)
             }
+            // Die Einzelwerte (`showteam.php?s=2`) sind ein zweiter, langsamer Request.
+            // Sie werden erst nach dem Anzeigen der Seite ergänzt, damit das Training
+            // auch bei zäher Serverantwort sofort sichtbar ist.
+            if (istTrainingsseite && _uiState.value.seite != null) {
+                val angereichert = anreichereSkillwerte(_uiState.value.seite!!)
+                if (angereichert != _uiState.value.seite) {
+                    _uiState.value = _uiState.value.copy(seite = angereichert)
+                }
+            }
         }
+    }
+
+    /**
+     * Ergänzt die Trainingszeilen um die Einzelwerte (`showteam.php?s=2`), damit die
+     * Skill-Dropdowns je Option den aktuellen Skillwert zeigen können. Die Werte
+     * werden als `skillwert:<pid>`-Eintrag an die Zeile gehängt und in
+     * `TrainingFormView` ausgewertet.
+     */
+    private suspend fun anreichereSkillwerte(ansicht: SeitenAnsicht): SeitenAnsicht {
+        val staerken = runCatching { repository.ladeStaerken() }.getOrDefault(emptyList())
+        if (staerken.isEmpty()) return ansicht
+        val jeSpieler = staerken.associateBy { it.pid }
+        return ansicht.copy(
+            abschnitte = ansicht.abschnitte.map { abschnitt ->
+                abschnitt.copy(
+                    zeilen = abschnitt.zeilen.map { zeile ->
+                        val pid = zeile.spielerPid ?: return@map zeile
+                        val werte = jeSpieler[pid]?.werte ?: return@map zeile
+                        val text = werte.entries.joinToString(" ") { "${it.key} ${it.value}" }
+                        if (text.isBlank()) zeile
+                        else zeile.copy(werte = zeile.werte + (skillWertFeld(pid.toString()) to text))
+                    },
+                )
+            },
+        )
     }
 
     /** Aktuelle Saison des Servers (Standard ohne Filter); 0, wenn sie unbekannt bleibt. */

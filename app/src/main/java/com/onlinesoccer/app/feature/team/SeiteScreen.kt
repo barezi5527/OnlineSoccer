@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.feature.team
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -147,6 +148,7 @@ fun SeiteScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SeitenAnsicht(
     ansicht: SeitenAnsicht,
@@ -165,118 +167,157 @@ private fun SeitenAnsicht(
     onTrainerVorschauZuruecksetzen: () -> Unit = {},
     onTabClick: (String) -> Unit = {},
 ) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
-                }
-                Text(
-                    ansicht.titel ?: "Seite",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+    val trainingAbschnitt = remember(ansicht) {
+        ansicht.abschnitte.firstOrNull { abschnitt ->
+            abschnitt.aktionen.any(::istTrainingFormular)
         }
+    }
+    val trainingForm = trainingAbschnitt?.aktionen?.firstOrNull(::istTrainingFormular)
+    val trainingZustand = if (trainingAbschnitt != null && trainingForm != null) {
+        rememberTrainingFormularZustand(trainingForm, trainingAbschnitt.zeilen)
+    } else {
+        null
+    }
 
-        if (ansicht.tabs.size > 1) {
+    // Die Trainer-Betreuung (mit Warnung bei >5 betreuten Spielern) wird oben
+    // fixiert und aus der mitscrollenden Liste entfernt.
+    val betreuungAbschnitt = ansicht.abschnitte.firstOrNull { it.titel == "Trainer-Betreuung" }
+    val uebrigeAbschnitte = ansicht.abschnitte.filterNot { it.titel == "Trainer-Betreuung" }
+
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 12.dp,
+                top = 8.dp,
+                end = 12.dp,
+                bottom = if (trainingZustand != null) 104.dp else 8.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             item {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp),
-                ) {
-                    items(ansicht.tabs, key = { it.path }) { tab ->
-                        FilterChip(
-                            selected = tab.aktiv,
-                            onClick = { onTabClick(tab.path) },
-                            label = { Text(tab.label) },
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                    }
+                    Text(
+                        ansicht.titel ?: "Seite",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            if (ansicht.tabs.size > 1) {
+                item {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp),
+                    ) {
+                        items(ansicht.tabs, key = { it.path }) { tab ->
+                            FilterChip(
+                                selected = tab.aktiv,
+                                onClick = { onTabClick(tab.path) },
+                                label = { Text(tab.label) },
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (aktioFehler != null) {
+                item {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    ) {
+                        Text(
+                            aktioFehler,
+                            Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
                         )
                     }
                 }
             }
-        }
 
-        if (aktioFehler != null) {
-            item {
-                Card(
-                    Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                ) {
-                    Text(
-                        aktioFehler,
-                        Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                    )
-                }
-            }
-        }
-
-        if (ansicht.abschnitte.isNotEmpty()) {
-            items(ansicht.abschnitte) { abschnitt ->
-                AbschnittView(
-                    abschnitt = abschnitt,
-                    onSende = onSende,
-                    onFormularOeffnen = onFormularOeffnen,
-                    saison = saison,
-                    stadionname = stadionname,
-                    onStadionnameGeaendert = onStadionnameGeaendert,
-                    onStadionnameSpeichern = onStadionnameSpeichern,
-                    onSpielerClick = onSpielerClick,
-                    trainerVorschau = trainerVorschau,
-                    onTrainerVorschauLaden = onTrainerVorschauLaden,
-                    onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
-                )
-            }
-            if (stadionname != null && ansicht.abschnitte.none { it.titel == "Aktueller Stadion-Zustand" }) {
-                item {
-                    StadionnameKarte(
-                        state = stadionname,
-                        onGeaendert = onStadionnameGeaendert,
-                        onSpeichern = onStadionnameSpeichern,
-                        onServernamenVerwenden = onServernamenVerwenden,
-                    )
-                }
-            }
-        } else {
-            if (stadionname != null) {
-                item {
-                    StadionnameKarte(
-                        state = stadionname,
-                        onGeaendert = onStadionnameGeaendert,
-                        onSpeichern = onStadionnameSpeichern,
-                        onServernamenVerwenden = onServernamenVerwenden,
-                    )
-                }
-            }
-            if (ansicht.absaetze.isEmpty() && ansicht.tabellen.isEmpty()) {
-                item {
-                    Text(
-                        "Kein Inhalt gefunden.",
-                        Modifier.padding(24.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            if (betreuungAbschnitt != null) {
+                stickyHeader {
+                    TrainerBetreuungLeiste(betreuungAbschnitt)
                 }
             }
 
-            ansicht.absaetze.forEach { text ->
-                item {
-                    Card(
-                        Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    ) {
-                        Text(text, Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall)
+            if (uebrigeAbschnitte.isNotEmpty()) {
+                items(uebrigeAbschnitte, key = { it.titel ?: it.hashCode().toString() }) { abschnitt ->
+                    AbschnittView(
+                        abschnitt = abschnitt,
+                        onSende = onSende,
+                        onFormularOeffnen = onFormularOeffnen,
+                        saison = saison,
+                        stadionname = stadionname,
+                        onStadionnameGeaendert = onStadionnameGeaendert,
+                        onStadionnameSpeichern = onStadionnameSpeichern,
+                        onSpielerClick = onSpielerClick,
+                        trainerVorschau = trainerVorschau,
+                        onTrainerVorschauLaden = onTrainerVorschauLaden,
+                        onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
+                        trainingZustand = trainingZustand,
+                    )
+                }
+                if (stadionname != null && uebrigeAbschnitte.none { it.titel == "Aktueller Stadion-Zustand" }) {
+                    item {
+                        StadionnameKarte(
+                            state = stadionname,
+                            onGeaendert = onStadionnameGeaendert,
+                            onSpeichern = onStadionnameSpeichern,
+                            onServernamenVerwenden = onServernamenVerwenden,
+                        )
                     }
                 }
-            }
+            } else if (betreuungAbschnitt == null) {
+                if (stadionname != null) {
+                    item {
+                        StadionnameKarte(
+                            state = stadionname,
+                            onGeaendert = onStadionnameGeaendert,
+                            onSpeichern = onStadionnameSpeichern,
+                            onServernamenVerwenden = onServernamenVerwenden,
+                        )
+                    }
+                }
+                if (ansicht.absaetze.isEmpty() && ansicht.tabellen.isEmpty()) {
+                    item {
+                        Text(
+                            "Kein Inhalt gefunden.",
+                            Modifier.padding(24.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
-            items(ansicht.tabellen) { tabelle ->
-                GenerischeTabelle(tabelle)
+                ansicht.absaetze.forEach { text ->
+                    item {
+                        Card(
+                            Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        ) {
+                            Text(text, Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                items(ansicht.tabellen) { tabelle ->
+                    GenerischeTabelle(tabelle)
+                }
             }
+        }
+
+        trainingZustand?.let { zustand ->
+            TrainingSpeicherLeiste(
+                zustand = zustand,
+                onSende = onSende,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
@@ -295,6 +336,7 @@ private fun AbschnittView(
     trainerVorschau: TrainerAktionVorschauUi? = null,
     onTrainerVorschauLaden: (String, List<Pair<String, String>>) -> Unit = { _, _ -> },
     onTrainerVorschauZuruecksetzen: () -> Unit = {},
+    trainingZustand: TrainingFormularZustand? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         abschnitt.titel?.let { titel ->
@@ -377,36 +419,55 @@ private fun AbschnittView(
         val zeilenFormen = abschnitt.zeilen.flatMap { zeile ->
             zeilenAktionen(zeile, abschnitt.aktionen).mapNotNull { it.form }
         }.toSet()
+        val trainingForm = abschnitt.aktionen.firstOrNull(::istTrainingFormular)
 
-        abschnitt.zeilen.forEach { zeile ->
-            AktionsFaehigeKarte(
-                zeile = zeile,
-                verfuegbareAktionen = zeilenAktionen(zeile, abschnitt.aktionen),
-                onSende = onSende,
-                onFormularOeffnen = onFormularOeffnen,
+        if (trainingForm != null && trainingZustand != null) {
+            TrainingFormView(
+                zeilen = abschnitt.zeilen,
+                form = trainingForm,
+                zustand = trainingZustand,
                 onSpielerClick = onSpielerClick,
-                trainerVorschau = trainerVorschau,
-                onTrainerVorschauLaden = onTrainerVorschauLaden,
-                onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
             )
+        } else {
+            abschnitt.zeilen.forEach { zeile ->
+                AktionsFaehigeKarte(
+                    zeile = zeile,
+                    verfuegbareAktionen = zeilenAktionen(zeile, abschnitt.aktionen),
+                    onSende = onSende,
+                    onFormularOeffnen = onFormularOeffnen,
+                    onSpielerClick = onSpielerClick,
+                    trainerVorschau = trainerVorschau,
+                    onTrainerVorschauLaden = onTrainerVorschauLaden,
+                    onTrainerVorschauZuruecksetzen = onTrainerVorschauZuruecksetzen,
+                )
+            }
         }
 
-        abschnitt.aktionen.filterNot { it in zeilenFormen }.forEach { form ->
-            Card(Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    form.titel?.let { titel ->
-                        Text(
-                            titel,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                    AktionFormView(form, onSende, onFormularOeffnen)
-                }
+        abschnitt.aktionen.filterNot { it == trainingForm || it in zeilenFormen }.forEach { form ->
+            AktionsFormularKarte(form, onSende, onFormularOeffnen)
+        }
+    }
+}
+
+@Composable
+private fun AktionsFormularKarte(
+    form: AktionForm,
+    onSende: (String, List<Pair<String, String>>) -> Unit,
+    onFormularOeffnen: (String) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            form.titel?.let { titel ->
+                Text(
+                    titel,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
             }
+            AktionFormView(form, onSende, onFormularOeffnen)
         }
     }
 }
@@ -750,10 +811,14 @@ internal fun AuswahlFeld(
     feld: AktionFeld,
     wert: String,
     onChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    wertProOption: Map<String, String> = emptyMap(),
 ) {
     var offen by remember(feld) { mutableStateOf(false) }
     val label = feld.optionen.firstOrNull { it.wert == wert }?.label ?: wert
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    val ausgewaehlterWert = wertProOption[wert]?.takeIf { it.isNotBlank() }
+    val anzeige = if (ausgewaehlterWert != null) "$label · $ausgewaehlterWert" else label
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             feld.label,
             style = MaterialTheme.typography.labelMedium,
@@ -764,13 +829,28 @@ internal fun AuswahlFeld(
                 onClick = { offen = true },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(label.ifBlank { "—"}, modifier = Modifier.weight(1f))
+                Text(anzeige.ifBlank { "—"}, modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
             }
             DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
                 feld.optionen.forEach { option ->
+                    val wertAnzeige = wertProOption[option.wert]?.takeIf { it.isNotBlank() }
                     DropdownMenuItem(
-                        text = { Text(option.label) },
+                        text = {
+                            Text(
+                                option.label,
+                                modifier = if (wertAnzeige != null) Modifier.weight(1f) else Modifier,
+                            )
+                        },
+                        trailingIcon = wertAnzeige?.let { wertText ->
+                            {
+                                Text(
+                                    wertText,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        },
                         onClick = {
                             onChange(option.wert)
                             offen = false

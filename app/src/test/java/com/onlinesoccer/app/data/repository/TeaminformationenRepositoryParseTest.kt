@@ -116,13 +116,19 @@ class TeaminformationenRepositoryParseTest {
     }
 
     @Test
-    fun saisonplan_berichtLinkWirdExtrahierer() {
+    fun saisonplan_berichtLinkWirdZurStatischenUrl() {
         val daten = repo.parseSaisonplan(dump("showteam_s6"))
-        val mitBericht = daten.eintraege.firstOrNull { it.berichtUrl != null }
-        assertNotNull("Bericht-Link vorhanden", mitBericht)
-        assertTrue(
-            "os_bericht-Parameter",
-            mitBericht!!.berichtUrl!!.startsWith("3449,"),
+        val heimspiel = daten.eintraege.first { it.berichtUrl != null }
+        assertEquals(
+            "Heimspiel: os_bericht(3449,709,1,24)",
+            "https://os.ongapo.com/rep/saison/24/1/3449-709.html",
+            heimspiel.berichtUrl,
+        )
+        val auswaertsspiel = daten.eintraege.first { it.zat == "3" && it.berichtUrl != null }
+        assertEquals(
+            "Auswärtsspiel: os_bericht(283,3449,3,24)",
+            "https://os.ongapo.com/rep/saison/24/3/283-3449.html",
+            auswaertsspiel.berichtUrl,
         )
     }
 
