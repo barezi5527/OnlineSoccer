@@ -26,15 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.onlinesoccer.app.core.ui.theme.kastenTextFarbe
+import com.onlinesoccer.app.core.ui.theme.PositionsBadge
 import com.onlinesoccer.app.core.ui.theme.positionVonText
-import com.onlinesoccer.app.core.ui.theme.trikotFarbe
 import com.onlinesoccer.app.data.model.AktionFeld
 import com.onlinesoccer.app.data.model.AktionForm
 import com.onlinesoccer.app.data.model.AktionZeile
+import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.data.model.UebersichtAbschnitt
 import com.onlinesoccer.app.data.model.UebersichtZeile
 
@@ -299,7 +298,7 @@ private fun TrainingSpielerKarte(
     zustand: TrainingFormularZustand,
     onSpielerClick: (Long) -> Unit,
 ) {
-    val farbe = kartenFarbe(zeile)
+    val position = kartenPosition(zeile)
     Card(Modifier.fillMaxWidth()) {
         Column(
             Modifier.padding(12.dp),
@@ -314,26 +313,19 @@ private fun TrainingSpielerKarte(
                     ),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                val kopfModifier = if (farbe != null) {
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(farbe)
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                } else {
-                    Modifier.fillMaxWidth()
-                }
                 Row(
-                    kopfModifier,
+                    Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (position != null) {
+                        PositionsBadge(position)
+                    }
                     Text(
                         zeile?.ueberschrift ?: aktionZeile.bezeichnung,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium,
-                        color = farbe?.let(::kastenTextFarbe)
-                            ?: MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                     )
                     zeile?.werte?.firstOrNull { it.first == "Chance" }?.second
@@ -455,9 +447,8 @@ internal fun skillWerteAusIndex(text: String, spalten: List<String>): Map<String
     }.toMap()
 }
 
-/** Positionsfarbe aus dem Untertitel („Abwehr · 31 Jahre · …“), sonst neutral. */
-private fun kartenFarbe(zeile: UebersichtZeile?) =
+/** Position aus dem Untertitel („Abwehr · 31 Jahre · …“), sonst unbekannt. */
+private fun kartenPosition(zeile: UebersichtZeile?): SpielerPosition? =
     zeile?.untertitel
         ?.split('·')
         ?.firstNotNullOfOrNull { positionVonText(it) }
-        ?.let(::trikotFarbe)
