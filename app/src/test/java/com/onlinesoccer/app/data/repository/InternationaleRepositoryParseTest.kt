@@ -128,6 +128,33 @@ class InternationaleRepositoryParseTest {
     }
 
     @Test
+    fun rueckspielErgebnisWirdAufHeimUndGastGedreht() {
+        val ansicht = repository.parse(
+            File("src/test/resources/dumps/oscq_ergebnisse_paarungsreihenfolge.html").readText(),
+        )
+
+        // Die Website nennt das Rückspiel-Ergebnis in der Reihenfolge der Paarung
+        // (Team A 3:0 Team B), der Berichtslink dreht Heim und Gast. Für die
+        // Anzeige (Heim : Gast) muss das Ergebnis deshalb gedreht werden.
+        assertEquals(4, ansicht.spiele.size)
+        assertEquals("Team A", ansicht.spiele[0].heim)
+        assertEquals("Team B", ansicht.spiele[0].gast)
+        assertEquals("2:3", ansicht.spiele[0].ergebnis)
+        assertEquals("Team B", ansicht.spiele[1].heim)
+        assertEquals("Team A", ansicht.spiele[1].gast)
+        assertEquals("0:3", ansicht.spiele[1].ergebnis)
+        assertEquals(listOf(11L, 11L), ansicht.spiele.take(2).map { it.qualifiziertTeamId })
+
+        assertEquals("Team C", ansicht.spiele[2].heim)
+        assertEquals("Team D", ansicht.spiele[2].gast)
+        assertEquals("1:1", ansicht.spiele[2].ergebnis)
+        assertEquals("Team D", ansicht.spiele[3].heim)
+        assertEquals("Team C", ansicht.spiele[3].gast)
+        assertEquals("2:0", ansicht.spiele[3].ergebnis)
+        assertEquals(listOf(44L, 44L), ansicht.spiele.drop(2).map { it.qualifiziertTeamId })
+    }
+
+    @Test
     fun oscQualifikationListetAuchPaarungenOhneSpielberichte() {
         val ansicht = repository.parse(File("src/test/resources/dumps/oscq_ohne_berichte.html").readText())
 

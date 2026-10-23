@@ -195,7 +195,7 @@ class InternationaleRepository @Inject constructor(
                 it.select("a[href*='rep/saison'], a[href*='os_bericht'], a[onclick*='os_bericht']")
             }
             val ergebnisse = elemente.map { it.text().trim() }
-                .filter { Regex("^\\d+\\s*:\\s*\\d+$").matches(it) }
+                .filter { ERGEBNIS_REGEX.matches(it) }
             val paarungsSpiele = berichte.mapIndexed { index, link ->
                 val berichtTeams = reportTeams(link)
                 val paarung = berichtTeams?.let { (heimId, gastId) ->
@@ -208,7 +208,15 @@ class InternationaleRepository @Inject constructor(
                 InternationaleSpiel(
                     heim = paarung.first.first,
                     gast = paarung.second.first,
-                    ergebnis = ergebnisse.getOrNull(index),
+                    ergebnis = if (istQualifikation) {
+                        ergebnisInPaarungsreihenfolge(
+                            ergebnisse.getOrNull(index),
+                            teams,
+                            paarung,
+                        )
+                    } else {
+                        ergebnisse.getOrNull(index)
+                    },
                     berichtUrl = berichtUrl(link),
                     heimTeamId = paarung.first.second,
                     gastTeamId = paarung.second.second,
@@ -285,6 +293,42 @@ class InternationaleRepository @Inject constructor(
             .distinctBy { it.heim to it.gast }
     }
 
+    /**
+     * Die Website listet beide Ergebnisse einer Qualifikationspaarung in der
+     * Reihenfolge der Paarung (erstes Team : zweites Team). Der Berichtslink des
+     * Rückspiels nennt Heim- und Gastmannschaft dagegen in vertauschter Reihenfolge.
+     * Für [InternationaleSpiel] wird das Rückspiel deshalb auf Heim: Gast gedreht,
+     * damit Ergebnis und hervorgehobener Sieger zusammenpassen.
+     */
+    private fun ergebnisInPaarungsreihenfolge(
+        ergebnis: String?,
+        teams: List<Pair<String, Long?>>,
+        paarung: Pair<Pair<String, Long?>, Pair<String, Long?>>,
+    ): String? {
+        if (ergebnis == null || teams.size < 2) return ergebnis
+        val (heim, gast) = paarung
+        val gleicheReihenfolge = gleichesTeam(heim, teams[0]) && gleichesTeam(gast, teams[1])
+        val umgekehrteReihenfolge = gleichesTeam(heim, teams[1]) && gleichesTeam(gast, teams[0])
+        return if (umgekehrteReihenfolge && !gleicheReihenfolge) {
+            tauscheErgebnis(ergebnis)
+        } else {
+            ergebnis
+        }
+    }
+
+    private fun gleichesTeam(a: Pair<String, Long?>, b: Pair<String, Long?>): Boolean =
+        if (a.second != null && b.second != null) {
+            a.second == b.second
+        } else {
+            a.first.equals(b.first, ignoreCase = true)
+        }
+
+    private fun tauscheErgebnis(ergebnis: String): String {
+        val match = ERGEBNIS_REGEX.find(ergebnis) ?: return ergebnis
+        val (heim, gast) = match.destructured
+        return "$gast:$heim"
+    }
+
     /** Spieltag-Überschrift der Website (`ZAT 17`), sonst `null`. */
     private fun zatUeberschrift(element: org.jsoup.nodes.Element): String? {
         val kandidat = element.selectFirst("h1, h2, h3")?.text()?.trim()
@@ -299,6 +343,9 @@ class InternationaleRepository @Inject constructor(
     private companion object {
         /** Spieltag-Überschrift der Gruppenphase, z. B. `ZAT 17`. */
         val ZAT_REGEX = Regex("ZAT\\s*\\d+", RegexOption.IGNORE_CASE)
+
+        /** Ergebnis einer Begegnung, z. B. `2:0` oder `2 : 0`. */
+        val ERGEBNIS_REGEX = Regex("^(\\d+)\\s*:\\s*(\\d+)$")
 
         /**
          * Wert der Rundenoption „Tableau" (`runde=99`) auf den Finalrundenseiten.

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+<body>
+  <h1>OSC-Qualifikation</h1>
+  <form>
+    <select name="runde"><option value="1" selected>1. Runde</option></select>
+    <select name="season"><option value="24" selected>Saison 24</option></select>
+    <select name="ergebnisse"><option value="1" selected>Ergebnisse anzeigen</option></select>
+  </form>
+  <div class="table" id="international">
+    <span class="first"><img src="/images/flaggen/AAA.gif" alt="Flagge Land A" /></span>
+    <span><img src="/images/wappen/00000011.gif" alt="Wappen Team A" /></span>
+    <span><a href="/st.php?c=11" onClick="teaminfo(11);return false;"><b>Team A</b></a></span>
+    <span>-</span>
+    <span><img src="/images/flaggen/BBB.gif" alt="Flagge Land B" /></span>
+    <span><img src="/images/wappen/00000022.gif" alt="Wappen Team B" /></span>
+    <span><a href="/st.php?c=22" onClick="teaminfo(22);return false;">Team B</a></span>
+    <span><a href="/rep/saison/24/5/11-22.html" onClick="os_bericht(11,22,5,24); return false;">Klick</a></span>
+    <span>2:3</span>
+    <span><a href="/rep/saison/24/7/22-11.html" onClick="os_bericht(22,11,7,24); return false;">Klick</a></span>
+    <span>3:0</span>
+
+    <span class="first"><img src="/images/flaggen/CCC.gif" alt="Flagge Land C" /></span>
+    <span><img src="/images/wappen/00000033.gif" alt="Wappen Team C" /></span>
+    <span><a href="/st.php?c=33" onClick="teaminfo(33);return false;">Team C</a></span>
+    <span>-</span>
+    <span><img src="/images/flaggen/DDD.gif" alt="Flagge Land D" /></span>
+    <span><img src="/images/wappen/00000044.gif" alt="Wappen Team D" /></span>
+    <span><a href="/st.php?c=44" onClick="teaminfo(44);return false;"><b>Team D</b></a></span>
+    <span><a href="/rep/saison/24/5/33-44.html" onClick="os_bericht(33,44,5,24); return false;">Klick</a></span>
+    <span>1:1</span>
+    <span><a href="/rep/saison/24/7/44-33.html" onClick="os_bericht(44,33,7,24); return false;">Klick</a></span>
+    <span>0:2</span>
+  </div>
+</body>
+</html>

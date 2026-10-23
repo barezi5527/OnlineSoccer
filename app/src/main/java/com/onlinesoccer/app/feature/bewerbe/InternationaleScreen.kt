@@ -680,6 +680,8 @@ private fun QualifikationsPaarungsKarte(
                     }
                 }
             }
+            // Wie auf der Website bleibt der Sieger an die Ergebnisanzeige gekoppelt,
+            // damit der Schalter keine Entscheidung vorwegnimmt.
             if (ergebnisseSichtbar && qualifiziert != null) {
                 Text(
                     "✓ Weiter: $qualifiziert",
