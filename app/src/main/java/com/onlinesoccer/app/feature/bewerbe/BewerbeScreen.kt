@@ -712,6 +712,7 @@ private fun SpielZeile(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
                         .padding(top = 2.dp)
                         .clickable { onSpielbericht(spiel.berichtSid, spiel.berichtUrl) },
                 )
@@ -920,6 +921,7 @@ private fun PokalAnsicht(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
                                 .padding(horizontal = 12.dp, vertical = 2.dp)
                                 .clickable { onSpielbericht(null, spiel.berichtUrl) },
                         )

@@ -658,7 +658,7 @@ private fun BegegnungCard(
             if (spiel.berichtUrl != null) {
                 TextButton(
                     onClick = { onSpielbericht(null, spiel.berichtUrl) },
-                    modifier = Modifier.align(Alignment.End),
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                 ) {
                     Text("Spielbericht öffnen")
                 }
@@ -767,7 +767,7 @@ private fun QualifikationsSpielZeile(
         spiel.berichtUrl?.let { url ->
             TextButton(
                 onClick = { onSpielbericht(null, url) },
-                modifier = Modifier.align(Alignment.End),
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
                 Text("Spielbericht öffnen")
             }
