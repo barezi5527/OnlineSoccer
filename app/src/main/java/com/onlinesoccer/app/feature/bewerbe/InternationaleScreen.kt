@@ -12,13 +12,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -890,7 +887,7 @@ private fun Auswahl(
         OutlinedButton(onClick = { offen = true }, modifier = Modifier.fillMaxWidth()) {
             Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }, modifier = Modifier.heightIn(max = 200.dp)) {
+        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
             optionen.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option.label) },

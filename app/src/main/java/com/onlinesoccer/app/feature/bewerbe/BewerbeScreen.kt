@@ -12,14 +12,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -220,11 +216,7 @@ private fun FilterAuswahl(
             Spacer(Modifier.width(6.dp))
             Text("▾", fontSize = 10.sp)
         }
-        DropdownMenu(
-            expanded = offen,
-            onDismissRequest = { offen = false },
-            modifier = Modifier.heightIn(max = 200.dp),
-        ) {
+        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
             optionen.forEach { opt ->
                 DropdownMenuItem(
                     text = { Text(opt.label) },
@@ -311,7 +303,7 @@ private fun TabelleAnsicht(
             zeilen = tabelle.zeilen,
             teamIds = tabelle.zeilenTeamIds,
             onTeamClick = onTeamClick,
-            modifier = Modifier.weight(1f, fill = true).fillMaxWidth(),
+            modifier = Modifier.weight(1f),
             eigeneHoehenRollleiste = true,
             zeilenHintergrund = { index -> zeilenFarben.getOrNull(index) ?: Color.Transparent },
         )
@@ -332,27 +324,24 @@ private fun legendeLabel(klasse: LigaTabellenKlasse): String = when (klasse) {
 /** Legende der Platz-Farben unter der Ligatabelle (wie auf der Website). */
 @Composable
 private fun TabellenLegende() {
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            LigaTabellenKlasse.entries.take(3).forEach { klasse ->
-                Legendeneintrag(klasse, Modifier.weight(1f))
-            }
+        LigaTabellenKlasse.entries.take(3).forEach { klasse ->
+            Legendeneintrag(klasse, Modifier.weight(1f))
         }
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            LigaTabellenKlasse.entries.drop(3).forEach { klasse ->
-                Legendeneintrag(klasse, Modifier.weight(1f))
-            }
+    }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        LigaTabellenKlasse.entries.drop(3).forEach { klasse ->
+            Legendeneintrag(klasse, Modifier.weight(1f))
         }
     }
 }
@@ -362,7 +351,7 @@ private fun Legendeneintrag(klasse: LigaTabellenKlasse, modifier: Modifier = Mod
     Row(
         modifier
             .background(ligaTabellenZeilenHintergrund(klasse), RoundedCornerShape(4.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -387,10 +376,10 @@ private fun TabelleFilterLeiste(
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterAuswahl(
                 selected = filter?.liga ?: 0,
                 optionen = tabelle.ligaOptionen,
@@ -406,7 +395,7 @@ private fun TabelleFilterLeiste(
                 leerLabel = "Land",
             )
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterAuswahl(
                 selected = filter?.tab ?: 0,
                 optionen = tabelle.tabOptionen,
@@ -440,7 +429,6 @@ internal data class TabellenSpalte(
     val wert: List<String>.() -> String,
     val gewicht: Float? = null,
     val fest: Boolean = false,
-    val wappen: Boolean = false,
 )
 
 /**
@@ -467,16 +455,16 @@ internal fun kompakteTabellenSpalten(header: List<String>): List<TabellenSpalte>
     fun holen(spalte: Int?): List<String>.() -> String = { getOrNull(spalte ?: -1) ?: "–" }
 
     return buildList {
-        add(TabellenSpalte("#", platz, team = false, breite = 40.dp, gewicht = 0.7f, wert = { holen(platz)() }))
-        add(TabellenSpalte("Team", team, team = true, breite = 200.dp, gewicht = 4.0f, wert = { holen(team)() }))
-        add(TabellenSpalte("Sp.", spiele ?: -1, team = false, breite = 38.dp, gewicht = 0.8f, wert = { holen(spiele)() }))
-        add(TabellenSpalte("Tore", torePlus ?: -1, team = false, breite = 56.dp, gewicht = 1.1f, wert = {
+        add(TabellenSpalte("#", platz, team = false, breite = 44.dp, gewicht = 0.8f, wert = { holen(platz)() }))
+        add(TabellenSpalte("Team", team, team = true, breite = 160.dp, gewicht = 3.2f, wert = { holen(team)() }))
+        add(TabellenSpalte("Sp.", spiele ?: -1, team = false, breite = 40.dp, gewicht = 0.9f, wert = { holen(spiele)() }))
+        add(TabellenSpalte("Tore", torePlus ?: -1, team = false, breite = 60.dp, gewicht = 1.2f, wert = {
             val a = torePlus?.let { getOrNull(it) }?.takeIf { it.isNotBlank() } ?: "–"
             val b = toreMinus?.let { getOrNull(it) }?.takeIf { it.isNotBlank() } ?: "–"
             if (a == "–" && b == "–") "–" else "$a:$b"
         }))
-        add(TabellenSpalte("Diff.", diff ?: -1, team = false, breite = 48.dp, gewicht = 0.9f, wert = { holen(diff)() }))
-        add(TabellenSpalte("Pkt.", punkte ?: -1, team = false, breite = 42.dp, gewicht = 0.8f, wert = { holen(punkte)() }))
+        add(TabellenSpalte("Diff.", diff ?: -1, team = false, breite = 52.dp, gewicht = 1.0f, wert = { holen(diff)() }))
+        add(TabellenSpalte("Pkt.", punkte ?: -1, team = false, breite = 44.dp, gewicht = 0.9f, wert = { holen(punkte)() }))
     }
 }
 
