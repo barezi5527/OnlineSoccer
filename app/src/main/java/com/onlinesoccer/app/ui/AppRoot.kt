@@ -784,7 +784,15 @@ private fun MainScaffold(
                     },
                 )
             }
-            composable(Routes.SPIELE) { SpieleScreen() }
+            composable(Routes.SPIELE) {
+                SpieleScreen(
+                    onSpielbericht = { url ->
+                        buildBerichtRoute(null, url)?.let { route ->
+                            navController.navigate(route) { launchSingleTop = true }
+                        }
+                    },
+                )
+            }
             composable(Routes.STATISTIKEN) {
                 StatistikenScreen(
                     onEintrag = { bereich ->

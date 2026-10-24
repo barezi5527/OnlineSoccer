@@ -18,6 +18,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ import com.onlinesoccer.app.ui.components.SpielverlaufLegende
 
 @Composable
 fun SpieleScreen(
+    onSpielbericht: (String) -> Unit = {},
     viewModel: SpieleViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -105,7 +107,7 @@ fun SpieleScreen(
                         Text("Dein letztes Spiel", style = MaterialTheme.typography.titleMedium)
                     }
                     item {
-                        LetztesSpielKarte(letztes)
+                        LetztesSpielKarte(letztes, onSpielbericht)
                     }
                 }
 
@@ -132,7 +134,7 @@ private fun Scorecard(live: LivegameData) {
                     textAlign = TextAlign.End,
                 )
                 Text(
-                    "  ${live.heimTore} : ${live.gastTore}  ",
+                    if (live.played) "  ${live.heimTore} : ${live.gastTore}  " else "  vs.  ",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -146,7 +148,7 @@ private fun Scorecard(live: LivegameData) {
             }
             Text(
                 if (live.played) "Endstand" else "Noch nicht gespielt",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
@@ -164,7 +166,10 @@ private fun SpielfreierHinweis(dashboard: DashboardData) {
 }
 
 @Composable
-private fun LetztesSpielKarte(prev: DashboardData.MatchInfo) {
+private fun LetztesSpielKarte(
+    prev: DashboardData.MatchInfo,
+    onSpielbericht: (String) -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -176,12 +181,13 @@ private fun LetztesSpielKarte(prev: DashboardData.MatchInfo) {
                 "${prev.art ?: "Spiel"} – ${prev.gegner ?: "?"}",
                 style = MaterialTheme.typography.titleSmall,
             )
-            prev.berichtUrl?.let {
-                Text(
-                    "Ergebnis via Spielbericht",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            prev.berichtUrl?.let { url ->
+                TextButton(
+                    onClick = { onSpielbericht(url) },
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                ) {
+                    Text("Spielbericht öffnen")
+                }
             }
         }
     }
@@ -208,7 +214,7 @@ private fun TaktikKarte(live: LivegameData) {
     if (heim == null || gast == null) return
     InfoKarte("Taktik") {
         listOf(
-            "Commitment" to Pair(heim.commitment, gast.commitment),
+            "Einsatz" to Pair(heim.commitment, gast.commitment),
             "Härte" to Pair(heim.hardness, gast.hardness),
             "Spieltyp" to Pair(heim.playtype, gast.playtype),
             "Abwehr" to Pair(heim.defence, gast.defence),
