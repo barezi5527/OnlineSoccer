@@ -79,8 +79,10 @@ Bestehende Lücke geschlossen, Muster wie `ZugabgabeViewModel`/`TaktikViewModel`
   `wechsleTab` ab, das über `lade()` läuft).
 - `sendeAktion()` prüft das Gate **vor** dem POST; bei Ablehnung `sendend = false`
   und `aktioFehler = TEAMWECHSEL_VERWORFEN` (erscheint als Fehlerkarte in der Seite).
-- `stadionnameSpeichern()` bleibt ohne Gate: es schreibt lokal, schlüsselbar nach
-  `teamId`.
+- ~~`stadionnameSpeichern()` bleibt ohne Gate: es schreibt lokal, schlüsselbar nach
+  `teamId`.~~ **Nachtrag 24.10.2026:** Die lokale Stadionnamen-Eingabe wurde aus
+  urheberrechtlichen und Wartungsgründen **entfernt** und wird nicht weiterverfolgt.
+  Der Spielbericht zeigt wieder ausschließlich den Servernamen.
 - Kein neuer Test: das Projekt hat keine Mock-Bibliothek (nur junit4 + org.json),
   `ZugabgabeViewModel`/`TaktikViewModel`/`TransferStatusViewModel` haben aus
   demselben Grund keine ViewModel-Tests. Abgedeckt ist die reine Funktion

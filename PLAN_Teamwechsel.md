@@ -12,6 +12,29 @@ Kein Schritt wird übersprungen — wenn ein Schritt zu groß wird, teile ihn au
 
 ---
 
+## Nachtrag 24.10.2026 — Stadionname-Override entfernt (finale Entscheidung)
+
+Die ursprüngliche **lokale Eingabe eines eigenen Stadion-Anzeigenamens** („Anzeigename im
+Spielbericht", `StadionnameStore`, `Stadionname.kt`, `StadionnameLogik`) ist **entfernt** und
+wird **nicht weiterverfolgt**. Die App zeigt im Spielbericht künftig wieder ausschließlich
+den Stadionnamen, den der Server liefert.
+
+Gründe (final, aus unterschiedlichen Erwägungen):
+
+- **Urheberrechtliches Risiko:** Ein lokal gesetzter, frei wählbarer Anzeigename kann
+  fremde geschützte Bezeichnungen abbilden und im Bericht wie eine offizielle Angabe wirken.
+- **Kein Mehrwert gegenüber dem Server:** Der Servername ist bereits korrekt und wird ohne
+  Zusatzlogik angezeigt.
+- **Wartungsaufwand:** Die Funktion brauchte eigenen Speicher, Validierung, Zeitstempel-Logik
+  und Tests, ohne dass eine Anforderung sie zwingend verlangt.
+
+Der Code wurde in einem eigenen Commit entfernt; die folgenden Abschnitte (insbesondere
+**T28**, **T29/T30** sowie die Store-Liste) bleiben **als historische Dokumentation** stehen.
+Verweise auf `StadionnameStore`/`stadionnameSpeichern()` sind damit überholt und nicht mehr
+umzusetzen.
+
+---
+
 ## Verifizierte Ausgangslage (nicht nochmal prüfen)
 
 Live mit dem Account geprüft, das gilt als gesichert:
@@ -505,7 +528,8 @@ Live mit dem Account geprüft, das gilt als gesichert:
   ⚠️ **Fund bei den persistenten Stores** (alle vier `getSharedPreferences` geprüft):
   - `ThemeState` — teamunabhängig, unkritisch.
   - `StadionnameStore` — strikt je Team (`v1_name_<teamId>`, `lesen(0)` liefert `null`).
-    Die Vermutung aus T28 ist damit **belegt**.
+    Die Vermutung aus T28 ist damit **belegt**. *(`StadionnameStore` wurde am 24.10.2026
+    entfernt, siehe Nachtrag oben — der Befund bleibt historisch gültig.)*
   - `ElfDesSpieltagsRepository` — **echter, wenn auch geringer Befund**, siehe unten.
   ⚠️ **`ElfCache.schluessel()` ist bei `teamId == null` nicht team-skopiert** (`ElfCache.kt:177`
   schreibt `"-"`). Die `teamId` stammt aus `ladeEigeneTeamId()` =
@@ -621,6 +645,9 @@ Live mit dem Account geprüft, das gilt als gesichert:
   den nächsten Schritt auf einem leeren Bild aus.
 
 - [x] **T28 — `StadionnameStore` prüfen** · `S`
+  > **Hinweis (24.10.2026):** Der `StadionnameStore` und die lokale Stadionnamen-Eingabe
+  > wurden nachträglich **entfernt** und werden nicht weiterverfolgt (siehe Nachtrag oben).
+  > Der folgende Prüfbefund bleibt als historische Dokumentation erhalten.
   **Erledigt — kein Code geändert, unkritisch wie im Plan vermutet.** Belege:
   - **Store:** `nameKey = "v1_name_$teamId"`, `aktivKey = "v1_aktiv_$teamId"`, und **beide**
     `lesen` (`:19`) und `speichern` (`:33`) lehnen `teamId <= 0` ab. Es gibt also keine
@@ -983,7 +1010,7 @@ Live mit dem Account geprüft, das gilt als gesichert:
 
 - [x] **T39 — `DashboardData.teamId` auf `Long?` umgestellt** · `M`
   **Ausgangsbefund:** `DashboardData.teamId: Int?`, während **alle** übrigen Team-IDs im
-  Projekt `Long?` sind (Navigation `NavType.LongType`, `StadionnameStore`,
+  Projekt `Long?` sind (Navigation `NavType.LongType`, ~~`StadionnameStore`~~ *(entfernt)*,
   `TeamwechselInfo`, Ligatabelle). Die Folge waren 5 Casts `.toLong()` an
   Konsumenten (`ElfDesSpieltagsRepository.kt:150`, `SpielberichtViewModel.kt:50`,
   `SeiteViewModel.kt:102`, `AppViewModel.kt:389`, `BewerbeRepository.kt:120`) und ein

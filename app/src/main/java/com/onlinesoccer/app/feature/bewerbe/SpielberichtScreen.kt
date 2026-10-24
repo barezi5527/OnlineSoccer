@@ -118,7 +118,6 @@ fun SpielberichtScreen(
 
         uiState.bericht != null -> BerichtsAnsicht(
             bericht = uiState.bericht!!,
-            stadionAnzeigename = uiState.stadionAnzeigename,
             onClose = onClose,
         )
     }
@@ -127,7 +126,6 @@ fun SpielberichtScreen(
 @Composable
 private fun BerichtsAnsicht(
     bericht: com.onlinesoccer.app.data.model.SpielBericht,
-    stadionAnzeigename: String?,
     onClose: () -> Unit,
 ) {
     var zeigePressekonferenz by remember { mutableStateOf(false) }
@@ -194,7 +192,7 @@ private fun BerichtsAnsicht(
         item {
             val meta = listOfNotNull(
                 bericht.datum?.let { "Datum: $it" },
-                (stadionAnzeigename ?: bericht.stadion)?.let { "Stadion: $it" },
+                bericht.stadion?.let { "Stadion: $it" },
                 bericht.spielart?.let { "Spielart: $it" },
                 bericht.zuschauer?.let { "Zuschaueranzahl: $it" },
             ).joinToString("   ")
