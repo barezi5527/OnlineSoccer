@@ -21,8 +21,8 @@ fun HubTabs(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
-    val vertical = if (compact) 2.dp else 6.dp
-    val topPadding = if (compact) 2.dp else 4.dp
+    val vertical = if (compact) 0.dp else 6.dp
+    val topPadding = if (compact) 0.dp else 4.dp
     LazyRow(
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = vertical),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
