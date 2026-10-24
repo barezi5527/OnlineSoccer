@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.TeamWappen
 import com.onlinesoccer.app.core.ui.theme.ligaTabellenZeilenHintergrund
 import com.onlinesoccer.app.data.model.LigaOption
 import com.onlinesoccer.app.data.model.LigaSpiel
@@ -612,10 +613,7 @@ private fun SpielZeile(
     ) {
         Column(Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    spiel.heim,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (spiel.eigenerVerein) FontWeight.Bold else FontWeight.Normal,
+                Row(
                     modifier = Modifier
                         .weight(1f)
                         .then(
@@ -625,9 +623,19 @@ private fun SpielZeile(
                                 Modifier
                             },
                         ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    TeamWappen(teamId = spiel.heimId, verein = spiel.heim, size = 16.dp)
+                    Text(
+                        spiel.heim,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (spiel.eigenerVerein) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Box(
                     Modifier
                         .padding(horizontal = 6.dp)
@@ -651,10 +659,7 @@ private fun SpielZeile(
                         fontWeight = FontWeight.Bold,
                     )
                 }
-                Text(
-                    spiel.gast,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (spiel.eigenerVerein) FontWeight.Bold else FontWeight.Normal,
+                Row(
                     modifier = Modifier
                         .weight(1f)
                         .then(
@@ -664,10 +669,20 @@ private fun SpielZeile(
                                 Modifier
                             },
                         ),
-                    textAlign = TextAlign.End,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                ) {
+                    Text(
+                        spiel.gast,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (spiel.eigenerVerein) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    TeamWappen(teamId = spiel.gastId, verein = spiel.gast, size = 16.dp)
+                }
             }
             if (!keinBericht) {
                 Text(
@@ -809,10 +824,7 @@ private fun PokalAnsicht(
                         Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            spiel.heim,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (spiel.heimId != null && spiel.heimId != 0L && (spiel.gastId == null || spiel.gastId == 0L || spiel.heim == spiel.gast)) FontWeight.Normal else FontWeight.Normal,
+                        Row(
                             modifier = Modifier
                                 .weight(1f)
                                 .then(
@@ -822,9 +834,18 @@ private fun PokalAnsicht(
                                         Modifier
                                     },
                                 ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            TeamWappen(teamId = spiel.heimId, verein = spiel.heim, size = 16.dp)
+                            Text(
+                                spiel.heim,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                         Box(
                             Modifier
                                 .padding(horizontal = 6.dp)
@@ -847,9 +868,7 @@ private fun PokalAnsicht(
                                 fontWeight = FontWeight.Bold,
                             )
                         }
-                        Text(
-                            spiel.gast,
-                            style = MaterialTheme.typography.bodyMedium,
+                        Row(
                             modifier = Modifier
                                 .weight(1f)
                                 .then(
@@ -859,10 +878,19 @@ private fun PokalAnsicht(
                                         Modifier
                                     },
                                 ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.End,
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                        ) {
+                            Text(
+                                spiel.gast,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.End,
+                            )
+                            TeamWappen(teamId = spiel.gastId, verein = spiel.gast, size = 16.dp)
+                        }
                     }
                     if (spiel.berichtUrl != null) {
                         Text(

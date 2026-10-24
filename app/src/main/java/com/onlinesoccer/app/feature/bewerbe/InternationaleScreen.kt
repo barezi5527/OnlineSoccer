@@ -57,8 +57,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.width
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.TeamWappen
 import com.onlinesoccer.app.core.ui.theme.internationaleTabellenZeilenHintergrund
 import com.onlinesoccer.app.data.model.InternationaleAnsicht
 import com.onlinesoccer.app.data.model.InternationaleFilter
@@ -772,19 +774,47 @@ private fun MannschaftText(
     textAlign: TextAlign,
     onTeamClick: (Long) -> Unit,
 ) {
-    Text(
-        name,
-        modifier.then(if (teamId != null) Modifier.clickable { onTeamClick(teamId) } else Modifier),
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        fontWeight = FontWeight.Medium,
-        textAlign = textAlign,
-        color = if (teamId != null) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
-    )
+    val klickbar = teamId != null
+    val textColor = if (klickbar) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    if (textAlign == TextAlign.Start) {
+        Row(
+            modifier = modifier.then(if (klickbar) Modifier.clickable { onTeamClick(teamId!!) } else Modifier),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            TeamWappen(teamId = teamId, verein = name, size = 18.dp)
+            Text(
+                name,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.Medium,
+                textAlign = textAlign,
+                color = textColor,
+            )
+        }
+    } else {
+        Row(
+            modifier = modifier.then(if (klickbar) Modifier.clickable { onTeamClick(teamId!!) } else Modifier),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
+        ) {
+            Text(
+                name,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.Medium,
+                textAlign = textAlign,
+                color = textColor,
+            )
+            TeamWappen(teamId = teamId, verein = name, size = 18.dp)
+        }
+    }
 }
 
 @Composable

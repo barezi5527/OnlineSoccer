@@ -1,5 +1,7 @@
 package com.onlinesoccer.app.feature.team
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -35,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.onlinesoccer.app.core.ui.TeamWappen
 import com.onlinesoccer.app.data.model.FremdesTeam
 import com.onlinesoccer.app.data.model.TeamTrainer
 
@@ -92,6 +96,7 @@ fun VereinScreen(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun VereinAnsicht(
     team: FremdesTeam,
     onSpielerClick: (Long) -> Unit,
@@ -99,62 +104,76 @@ private fun VereinAnsicht(
     onTeaminformationenClick: () -> Unit,
     onTrainerKlick: (TeamTrainer.Besetzt) -> Unit,
 ) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        item {
-            Row(
-                Modifier.padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = onClose) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
-                }
-                Column(Modifier.weight(1f)) {
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onClose) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+            }
+            TeamWappen(
+                teamId = team.teamId,
+                verein = team.name,
+                size = 44.dp,
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    team.name.ifBlank { "Verein ${team.teamId}" },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                if (team.liga.isNotBlank()) {
                     Text(
-                        team.name.ifBlank { "Verein ${team.teamId}" },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        team.liga,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    if (team.liga.isNotBlank()) {
-                        Text(
-                            team.liga,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.height(2.dp))
-                    TrainerHeaderZeile(team.trainer, onKlick = onTrainerKlick)
                 }
+                Spacer(Modifier.height(2.dp))
+                TrainerHeaderZeile(team.trainer, onKlick = onTrainerKlick)
             }
         }
-        item {
-            Card(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            ) {
-                Row(
-                    Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            stickyHeader(key = "kader_leiste") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background),
                 ) {
-                    Text(
-                        "Kader · ${team.kader.size} Spieler",
-                        modifier = Modifier.weight(1f).padding(start = 4.dp),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    TextButton(onClick = onTeaminformationenClick) {
-                        Text("Teaminformationen")
+                    Card(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    ) {
+                        Row(
+                            Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Kader · ${team.kader.size} Spieler",
+                                modifier = Modifier.weight(1f).padding(start = 4.dp),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            TextButton(onClick = onTeaminformationenClick) {
+                                Text("Teaminformationen")
+                            }
+                        }
                     }
                 }
             }
-        }
-        items(team.kader, key = { it.pid }) { spieler ->
-            SpielerZeile(spieler) { onSpielerClick(spieler.pid) }
+            items(team.kader, key = { it.pid }) { spieler ->
+                SpielerZeile(spieler) { onSpielerClick(spieler.pid) }
+            }
         }
     }
 }
