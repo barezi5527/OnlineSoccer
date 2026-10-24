@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.feature.bewerbe
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -203,6 +204,15 @@ val geladen = uiState.ansicht
     // Ziel des Zurück-Pfeils: aus einer direkt geöffneten Ansicht zurück in den
     // zuvor gewählten Bereich, sonst in die Liste des eigenen Bereichs.
     val zurueckNach = if (direktOffen != null) vorherigerBereich else bereich
+    // Zurück-Pfeil und System-Zurück (Wischgeste/Taste) müssen denselben Schritt
+    // gehen: aus einer Ansicht in die Übersicht des Bereichs, nicht direkt aus
+    // der ganzen Route ins Dashboard.
+    val zurueckZurUebersicht: () -> Unit = {
+        bereich = zurueckNach
+        ansicht = bereichAnsichten.getValue(zurueckNach).singleOrNull()
+        viewModel.verwerfeAnsicht()
+    }
+    BackHandler(enabled = ansicht != null, onBack = zurueckZurUebersicht)
 
     Column(Modifier.fillMaxSize()) {
         if (ansicht == null) {
@@ -226,11 +236,7 @@ val geladen = uiState.ansicht
                 onErgebnisseSichtbar = { ergebnisseSichtbar = it },
                 // Beim erneuten Öffnen soll wieder frisch geladen werden, nach dem
                 // Zurück aus dem Kader bleibt die bisherige Ansicht dagegen erhalten.
-                onZurueck = {
-                    bereich = zurueckNach
-                    ansicht = bereichAnsichten.getValue(zurueckNach).singleOrNull()
-                    viewModel.verwerfeAnsicht()
-                },
+                onZurueck = zurueckZurUebersicht,
             )
         }
         Box(Modifier.fillMaxSize().weight(1f)) {

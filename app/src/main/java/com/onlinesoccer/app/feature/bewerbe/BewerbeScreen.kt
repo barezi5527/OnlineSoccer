@@ -1,5 +1,6 @@
 package com.onlinesoccer.app.feature.bewerbe
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -83,6 +84,15 @@ fun BewerbeScreen(
     var spieltageUnteransicht by rememberSaveable { mutableStateOf(SpieltageUnteransicht.SPIELTAGE) }
     var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
     var pokalErgebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
+
+    // System-Zurück (Wischgeste/Taste) soll wie der Pfeil in der Kopfzeile
+    // zunächst die Elf des Spieltags verlassen, statt die ganze Route zu poppen.
+    BackHandler(
+        enabled = bereich == BewerbeBereich.SPIELTAGE &&
+            spieltageUnteransicht == SpieltageUnteransicht.ELF_DE_SPIELTAGS,
+    ) {
+        spieltageUnteransicht = SpieltageUnteransicht.SPIELTAGE
+    }
 
     LaunchedEffect(demo) {
         viewModel.setDemo(demo)
