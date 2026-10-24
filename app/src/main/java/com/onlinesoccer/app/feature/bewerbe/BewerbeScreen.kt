@@ -171,6 +171,7 @@ fun BewerbeScreen(
                             ergebnisseSichtbar = ergebnisseSichtbar,
                             onErgebnisseSichtbar = { ergebnisseSichtbar = it },
                             onSpielbericht = onSpielbericht,
+                            onTeamClick = onTeamClick,
                             onElf = { spieltageUnteransicht = SpieltageUnteransicht.ELF_DE_SPIELTAGS },
                             demo = demo,
                         )
@@ -178,6 +179,7 @@ fun BewerbeScreen(
                             pokal = uiState.pokal,
                             ergebnisseSichtbar = pokalErgebnisseSichtbar,
                             onSpielbericht = onSpielbericht,
+                            onTeamClick = onTeamClick,
                             onSaison = viewModel::waehlePokalSaison,
                             onRunde = viewModel::waehlePokalRunde,
                             onLand = viewModel::waehlePokalLand,
@@ -475,6 +477,7 @@ private fun SpieltageAnsicht(
     ergebnisseSichtbar: Boolean,
     onErgebnisseSichtbar: (Boolean) -> Unit,
     onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit = {},
     onElf: (() -> Unit)? = null,
     demo: Boolean = false,
 ) {
@@ -561,8 +564,8 @@ private fun SpieltageAnsicht(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            items(spieltag.spiele, key = { "${it.heim}-${it.gast}" }) { spiel ->
-                SpielZeile(spiel, ergebnisseSichtbar, onSpielbericht)
+            items(spieltag.spiele, key = { "${it.heimId ?: 0}-${it.gastId ?: 0}-${it.heim}-${it.gast}" }) { spiel ->
+                SpielZeile(spiel, ergebnisseSichtbar, onSpielbericht, onTeamClick)
             }
         }
     }
@@ -600,14 +603,12 @@ private fun SpielZeile(
     spiel: LigaSpiel,
     ergebnisseSichtbar: Boolean,
     onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit = {},
 ) {
     val keinBericht = spiel.berichtSid == null && spiel.berichtUrl == null
+    val hatTeamDetails = (spiel.heimId != null && spiel.heimId != 0L) || (spiel.gastId != null && spiel.gastId != 0L)
     Card(
-        Modifier
-            .fillMaxWidth()
-            .then(
-                if (!keinBericht) Modifier.clickable { onSpielbericht(spiel.berichtSid, spiel.berichtUrl) } else Modifier,
-            ),
+        Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -615,8 +616,17 @@ private fun SpielZeile(
                     spiel.heim,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (spiel.eigenerVerein) FontWeight.Bold else FontWeight.Normal,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(
+                            if (spiel.heimId != null && spiel.heimId != 0L) {
+                                Modifier.clickable { onTeamClick(spiel.heimId) }
+                            } else {
+                                Modifier
+                            },
+                        ),
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Box(
                     Modifier
@@ -625,7 +635,14 @@ private fun SpielZeile(
                             if (spiel.gespielt) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                             RoundedCornerShape(8.dp),
                         )
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .then(
+                            if (!keinBericht) {
+                                Modifier.clickable { onSpielbericht(spiel.berichtSid, spiel.berichtUrl) }
+                            } else {
+                                Modifier
+                            },
+                        ),
                 ) {
                     Text(
                         if (!spiel.gespielt || !ergebnisseSichtbar) "vs."
@@ -638,17 +655,28 @@ private fun SpielZeile(
                     spiel.gast,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (spiel.eigenerVerein) FontWeight.Bold else FontWeight.Normal,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(
+                            if (spiel.gastId != null && spiel.gastId != 0L) {
+                                Modifier.clickable { onTeamClick(spiel.gastId) }
+                            } else {
+                                Modifier
+                            },
+                        ),
                     textAlign = TextAlign.End,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             if (!keinBericht) {
                 Text(
-                    if (spiel.gespielt) "Spielbericht öffnen" else "Vorschau",
+                    text = if (spiel.gespielt) "Spielbericht öffnen" else "Vorschau",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clickable { onSpielbericht(spiel.berichtSid, spiel.berichtUrl) },
                 )
             }
         }
@@ -660,6 +688,7 @@ private fun PokalAnsicht(
     pokal: PokalAnsicht?,
     ergebnisseSichtbar: Boolean,
     onSpielbericht: (String?, String?) -> Unit,
+    onTeamClick: (Long) -> Unit = {},
     onSaison: (Int) -> Unit,
     onRunde: (Int) -> Unit,
     onLand: (Int) -> Unit,
@@ -774,39 +803,63 @@ private fun PokalAnsicht(
             Spacer(Modifier.height(4.dp))
             runde.spiele.forEach { spiel ->
                 Card(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp)
-                        .then(
-                            if (spiel.berichtUrl != null) {
-                                Modifier.clickable { onSpielbericht(null, spiel.berichtUrl) }
-                            } else {
-                                Modifier
-                            },
-                        ),
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
                 ) {
                     Row(
-                        Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                        Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             spiel.heim,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 2,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (spiel.heimId != null && spiel.heimId != 0L && (spiel.gastId == null || spiel.gastId == 0L || spiel.heim == spiel.gast)) FontWeight.Normal else FontWeight.Normal,
+                            modifier = Modifier
+                                .weight(1f)
+                                .then(
+                                    if (spiel.heimId != null && spiel.heimId != 0L) {
+                                        Modifier.clickable { onTeamClick(spiel.heimId) }
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            if (ergebnisseSichtbar) spiel.ergebnis ?: "vs." else "vs.",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp),
-                        )
+                        Box(
+                            Modifier
+                                .padding(horizontal = 6.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(8.dp),
+                                )
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                                .then(
+                                    if (spiel.berichtUrl != null) {
+                                        Modifier.clickable { onSpielbericht(null, spiel.berichtUrl) }
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                        ) {
+                            Text(
+                                if (ergebnisseSichtbar) spiel.ergebnis ?: "vs." else "vs.",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                         Text(
                             spiel.gast,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 2,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .weight(1f)
+                                .then(
+                                    if (spiel.gastId != null && spiel.gastId != 0L) {
+                                        Modifier.clickable { onTeamClick(spiel.gastId) }
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.End,
                         )
@@ -816,7 +869,9 @@ private fun PokalAnsicht(
                             "Spielbericht öffnen",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+                            modifier = Modifier
+                                .padding(horizontal = 12.dp, vertical = 2.dp)
+                                .clickable { onSpielbericht(null, spiel.berichtUrl) },
                         )
                     }
                 }

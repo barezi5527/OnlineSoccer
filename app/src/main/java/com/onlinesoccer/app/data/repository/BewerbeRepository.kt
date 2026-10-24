@@ -147,8 +147,10 @@ class BewerbeRepository @Inject constructor(
             tabelle.select("tr").forEach { tr ->
                 val teams = tr.select("td a[href*='teaminfo']")
                 if (teams.size < 2) return@forEach
-                val heim = teams[0].text().trim()
-                val gast = teams[1].text().trim()
+                val heimId = teamId(teams[0])
+                val gastId = teamId(teams[1])
+                val heim = ohnePositionszusatz(teams[0].text())
+                val gast = ohnePositionszusatz(teams[1].text())
                 if (heim.isEmpty() || gast.isEmpty()) return@forEach
                 val ergebnis = tr.select("td").map { it.text().trim() }
                     .firstOrNull { Regex("\\d+\\s*:\\s*\\d+").containsMatchIn(it) }
@@ -157,7 +159,7 @@ class BewerbeRepository @Inject constructor(
                 } else {
                     null
                 }
-                spiele += PokalSpiel(heim = heim, gast = gast, ergebnis = ergebnis, berichtUrl = berichtUrl)
+                spiele += PokalSpiel(heim = heim, gast = gast, heimId = heimId, gastId = gastId, ergebnis = ergebnis, berichtUrl = berichtUrl)
             }
             if (spiele.isEmpty()) return@mapNotNull null
             PokalRunde(spiele = spiele)

@@ -127,6 +127,8 @@ data class PokalRunde(
 data class PokalSpiel(
     val heim: String,
     val gast: String,
+    val heimId: Long? = null,
+    val gastId: Long? = null,
     val ergebnis: String? = null,
     val berichtUrl: String? = null,
 )
