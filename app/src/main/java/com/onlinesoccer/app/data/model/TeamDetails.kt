@@ -193,6 +193,7 @@ data class FremdesTeam(
     val teamId: Long,
     val name: String = "",
     val liga: String = "",
+    val land: String = "",
     val kader: List<KaderSpieler> = emptyList(),
     val trainer: TeamTrainer = TeamTrainer.Unbekannt,
 )

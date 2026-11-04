@@ -20,6 +20,11 @@ import okhttp3.OkHttpClient
 @Retention(AnnotationRetention.BINARY)
 annotation class ToggleClient
 
+/** Client für öffentliche GitHub-Anfragen ohne Spiel-Session-Cookies. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class UpdateClient
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
@@ -60,6 +65,26 @@ object NetworkModule {
             cookieStore = cookieStore,
             retryOnConnectionFailure = false,
         )
+
+    @Provides
+    @Singleton
+    @UpdateClient
+    fun provideUpdateClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .retryOnConnectionFailure(true)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("User-Agent", OsApi.USER_AGENT)
+                    .header("Accept", "application/vnd.github+json")
+                    .build()
+                chain.proceed(request)
+            }
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .callTimeout(20, TimeUnit.SECONDS)
+            .build()
 
     private fun buildOkHttpClient(
         cookieStore: OsCookieStore,

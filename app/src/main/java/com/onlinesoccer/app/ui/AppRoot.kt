@@ -2,6 +2,11 @@ package com.onlinesoccer.app.ui
 
 import android.content.res.Configuration
 import android.net.Uri
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -68,6 +73,7 @@ import com.onlinesoccer.app.feature.bewerbe.InternationaleScreen
 import com.onlinesoccer.app.feature.bewerbe.SpielberichtScreen
 import com.onlinesoccer.app.feature.dashboard.DashboardScreen
 import com.onlinesoccer.app.feature.pm.PmScreen
+import com.onlinesoccer.app.core.update.UpdateInfo
 import com.onlinesoccer.app.feature.server.FreieTeamsScreen
 import com.onlinesoccer.app.feature.server.ManagerSucheScreen
 import com.onlinesoccer.app.feature.server.ManagerlisteScreen
@@ -151,6 +157,8 @@ fun AppRoot(
 ) {
     val authState by viewModel.authState.collectAsStateWithLifecycle()
     val vertragsWarnung by viewModel.vertragsWarnung.collectAsStateWithLifecycle()
+    val updateInfo by viewModel.updateInfo.collectAsStateWithLifecycle()
+    val updateUngelesen by viewModel.updateUngelesen.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize()) {
         when (authState) {
             AuthUiState.Restoring -> Box(Modifier.fillMaxSize())
@@ -161,6 +169,9 @@ fun AppRoot(
                 themeDark = themeDark,
                 themeFollowsSystem = themeFollowsSystem,
                 onThemeCycle = onThemeCycle,
+                updateInfo = updateInfo,
+                updateUngelesen = updateUngelesen,
+                onUpdateGelesen = viewModel::updateAlsGelesenMarkieren,
             )
             AuthUiState.SignedInDemo -> MainScaffold(
                 demo = true,
@@ -169,6 +180,9 @@ fun AppRoot(
                 themeDark = themeDark,
                 themeFollowsSystem = themeFollowsSystem,
                 onThemeCycle = onThemeCycle,
+                updateInfo = null,
+                updateUngelesen = false,
+                onUpdateGelesen = {},
             )
         }
         if (authState == AuthUiState.SignedIn && vertragsWarnung.isNotEmpty()) {
@@ -253,6 +267,9 @@ private fun MainScaffold(
     themeDark: Boolean,
     themeFollowsSystem: Boolean,
     onThemeCycle: () -> Unit,
+    updateInfo: UpdateInfo?,
+    updateUngelesen: Boolean,
+    onUpdateGelesen: () -> Unit,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -260,6 +277,16 @@ private fun MainScaffold(
     var dashboardRefreshTrigger by remember { mutableStateOf(0) }
     val ungeleseneNachrichten by appViewModel.ungeleseneNachrichten.collectAsStateWithLifecycle()
     val teamwechsel by appViewModel.teamwechsel.collectAsStateWithLifecycle()
+    val briefumschlagTransition = rememberInfiniteTransition(label = "Update-Hinweis")
+    val briefumschlagAlpha by briefumschlagTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (updateUngelesen) 0.35f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(650),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "Briefumschlag pulsiert",
+    )
     val snackbarHostState = remember { SnackbarHostState() }
     var letzteRoute by remember { mutableStateOf<String?>(null) }
 
@@ -403,9 +430,9 @@ private fun MainScaffold(
                         }) {
                             BadgedBox(
                                 badge = {
-                                    if (ungeleseneNachrichten > 0) {
+                                    if (ungeleseneNachrichten > 0 || updateUngelesen) {
                                         Badge {
-                                            Text(ungeleseneNachrichten.toString())
+                                            Text((ungeleseneNachrichten + if (updateUngelesen) 1 else 0).toString())
                                         }
                                     }
                                 },
@@ -413,6 +440,7 @@ private fun MainScaffold(
                                 Icon(
                                     imageVector = Icons.Filled.MailOutline,
                                     contentDescription = "Nachrichten",
+                                    modifier = Modifier.alpha(briefumschlagAlpha),
                                 )
                             }
                         }
@@ -843,7 +871,12 @@ private fun MainScaffold(
                 )
             }
             composable(Routes.NACHRICHTEN) {
-                PmScreen(onClose = { navController.popBackStack() })
+                PmScreen(
+                    onClose = { navController.popBackStack() },
+                    updateInfo = updateInfo,
+                    updateUngelesen = updateUngelesen,
+                    onUpdateGelesen = onUpdateGelesen,
+                )
             }
             composable(
                 Routes.SPIELER,

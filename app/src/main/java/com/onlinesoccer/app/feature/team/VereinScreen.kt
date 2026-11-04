@@ -126,9 +126,12 @@ private fun VereinAnsicht(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
-                if (team.liga.isNotBlank()) {
+                val ligaUndLand = listOf(team.liga, team.land)
+                    .filter(String::isNotBlank)
+                    .joinToString(" · ")
+                if (ligaUndLand.isNotBlank()) {
                     Text(
-                        team.liga,
+                        ligaUndLand,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

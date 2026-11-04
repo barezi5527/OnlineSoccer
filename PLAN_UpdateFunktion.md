@@ -14,9 +14,10 @@ kein `REQUEST_INSTALL_PACKAGES`, kein `FileProvider`, keine Kosten.
 Haken setzen, `./gradlew :app:testDebugUnitTest` und `:app:assembleDebug` laufen lassen,
 ggf. committen.
 
-**Aktueller Stand:** ☐ offen / ☑ erledigt — **noch nichts umgesetzt.**
-Offen zur Entscheidung: Banner vs. Dialog (siehe Schritt U7) und Developer-Verification
-(siehe „Offene Produktentscheidung").
+**Aktueller Stand:** Die Update-Anzeige ist umgesetzt: Die App prüft GitHub höchstens
+einmal pro Woche, markiert den Briefumschlag bei einer ungelesenen neuen Version und
+zeigt im Chip „Updates" eine lokale Nachricht mit Link zur Download-Seite. Es gibt
+bewusst kein Popup und keinen automatischen Installer-Aufruf.
 
 ---
 

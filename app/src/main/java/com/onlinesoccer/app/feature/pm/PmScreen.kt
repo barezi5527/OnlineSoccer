@@ -1,5 +1,7 @@
 package com.onlinesoccer.app.feature.pm
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,12 +42,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.onlinesoccer.app.data.model.PmNachricht
 import com.onlinesoccer.app.data.model.PmEmpfaengerVorschlag
+import com.onlinesoccer.app.core.update.UpdateInfo
 
-enum class PmOrdner { EINGANG, AUSGANG }
+enum class PmOrdner { EINGANG, AUSGANG, UPDATES }
 
 @Composable
 fun PmScreen(
     onClose: () -> Unit,
+    updateInfo: UpdateInfo? = null,
+    updateUngelesen: Boolean = false,
+    onUpdateGelesen: () -> Unit = {},
     viewModel: PmViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -130,7 +137,7 @@ fun PmScreen(
                 Button(onClick = viewModel::lade) { Text("Erneut laden") }
             }
 
-            uiState.liste.isEmpty() -> Box(
+            uiState.liste.isEmpty() && updateInfo == null -> Box(
                 Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -156,6 +163,16 @@ fun PmScreen(
                             selected = ordner == PmOrdner.AUSGANG,
                             onClick = { ordner = PmOrdner.AUSGANG },
                             label = { Text("Postausgang") },
+                        )
+                        FilterChip(
+                            selected = ordner == PmOrdner.UPDATES,
+                            onClick = {
+                                ordner = PmOrdner.UPDATES
+                                onUpdateGelesen()
+                            },
+                            label = {
+                                Text(if (updateUngelesen) "Updates •" else "Updates")
+                            },
                         )
                     }
                     when (ordner) {
@@ -193,6 +210,7 @@ fun PmScreen(
                                 }
                             }
                         }
+                        PmOrdner.UPDATES -> UpdateAnsicht(updateInfo)
                     }
                 }
             }
@@ -208,6 +226,37 @@ fun PmScreen(
             },
             dismissButton = { TextButton(onClick = { loeschenBestaetigen = false }) { Text("Abbrechen") } },
         )
+    }
+}
+
+@Composable
+private fun UpdateAnsicht(updateInfo: UpdateInfo?) {
+    val context = LocalContext.current
+    if (updateInfo == null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Keine neuen Updates verfügbar.")
+        }
+        return
+    }
+    Column(
+        modifier = Modifier.padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Neue Version verfügbar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Online Soccer ${updateInfo.version} kann heruntergeladen werden.")
+                Text(
+                    "Öffne die Download-Seite und lade die aktuelle APK manuell herunter.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Button(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl)))
+                }) {
+                    Text("Download-Seite öffnen")
+                }
+            }
+        }
     }
 }
 

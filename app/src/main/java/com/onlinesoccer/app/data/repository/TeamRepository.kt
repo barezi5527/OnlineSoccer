@@ -1599,10 +1599,12 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
         val kopf = kopfDoc.select("b").firstOrNull()?.ownText()?.trim().orEmpty()
         val name = kopf.substringBefore(" - ").trim()
         val liga = kopf.substringAfter(" - ").trim()
+        val land = kopfDoc.select("b a").firstOrNull()?.text()?.trim().orEmpty()
         return FremdesTeam(
             teamId = teamId,
             name = name,
             liga = liga,
+            land = land,
             kader = if (name.isBlank()) emptyList() else parseKader(html),
             trainer = if (name.isBlank()) TeamTrainer.Unbekannt else parseTrainer(kopfDoc),
         )

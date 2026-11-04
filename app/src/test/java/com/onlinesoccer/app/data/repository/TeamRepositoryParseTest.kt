@@ -242,6 +242,7 @@ class TeamRepositoryParseTest {
         val fremd = repo.parseFremdesTeam(dump("st902"), 902L)
         assertEquals("Olympique Mansfeldia", fremd.name)
         assertEquals("1. Liga", fremd.liga)
+        assertEquals("Luxemburg", fremd.land)
         assertTrue("Kader nicht leer", fremd.kader.isNotEmpty())
         val ullrich = fremd.kader.first { it.pid == 86001L }
         assertEquals("Tom Ullrich", ullrich.name)

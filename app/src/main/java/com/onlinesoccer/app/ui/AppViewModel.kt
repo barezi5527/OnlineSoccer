@@ -2,6 +2,7 @@ package com.onlinesoccer.app.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.onlinesoccer.app.BuildConfig
 import com.onlinesoccer.app.core.auth.AuthUiState
 import com.onlinesoccer.app.core.auth.LoginResult
 import com.onlinesoccer.app.core.auth.SessionManager
@@ -16,6 +17,10 @@ import com.onlinesoccer.app.data.repository.TeamRepository
 import com.onlinesoccer.app.core.state.OffeneAenderung
 import com.onlinesoccer.app.core.state.bestaetigungstext
 import com.onlinesoccer.app.data.repository.TeamwechselRepository
+import com.onlinesoccer.app.core.update.UpdateInfo
+import com.onlinesoccer.app.core.update.UpdateRepository
+import com.onlinesoccer.app.core.update.UpdateStore
+import com.onlinesoccer.app.core.update.versionVergleich
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -216,6 +221,8 @@ class AppViewModel @Inject constructor(
     private val pmRepository: PmRepository,
     private val dashboardRepository: DashboardRepository,
     private val teamwechselRepository: TeamwechselRepository,
+    private val updateRepository: UpdateRepository,
+    private val updateStore: UpdateStore,
     private val teamGeneration: com.onlinesoccer.app.core.state.TeamGeneration,
     private val offeneAenderung: OffeneAenderung,
 ) : ViewModel() {
@@ -246,6 +253,12 @@ class AppViewModel @Inject constructor(
 
     private val _ungeleseneNachrichten = MutableStateFlow(0)
     val ungeleseneNachrichten: StateFlow<Int> = _ungeleseneNachrichten.asStateFlow()
+
+    private val _updateInfo = MutableStateFlow<UpdateInfo?>(null)
+    val updateInfo: StateFlow<UpdateInfo?> = _updateInfo.asStateFlow()
+
+    private val _updateUngelesen = MutableStateFlow(false)
+    val updateUngelesen: StateFlow<Boolean> = _updateUngelesen.asStateFlow()
 
     /**
      * ID des Zweitteams, `null` wenn der Account keins besitzt.
@@ -308,6 +321,7 @@ class AppViewModel @Inject constructor(
                 dashboardRepository.invalidate()
             }
             starteUngelesenePolling()
+            pruefeUpdate()
             beobachteAnmeldung()
         }
     }
@@ -537,6 +551,40 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    /** Prüft höchstens einmal pro Woche auf einen stabilen GitHub-Release. */
+    private fun pruefeUpdate() {
+        val jetzt = System.currentTimeMillis()
+        if (!updateStore.darfPruefen(jetzt)) {
+            val gespeichertesUpdate = updateStore.verfuegbaresUpdate()
+                ?.takeIf { versionVergleich(it.version, BuildConfig.VERSION_NAME) > 0 }
+            _updateInfo.value = gespeichertesUpdate
+            _updateUngelesen.value = gespeichertesUpdate != null &&
+                !updateStore.istGelesen(gespeichertesUpdate.version)
+            return
+        }
+        viewModelScope.launch {
+            val ergebnis = runCatching { updateRepository.verfuegbareVersion() }
+            updateStore.pruefungGespeichert(jetzt)
+            ergebnis.onSuccess { update ->
+                updateStore.updateSpeichern(update)
+                _updateInfo.value = update
+                _updateUngelesen.value = update != null && !updateStore.istGelesen(update.version)
+            }.onFailure {
+                val gespeichertesUpdate = updateStore.verfuegbaresUpdate()
+                    ?.takeIf { versionVergleich(it.version, BuildConfig.VERSION_NAME) > 0 }
+                _updateInfo.value = gespeichertesUpdate
+                _updateUngelesen.value = gespeichertesUpdate != null &&
+                    !updateStore.istGelesen(gespeichertesUpdate.version)
+            }
+        }
+    }
+
+    fun updateAlsGelesenMarkieren() {
+        val update = _updateInfo.value ?: return
+        updateStore.alsGelesenMarkieren(update.version)
+        _updateUngelesen.value = false
+    }
+
     /** Lädt die Vertragstabelle und warnt, sobald ein Vertrag höchstens 2 ZAT läuft. */
     private fun pruefeVertragslaufzeiten() {
         viewModelScope.launch {
@@ -606,6 +654,8 @@ class AppViewModel @Inject constructor(
     fun logout() {
         _vertragsWarnung.value = emptyList()
         _ungeleseneNachrichten.value = 0
+        _updateInfo.value = null
+        _updateUngelesen.value = false
         jugendHinweisStore.zuruecksetzen()
         // Nicht persistiert (Regel 1) — der Wert gehört zur alten Anmeldung.
         teamwechselZuruecksetzen()

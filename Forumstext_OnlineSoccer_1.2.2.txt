@@ -1,0 +1,68 @@
+Online Soccer – inoffizielle Android-App (Version 1.2.2)
+
+Hallo,
+
+ich habe eine neue Version meiner inoffiziellen Android-App für Online Soccer
+veröffentlicht. Version 1.2.2 bündelt die Änderungen der letzten Tage und
+behebt neun der zuletzt gemeldeten Issues.
+
+Download Version 1.2.2 (Android 8.0 oder neuer, kostenlos):
+https://github.com/barezi5527/OnlineSoccer-Download/releases/latest/download/OnlineSoccer-1.2.2-release.apk
+
+Release-Seite mit Prüfsumme und Signaturangaben:
+https://github.com/barezi5527/OnlineSoccer-Download/releases/tag/v1.2.2
+
+Projektseite mit Changelog, Sicherheits- und Datenschutzangaben:
+https://github.com/barezi5527/OnlineSoccer-Download
+
+
+Was in den letzten zwei Tagen erledigt wurde (Auswahl aus den Issues):
+
+- #12 OSC-/OSE-Qualifikation: Das Rückspiel-Ergebnis wird jetzt in der
+  richtigen Paarungsreihenfolge angezeigt.
+- #13 Spielfeldmatrix: Das ZAT-Spielfeld reicht wie auf der Website bis zur
+  T-Zone.
+- #14 Trainingseinstellungen: Die Chip-Leiste zeigt wieder das T-Präfix, und
+  das Formular sendet stets alle Spielerzeilen.
+- #15 Spielplan fremdes Team: Der Saisonplan eines fremden Vereins öffnet den
+  gewählten Spielbericht und nicht mehr einen fremden Bericht.
+- #16 Spielbericht: Die taktische Matrix ist bis zur T-Zone angeglichen.
+- #17 Spieltag-Übersicht: Vereine lassen sich direkt aus dem Spieltag öffnen.
+- #18/#19 Wappen: Ein zentraler Wappen-Loader versorgt Ligatabelle,
+  Vereinsseite, Landespokal und internationale Wettbewerbe. Fehlt ein Wappen,
+  erscheinen die Initialen.
+- #20 Filter-Dropdowns: Der aktuell gewählte Eintrag wird beim Öffnen
+  automatisch sichtbar gemacht.
+
+Zusätzlich:
+- Das letzte Spiel auf der Spiele-Seite führt jetzt direkt zum Spielbericht.
+- Die Zurück-Geste funktioniert in den Bewerbs-Unteransichten zuverlässig.
+- Der ZAT-Kopfbereich ist kompakter und näher an den Untertabs.
+- Die lokale Anzeigename-Eingabe für Spielberichte ist entfallen;
+  Spielberichte zeigen wieder ausschließlich den Servernamen.
+
+An den Funktionen, die einen finalen Befehl auslösen – etwa Zugabgabe
+speichern, Trainer einstellen oder entlassen, Transfers und Stadion – hat sich
+nichts geändert. Diese Abläufe laufen unverändert. Unit-Tests und Lint sind
+grün durchgelaufen.
+
+
+Prüfsumme (SHA-256):
+d86e7a7d780a26949066a36a9a3d598e9c638e5c45bc28ce9eb0f00ee7b37ef6
+
+Datei: OnlineSoccer-1.2.2-release.apk
+Größe: 15.993.089 Bytes (16,0 MB)
+Berechtigungen: nur INTERNET und ACCESS_NETWORK_STATE
+
+
+Mein Ziel war zu sehen, wie weit ich mit der App komme. Ich nutze sie
+weiterhin täglich und lege Fehler, die mir auffallen, als GitHub-Issue an.
+Rückmeldungen aus der Community kommen bisher leider keine – wer etwas
+findet oder einen Wunsch hat, kann sich gern über die Issues melden. Auch
+kurze Rückmeldungen, ob die App bei euch läuft, helfen.
+
+Die App ist ein inoffizielles Community-Projekt. Sie steht in keiner
+Verbindung zu den Betreibern von os.ongapo.com und wird von ihnen weder
+unterstützt noch verifiziert. Ein bestehendes Online-Soccer-Konto wird
+benötigt. Die App ist nicht im Google Play Store; Updates werden manuell
+installiert.

@@ -125,7 +125,7 @@ class BerichtRepository @Inject constructor(
             val minuteMatch = Regex("^(\\d{1,3})\\s*\\.\\s*").find(segment)
             val minute = minuteMatch?.groupValues?.get(1)
             val text = (minuteMatch?.let { segment.removeRange(it.range) } ?: segment).trim()
-            if (minute != null && text.isNotBlank() && text.length < 700) {
+            if (minute != null && text.isNotBlank()) {
                 ereignisse += BerichtEreignis(minute = minute, text = text, typ = klassifiziereEreignis(segment))
             }
         }

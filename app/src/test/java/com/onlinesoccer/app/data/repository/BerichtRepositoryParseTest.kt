@@ -28,6 +28,27 @@ class BerichtRepositoryParseTest {
     }
 
     @Test
+    fun parseBericht_verliertKeineLangenMinutenbloecke() {
+        val langeAktion = "Ein langer Spielzug mit vielen Pässen und weiteren Aktionen. ".repeat(20)
+        val html = """
+            <html><body>
+            <div>Es folgt der Spielbericht :</div>
+            <table>
+              <tr><td>8.</td><td>Minute 8: $langeAktion</td></tr>
+              <tr><td>9.</td><td>Minute 9: $langeAktion</td></tr>
+              <tr><td>10.</td><td>Minute 10: $langeAktion</td></tr>
+            </table>
+            <div>Es folgen die Spielstatistiken</div>
+            </body></html>
+        """.trimIndent()
+
+        val bericht = repo.parseBericht(html, "test", null)
+
+        assertEquals(listOf("8", "9", "10"), bericht.ereignisse.map { it.minute })
+        assertTrue(bericht.ereignisse.all { it.text.length > 700 })
+    }
+
+    @Test
     fun parseBericht_liestRasterSpielerUndStarteinstellungen() {
         val html = """
             <html><body>
