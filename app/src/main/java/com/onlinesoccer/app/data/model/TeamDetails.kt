@@ -88,6 +88,26 @@ data class LeihhistorieEintrag(
     val dauer: String,
 )
 
+/** Eine Tabelle aus der Spielerkarte (`sp.php`), vollständig und lesend. */
+data class SpielerHistorienTabelle(
+    val kopf: List<String> = emptyList(),
+    val zeilen: List<List<String>> = emptyList(),
+    /** Transfer-ID je Datenzeile, falls die Website einen „Details“-Link liefert. */
+    val detailIds: List<Long?> = emptyList(),
+    val linkIds: List<List<Long?>> = emptyList(),
+)
+
+/** Transferdetails aus `transferview.php?tr=...`. */
+data class TransferDetailTeam(
+    val teamId: Long? = null,
+    val name: String = "",
+    val positionen: List<String> = emptyList(),
+)
+
+data class TransferDetails(
+    val teams: List<TransferDetailTeam> = emptyList(),
+)
+
 /** Zeile der Saisonhistorie (`showteam.php?s=10`). */
 data class SaisonhistorieEintrag(
     val saison: String,
@@ -190,6 +210,13 @@ data class SpielerKarte(
     val statistikSaison: Map<String, String> = emptyMap(),
     val statistikGesamt: Map<String, String> = emptyMap(),
     val profilRohtext: List<String> = emptyList(),
+    val teamId: Long? = null,
+    val teamName: String? = null,
+    val teamLiga: String? = null,
+    val teamLand: String? = null,
+    val transferhistorie: SpielerHistorienTabelle = SpielerHistorienTabelle(),
+    val leihhistorie: SpielerHistorienTabelle = SpielerHistorienTabelle(),
+    val spielerhistorie: SpielerHistorienTabelle = SpielerHistorienTabelle(),
     /** Trainer des zugehörigen Vereins (nur bei fremden Spielern ausgefüllt). */
     val trainer: TeamTrainer = TeamTrainer.Unbekannt,
 ) {

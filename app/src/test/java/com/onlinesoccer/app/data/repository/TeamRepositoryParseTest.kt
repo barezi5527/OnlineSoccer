@@ -325,6 +325,10 @@ class TeamRepositoryParseTest {
         assertEquals("Tom Ullrich", profil.name)
         assertEquals(35, profil.alter)
         assertEquals(com.onlinesoccer.app.data.model.SpielerPosition.TOR, profil.position)
+        assertEquals(902L, profil.teamId)
+        assertEquals("Olympique Mansfeldia", profil.teamName)
+        assertEquals("1. Liga", profil.teamLiga)
+        assertEquals("Luxemburg", profil.teamLand)
         assertEquals("8.669.243 EUR", profil.vertrag?.marktwert)
         assertTrue(profil.staerken.containsKey("Abstoss"))
         assertEquals("56", profil.staerken["Abstoss"])
@@ -332,6 +336,12 @@ class TeamRepositoryParseTest {
         assertTrue("Statistik Saison gefüllt", profil.statistikSaison.isNotEmpty())
         assertTrue("Statistik Karriere gefüllt", profil.statistikGesamt.isNotEmpty())
         assertEquals("154", profil.statistikGesamt["Spiele (LI)"])
+        assertTrue("Transferhistorie vollständig gefüllt", profil.transferhistorie.kopf.contains("Datum"))
+        assertTrue("Leihhistorie vollständig gefüllt", profil.leihhistorie.kopf.contains("Dauer"))
+        assertTrue("Spielerhistorie vollständig gefüllt", profil.spielerhistorie.kopf.contains("Saison"))
+        assertTrue("Transferhistorie enthält alle Zeilen", profil.transferhistorie.zeilen.isNotEmpty())
+        assertEquals("Transferdetails sind auswählbar", 51683L, profil.transferhistorie.detailIds.first())
+        assertTrue("Spielerhistorie enthält alle Spalten", profil.spielerhistorie.kopf.size >= 6)
     }
 
     @Test
@@ -349,6 +359,23 @@ class TeamRepositoryParseTest {
         assertTrue("Stärken gefüllt", profil.staerken.size >= 18)
         assertTrue("Statistik Karriere gefüllt", profil.statistikGesamt.isNotEmpty())
         assertEquals("3", profil.statistikGesamt["Tore (FS)"])
+    }
+
+    @Test
+    fun transferdetails_liestVereineSpielerUndSummen() {
+        val details = repo.parseTransferdetails(
+            """
+            <div><table>
+              <tr><td><a href="javascript:teaminfo(1324)">Chimica Agigea</a></td><td><a href="javascript:teaminfo(902)">Olympique Mansfeldia</a></td></tr>
+              <tr><td><table><tr><td>Tom Ullrich : 12.098.868 Euro</td></tr></table><table><tr><td>Gesamt: 12.098.868 Euro</td></tr></table></td><td><table><tr><td>Bargeld: 6.300.000 Euro</td></tr></table></td></tr>
+            </table></div>
+            """.trimIndent(),
+        )
+
+        assertEquals(listOf(1324L, 902L), details.teams.map { it.teamId })
+        assertEquals("Chimica Agigea", details.teams[0].name)
+        assertTrue(details.teams[0].positionen.any { it.contains("Tom Ullrich") })
+        assertTrue(details.teams[1].positionen.any { it.contains("Bargeld") })
     }
 
     @Test

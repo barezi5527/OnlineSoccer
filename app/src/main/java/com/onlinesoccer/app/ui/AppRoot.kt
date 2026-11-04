@@ -853,7 +853,14 @@ private fun MainScaffold(
                     navArgument("quelle") { type = androidx.navigation.NavType.StringType; defaultValue = "" },
                 ),
             ) {
-                SpielerkarteScreen(onClose = { navController.popBackStack() })
+                SpielerkarteScreen(
+                    onClose = { navController.popBackStack() },
+                    onTeamClick = { teamId ->
+                        navController.navigate(Routes.VEREIN.replace("{teamId}", teamId.toString())) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
             composable(
                 Routes.VEREIN,

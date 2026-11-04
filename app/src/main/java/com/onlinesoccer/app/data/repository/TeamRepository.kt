@@ -21,6 +21,7 @@ import com.onlinesoccer.app.data.model.SeitenAnsicht
 import com.onlinesoccer.app.data.model.SeitenTab
 import com.onlinesoccer.app.data.model.SonderFaehigkeit
 import com.onlinesoccer.app.data.model.SpielerKarte
+import com.onlinesoccer.app.data.model.SpielerHistorienTabelle
 import com.onlinesoccer.app.data.model.SpielerPosition
 import com.onlinesoccer.app.data.model.StadionBereich
 import com.onlinesoccer.app.data.model.StadionLage
@@ -33,6 +34,8 @@ import com.onlinesoccer.app.data.model.TeamInfoMenuEintrag
 import com.onlinesoccer.app.data.model.TeamTrainer
 import com.onlinesoccer.app.data.model.TrainerAktionVorschau
 import com.onlinesoccer.app.data.model.TransferhistorieBlock
+import com.onlinesoccer.app.data.model.TransferDetails
+import com.onlinesoccer.app.data.model.TransferDetailTeam
 import com.onlinesoccer.app.data.model.UebersichtAbschnitt
 import com.onlinesoccer.app.data.model.UebersichtZeile
 import com.onlinesoccer.app.data.model.VereinshistorieEintrag
@@ -1545,6 +1548,13 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
             statistikSaison = statSaison.await()?.werte.orEmpty().ifEmpty { sprofil.statistikSaison },
             statistikGesamt = statGesamt.await()?.werte.orEmpty().ifEmpty { sprofil.statistikGesamt },
             profilRohtext = parseProfilRohtext(profRoh),
+            teamId = sprofil.teamId,
+            teamName = sprofil.teamName,
+            teamLiga = sprofil.teamLiga,
+            teamLand = sprofil.teamLand,
+            transferhistorie = sprofil.transferhistorie,
+            leihhistorie = sprofil.leihhistorie,
+            spielerhistorie = sprofil.spielerhistorie,
         )
     }
 
@@ -1572,6 +1582,13 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
             staerken = sprofil.staerken,
             statistikSaison = sprofil.statistikSaison,
             statistikGesamt = sprofil.statistikGesamt,
+            teamId = sprofil.teamId,
+            teamName = sprofil.teamName,
+            teamLiga = sprofil.teamLiga,
+            teamLand = sprofil.teamLand,
+            transferhistorie = sprofil.transferhistorie,
+            leihhistorie = sprofil.leihhistorie,
+            spielerhistorie = sprofil.spielerhistorie,
             trainer = team.await()?.trainer ?: TeamTrainer.Unbekannt,
         )
     }
@@ -2039,6 +2056,34 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
         }
     }
 
+    suspend fun ladeTransferdetails(transferId: Long): TransferDetails = withContext(Dispatchers.IO) {
+        safeGet("${OsApi.BASE_URL}/transferview.php?tr=$transferId")
+            ?.let(::parseTransferdetails)
+            ?: TransferDetails()
+    }
+
+    internal fun parseTransferdetails(html: String): TransferDetails {
+        val doc = Jsoup.parse(html)
+        val tabelle = doc.select("body > div > table").firstOrNull()
+            ?: doc.select("table").firstOrNull()
+            ?: return TransferDetails()
+        val zeilen = tabelle.select("tr")
+        val kopf = zeilen.getOrNull(0)?.select("> td") ?: return TransferDetails()
+        val inhalt = zeilen.getOrNull(1)?.select("> td").orEmpty()
+        return TransferDetails(
+            teams = kopf.mapIndexed { index, td ->
+                val link = td.selectFirst("a[href*='teaminfo']")
+                val id = link?.attr("href")?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+                val positionen = inhalt.getOrNull(index)
+                    ?.select("table tr td")
+                    ?.map { it.text().trim() }
+                    ?.filter { it.isNotBlank() }
+                    .orEmpty()
+                TransferDetailTeam(id, link?.text()?.trim().orEmpty(), positionen)
+            },
+        )
+    }
+
     /** Leihhistorie: Tabelle aller Leihen. */
     suspend fun ladeLeihhistorie(teamId: Long? = null): List<LeihhistorieEintrag> =
         withContext(Dispatchers.IO) {
@@ -2152,6 +2197,13 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
         val staerken: Map<String, String> = emptyMap(),
         val statistikSaison: Map<String, String> = emptyMap(),
         val statistikGesamt: Map<String, String> = emptyMap(),
+        val teamId: Long? = null,
+        val teamName: String? = null,
+        val teamLiga: String? = null,
+        val teamLand: String? = null,
+        val transferhistorie: SpielerHistorienTabelle = SpielerHistorienTabelle(),
+        val leihhistorie: SpielerHistorienTabelle = SpielerHistorienTabelle(),
+        val spielerhistorie: SpielerHistorienTabelle = SpielerHistorienTabelle(),
     )
 
     /** Spielerprofil aus `sp.php`: Kopf-Daten, Stärken (`td.stats`), Statistik. */
@@ -2177,6 +2229,19 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
                 }
             }
         }
+
+        val teamZelle = doc.select("td.stat").firstOrNull { it.text().trim().equals("Team :", ignoreCase = true) }
+            ?.nextElementSibling()
+        val teamLink = teamZelle?.selectFirst("a[href*='teaminfo']")
+        val teamName = teamLink?.text()?.trim()?.takeIf { it.isNotBlank() }
+        val teamId = teamLink?.attr("href")?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+        val teamAnchors = teamZelle?.select("a").orEmpty()
+        val teamLand = teamAnchors.lastOrNull()?.text()?.trim()?.takeIf { it.isNotBlank() && it != teamName }
+        val teamLiga = teamZelle?.text()?.trim()
+            ?.removePrefix(teamName.orEmpty())
+            ?.removeSuffix(teamLand.orEmpty())
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
 
         var statSaison = emptyMap<String, String>()
         var statGesamt = emptyMap<String, String>()
@@ -2211,7 +2276,43 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
             staerken = staerken,
             statistikSaison = statSaison,
             statistikGesamt = statGesamt,
+            teamId = teamId,
+            teamName = teamName,
+            teamLiga = teamLiga,
+            teamLand = teamLand,
+            transferhistorie = parseSpielerHistorienTabelle(doc, "c"),
+            leihhistorie = parseSpielerHistorienTabelle(doc, "d"),
+            spielerhistorie = parseSpielerHistorienTabelle(doc, "e"),
         )
+    }
+
+    /** Liest die drei Historientabellen der Spielerkarte ohne Spalten zu verwerfen. */
+    private fun parseSpielerHistorienTabelle(doc: Document, bereich: String): SpielerHistorienTabelle {
+        val tabelle = doc.selectFirst("div#$bereich table") ?: return SpielerHistorienTabelle()
+        val rows = tabelle.select("tr").map { tr ->
+            tr.select("td,th").map { it.text().trim() }
+        }.filter { it.any(String::isNotBlank) }
+        if (rows.isEmpty()) return SpielerHistorienTabelle()
+
+        val kopf = rows.first()
+        val breite = rows.drop(1).maxOfOrNull { it.size } ?: kopf.size
+        val vollstaendigerKopf = kopf.toMutableList().apply {
+            while (size < breite) add("Details")
+        }
+        val detailIds = tabelle.select("tr").drop(1).map { tr ->
+            tr.selectFirst("a[href^='javascript:transferview']")?.attr("href")
+                ?.let { Regex("transferview\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+        }
+        val linkIds = tabelle.select("tr").drop(1).map { tr ->
+            tr.select("td").map { td ->
+                td.selectFirst("a[href*='teaminfo']")?.attr("href")
+                    ?.let { Regex("teaminfo\\((\\d+)\\)").find(it)?.groupValues?.get(1)?.toLongOrNull() }
+            }
+        }
+        val zeilen = rows.drop(1).map { row ->
+            row + List((vollstaendigerKopf.size - row.size).coerceAtLeast(0)) { "" }
+        }
+        return SpielerHistorienTabelle(vollstaendigerKopf, zeilen, detailIds, linkIds)
     }
 
     private fun parseProfilRohtext(html: String): List<String> {

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.onlinesoccer.app.data.model.GebotInformation
 import com.onlinesoccer.app.data.model.PmAntwortFormular
 import com.onlinesoccer.app.data.model.SpielerKarte
+import com.onlinesoccer.app.data.model.TransferDetails
 import com.onlinesoccer.app.data.repository.PmRepository
 import com.onlinesoccer.app.data.repository.ServerRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
@@ -24,6 +25,12 @@ data class SpielerkarteUiState(
     val karte: SpielerKarte? = null,
     /** True, wenn die Karte aus dem Transfermarkt geöffnet wurde („Bieten" sichtbar). */
     val bietenMoeglich: Boolean = false,
+)
+
+data class TransferDetailsState(
+    val ladend: Boolean = false,
+    val daten: TransferDetails? = null,
+    val fehler: String? = null,
 )
 
 /** Zustand des „Bieten"-Dialogs (Gebote werden erst nach Bestätigung gesendet). */
@@ -54,6 +61,9 @@ class SpielerkarteViewModel @Inject constructor(
         SpielerkarteUiState(bietenMoeglich = quelle == "tm"),
     )
     val uiState: StateFlow<SpielerkarteUiState> = _uiState.asStateFlow()
+
+    private val _transferDetails = MutableStateFlow(TransferDetailsState())
+    val transferDetails: StateFlow<TransferDetailsState> = _transferDetails.asStateFlow()
 
     private val _bietDialog = MutableStateFlow<BietDialogState>(BietDialogState.Verborgen)
     val bietDialog: StateFlow<BietDialogState> = _bietDialog.asStateFlow()
@@ -111,6 +121,22 @@ class SpielerkarteViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun ladeTransferdetails(transferId: Long) {
+        if (_transferDetails.value.ladend) return
+        viewModelScope.launch {
+            _transferDetails.value = TransferDetailsState(ladend = true)
+            _transferDetails.value = try {
+                TransferDetailsState(daten = repository.ladeTransferdetails(transferId))
+            } catch (e: Exception) {
+                TransferDetailsState(fehler = e.message ?: "Transferdetails konnten nicht geladen werden.")
+            }
+        }
+    }
+
+    fun transferDetailsSchliessen() {
+        _transferDetails.value = TransferDetailsState()
     }
 
     /** Öffnet den „Bieten"-Dialog: lädt die Gebots-Vorschau (`gebot.php`, nur lesend). */
