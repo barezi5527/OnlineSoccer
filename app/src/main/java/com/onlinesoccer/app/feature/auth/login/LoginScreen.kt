@@ -57,11 +57,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.onlinesoccer.app.R
@@ -77,8 +81,10 @@ fun LoginScreen(
     val loggingIn by viewModel.loggingIn.collectAsStateWithLifecycle()
     val loginError by viewModel.loginError.collectAsStateWithLifecycle()
     val serverUnavailable by viewModel.serverUnavailable.collectAsStateWithLifecycle()
+    val aktiveManager by viewModel.aktiveManager.collectAsStateWithLifecycle()
     val keyboard = LocalSoftwareKeyboardController.current
     val labelColor = MaterialTheme.colorScheme.onSurface
+    val managerzahl = aktiveManager?.toString() ?: "viele"
     var passwortSichtbar by remember { mutableStateOf(false) }
 
     Column(
@@ -213,6 +219,49 @@ fun LoginScreen(
                 .height(52.dp),
         ) {
             Text("Als Gast erkunden (Demo)", style = MaterialTheme.typography.titleMedium)
+        }
+
+        Spacer(Modifier.height(20.dp))
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(14.dp)) {
+                Text(
+                    text = "Was ist Online Soccer überhaupt?",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = buildAnnotatedString {
+                        append("Sicherlich kennst Du vom Computer her diverse " +
+                            "Fußball-Managerspiele, bei denen Du das Geschick einer Mannschaft " +
+                            "lenkst, indem Du Spieler kaufst, verkaufst und trainierst, die " +
+                            "Mannschaftsaufstellung festlegst, die Mannschaft optimal auf den " +
+                            "nächsten Gegner einstellst und Dich \"nebenher\" auch noch um die " +
+                            "finanziellen Belange \"Deiner\" Mannschaft kümmern musst. Nun, genau " +
+                            "das ist es, was Dich bei Online Soccer erwartet. Du übernimmst die " +
+                            "sportliche und wirtschaftliche Leitung eines Fussballclubs und " +
+                            "versuchst dabei, so erfolgreich wie möglich zu sein. Allerdings " +
+                            "versuchen das die ")
+                        withStyle(
+                            SpanStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 16.sp,
+                            ),
+                        ) {
+                            append(managerzahl)
+                        }
+                        append(" Mitstreiter natürlich ihrerseits ebenfalls; Und wie so oft " +
+                            "im Leben heißt es auch hier - Nur einer kann am Ende oben stehen!")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))

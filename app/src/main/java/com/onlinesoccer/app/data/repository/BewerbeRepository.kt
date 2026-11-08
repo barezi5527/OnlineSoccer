@@ -103,7 +103,19 @@ class BewerbeRepository @Inject constructor(
             ?: doc.select("table")
                 .filter { it.select("tr").isNotEmpty() && it.select("a[href*='teaminfo']").isNotEmpty() }
                 .maxByOrNull { it.select("tr").size }
-            ?: return null
+            ?: return LigaTabelle(
+                saisonen = saisonen,
+                saison = saison,
+                ligaOptionen = optionen(doc, "ligaauswahl"),
+                landOptionen = optionen(doc, "landauswahl"),
+                tabOptionen = optionen(doc, "tabauswahl"),
+                filter = LigaFilter(
+                    liga = selectedInt("ligaauswahl"),
+                    land = selectedInt("landauswahl"),
+                    tab = selectedInt("tabauswahl"),
+                    saison = saison,
+                ),
+            )
         val rows = haupt.select("tr").filter { it.select("td").isNotEmpty() }
         if (rows.isEmpty()) return null
         val kopfIndex = rows.indexOfFirst { it.select("th").isNotEmpty() }.let { if (it < 0) 0 else it }

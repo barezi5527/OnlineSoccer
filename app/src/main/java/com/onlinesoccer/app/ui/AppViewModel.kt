@@ -13,6 +13,7 @@ import com.onlinesoccer.app.data.model.TeamwechselErgebnis
 import com.onlinesoccer.app.data.model.VertragZeile
 import com.onlinesoccer.app.data.repository.DashboardRepository
 import com.onlinesoccer.app.data.repository.PmRepository
+import com.onlinesoccer.app.data.repository.PublicStatsRepository
 import com.onlinesoccer.app.data.repository.TeamRepository
 import com.onlinesoccer.app.core.state.OffeneAenderung
 import com.onlinesoccer.app.core.state.bestaetigungstext
@@ -219,6 +220,7 @@ class AppViewModel @Inject constructor(
     private val jugendHinweisStore: JugendHinweisStore,
     private val teamRepository: TeamRepository,
     private val pmRepository: PmRepository,
+    private val publicStatsRepository: PublicStatsRepository,
     private val dashboardRepository: DashboardRepository,
     private val teamwechselRepository: TeamwechselRepository,
     private val updateRepository: UpdateRepository,
@@ -246,6 +248,9 @@ class AppViewModel @Inject constructor(
     /** True, wenn die Website nicht erreichbar war (ZAT-Spieltag/Störung). */
     private val _serverUnavailable = MutableStateFlow(false)
     val serverUnavailable: StateFlow<Boolean> = _serverUnavailable.asStateFlow()
+
+    private val _aktiveManager = MutableStateFlow<Int?>(null)
+    val aktiveManager: StateFlow<Int?> = _aktiveManager.asStateFlow()
 
     /** Spieler mit höchstens [VERTRAGS_WARNUNG_ZAT] ZAT Restlaufzeit (Popup beim Login). */
     private val _vertragsWarnung = MutableStateFlow<List<VertragZeile>>(emptyList())
@@ -291,6 +296,9 @@ class AppViewModel @Inject constructor(
     val teamwechselAusgefuehrt: SharedFlow<Unit> = _teamwechselAusgefuehrt.asSharedFlow()
 
     init {
+        viewModelScope.launch {
+            _aktiveManager.value = publicStatsRepository.aktiveManager()
+        }
         // Offene, ungespeicherte Änderungen aus den Bildschirmen (T33/T34). Der
         // TopAppBar-Button sieht deren ViewModel nicht — der Singleton ist die einzige
         // Stelle, die beide Seiten kennt (siehe `OffeneAenderung`).

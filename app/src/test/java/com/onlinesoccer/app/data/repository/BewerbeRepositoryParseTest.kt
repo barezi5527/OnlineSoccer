@@ -188,6 +188,23 @@ class BewerbeRepositoryParseTest {
     }
 
     @Test
+    fun tabelle_demoOhneAusgewaehlteLigaLiefertDieFilter() {
+        val tabelle = repo.parseLigatabelle(
+            """
+            <select name="ligaauswahl"><option value="0">---Ligaauswahl---</option><option value="1">1. Liga</option></select>
+            <select name="landauswahl"><option value="0">---Landauswahl---</option><option value="6">Deutschland</option></select>
+            <select name="tabauswahl"><option value="0">Gesamttabelle</option></select>
+            <select name="saauswahl"><option value="24" selected>Saison 24</option></select>
+            """.trimIndent(),
+        )
+
+        assertNotNull("Demo-Seite mit Filtern parse failed", tabelle)
+        assertTrue("Liga-Auswahl vorhanden", tabelle!!.ligaOptionen.any { it.wert == 1 })
+        assertTrue("Land-Auswahl vorhanden", tabelle.landOptionen.any { it.wert == 6 })
+        assertTrue("Noch keine Tabelle angezeigt", tabelle.zeilen.isEmpty())
+    }
+
+    @Test
     fun pokalRundenMitSpielen() {
         val pokal = runCatching { repo.parsePokal(dump("lp2")) }.getOrNull()
         assertNotNull("lp2 parse failed", pokal)
