@@ -19,6 +19,7 @@ object SessionGuard {
         val html = html(bytes)
         return html.contains(MARKER_PERSONAL) &&
             !html.contains(MARKER_LOGIN_FORM) &&
+            !html.contains(MARKER_DEMO) &&
             !isDemoOffice(html)
     }
 
@@ -41,7 +42,8 @@ object SessionGuard {
     }
 
     /** Positiv-Erkennung des Demo-Managerbüros (nur auf `haupt.php` relevant). */
-    private fun isDemoOffice(html: String): Boolean = html.contains(MARKER_DEMO_OFFICE)
+    private fun isDemoOffice(html: String): Boolean =
+        html.contains(MARKER_DEMO_OFFICE) || html.contains(MARKER_DEMO_OFFICE_DECODED)
 
     private fun html(bytes: ByteArray): String = HtmlTools.serverText(bytes)
 
@@ -49,4 +51,5 @@ object SessionGuard {
     private const val MARKER_LOGIN_FORM = "loginemail"
     private const val MARKER_DEMO = "DemoTeam"
     private const val MARKER_DEMO_OFFICE = "Demo-Managerb&uuml;ro"
+    private const val MARKER_DEMO_OFFICE_DECODED = "Demo-Managerb\u00FCro"
 }

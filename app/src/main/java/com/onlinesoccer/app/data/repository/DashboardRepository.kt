@@ -3,6 +3,8 @@ package com.onlinesoccer.app.data.repository
 import com.onlinesoccer.app.core.network.OsApi
 import com.onlinesoccer.app.core.network.HtmlTools
 import com.onlinesoccer.app.core.network.SessionGuard
+import com.onlinesoccer.app.core.auth.AuthUiState
+import com.onlinesoccer.app.core.auth.SessionManager
 import com.onlinesoccer.app.data.model.DashboardData
 import com.onlinesoccer.app.data.model.TeamwechselInfo
 import java.io.IOException
@@ -19,6 +21,7 @@ import org.jsoup.Jsoup
 @Singleton
 class DashboardRepository @Inject constructor(
     private val client: OkHttpClient,
+    private val sessionManager: SessionManager? = null,
 ) {
 
     private val mutex = Mutex()
@@ -59,6 +62,12 @@ class DashboardRepository @Inject constructor(
             val request = Request.Builder().url(OsApi.MAIN).build()
             client.newCall(request).execute().use { response ->
                 val bytes = response.body?.bytes() ?: throw IOException("Leere Antwort")
+                if (SessionGuard.isDemoView(bytes) &&
+                    sessionManager?.state?.value != AuthUiState.SignedInDemo
+                ) {
+                    sessionManager?.invalidate()
+                    throw IOException("Persönliche Sitzung abgelaufen – bitte neu anmelden")
+                }
                 if (!SessionGuard.isPersonalView(bytes) && !SessionGuard.isDemoView(bytes)) {
                     throw IOException("Session abgelaufen – bitte neu anmelden")
                 }

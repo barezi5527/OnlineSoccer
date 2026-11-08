@@ -95,7 +95,7 @@ fun LoginScreen(
             .background(MaterialTheme.colorScheme.background)
             .imePadding()
             .systemBarsPadding()
-            .offset(y = 72.dp)
+            .offset(y = 18.dp)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 28.dp),
         verticalArrangement = Arrangement.Center,

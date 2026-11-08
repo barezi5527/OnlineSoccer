@@ -142,6 +142,12 @@ class SessionManager @Inject constructor(
         _state.value = AuthUiState.SignedOut
     }
 
+    /** Verwirft eine Sitzung, wenn ein persönlicher Abruf Demo-Daten erhalten hat. */
+    fun invalidate() {
+        cookieStore.clear()
+        _state.value = AuthUiState.SignedOut
+    }
+
     /**
      * Gastzugang wie auf der Website: leerer Login-POST über den „Gast"-Button
      * (`imageField2`) erzeugt eine anonyme Demo-Session (kein `lc`-Token).
