@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -206,7 +207,11 @@ private fun TopspielerFilterAuswahl(
             Spacer(Modifier.width(6.dp))
             Text("▾", fontSize = 10.sp)
         }
-        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+        DropdownMenu(
+            expanded = offen,
+            onDismissRequest = { offen = false },
+            modifier = Modifier.heightIn(max = 300.dp),
+        ) {
             optionen.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option.label) },

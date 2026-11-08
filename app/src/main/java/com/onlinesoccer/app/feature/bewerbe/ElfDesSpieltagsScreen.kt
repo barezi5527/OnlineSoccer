@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -351,7 +352,11 @@ private fun ElfFilterAuswahl(
         ) {
             Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+        DropdownMenu(
+            expanded = offen,
+            onDismissRequest = { offen = false },
+            modifier = Modifier.heightIn(max = 300.dp),
+        ) {
             optionen.forEach { opt ->
                 DropdownMenuItem(
                     text = { Text(opt.label) },
@@ -381,7 +386,11 @@ private fun ElfZatAuswahl(
         ) {
             Text("Spieltag ${zat.takeIf { it > 0 } ?: "–"}")
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 300.dp),
+        ) {
             zatOptionen.forEach { option ->
                 DropdownMenuItem(
                     text = { Text("Spieltag $option") },

@@ -896,7 +896,7 @@ private fun Auswahl(
         OutlinedButton(onClick = { offen = true }, modifier = Modifier.fillMaxWidth()) {
             Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }, modifier = Modifier.heightIn(max = 200.dp)) {
+        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }, modifier = Modifier.heightIn(max = 300.dp)) {
             optionen.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option.label) },

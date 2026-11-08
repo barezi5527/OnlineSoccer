@@ -233,7 +233,7 @@ private fun FilterAuswahl(
         DropdownMenu(
             expanded = offen,
             onDismissRequest = { offen = false },
-            modifier = Modifier.heightIn(max = 200.dp),
+            modifier = Modifier.heightIn(max = 300.dp),
         ) {
             optionen.forEach { opt ->
                 DropdownMenuItem(
@@ -607,7 +607,11 @@ private fun ZatSelector(
             Spacer(Modifier.width(6.dp))
             Text("▾", fontSize = 10.sp)
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 300.dp),
+        ) {
             spieltag.zatOptionen.forEach { zat ->
                 DropdownMenuItem(
                     text = { Text("Spieltag $zat") },
