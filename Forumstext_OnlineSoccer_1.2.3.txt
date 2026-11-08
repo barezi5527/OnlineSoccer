@@ -1,0 +1,31 @@
+Online Soccer - inoffizielle Android-App (Version 1.2.3)
+
+Hallo zusammen,
+
+es gibt eine neue Version meiner inoffiziellen Android-App für Online Soccer.
+Mit Version 1.2.3 gibt es auf der Login-Seite jetzt einen kurzen Überblick zum
+Spiel und die aktuelle Zahl der aktiven Manager. Außerdem bleiben die Filter
+auf der Liga-Seite auch dann sichtbar, wenn noch keine Tabelle ausgewählt ist.
+
+Download Version 1.2.3 (Android 8.0 oder neuer, kostenlos):
+https://github.com/barezi5527/OnlineSoccer-Download/releases/latest/download/OnlineSoccer-1.2.3-release.apk
+
+Release-Seite mit Changelog und Prüfsumme:
+https://github.com/barezi5527/OnlineSoccer-Download/releases/tag/v1.2.3
+
+Anpassungen in Stichworten:
+- Info-Text auf der Login-Seite
+- Anzeige der aktiven Manager
+- Liga-Filter auch ohne ausgewählte Tabelle sichtbar
+- Parser- und Stabilitätsverbesserungen
+
+Wenn euch etwas auffällt oder ihr einen Wunsch habt, freue ich mich über eine
+kurze Rückmeldung oder ein Issue auf GitHub. Viel Spaß damit!
+
+Die Nutzung der App ist freiwillig. Die App kann weiterhin Fehler enthalten;
+die Nutzung erfolgt auf eigene Verantwortung. Für Schäden, Datenverlust oder
+sonstige Nachteile übernehme ich keine Haftung.
+
+Die App ist ein inoffizielles Community-Projekt und steht in keiner Verbindung
+zu den Betreibern von os.ongapo.com. Ein bestehendes Online-Soccer-Konto wird
+benötigt; die App ist nicht im Google Play Store.
