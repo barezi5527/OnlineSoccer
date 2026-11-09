@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -185,7 +186,11 @@ private fun AuswahlButton(
     var offen by remember { mutableStateOf(false) }
     Box {
         OutlinedButton(onClick = { offen = true }, modifier = Modifier.fillMaxWidth()) { Text(selected?.label ?: placeholder) }
-        DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+        DropdownMenu(
+            expanded = offen,
+            onDismissRequest = { offen = false },
+            modifier = Modifier.heightIn(max = 300.dp),
+        ) {
             options.forEach { option ->
                 DropdownMenuItem(text = { Text(option.label) }, onClick = { offen = false; onSelect(option) })
             }
