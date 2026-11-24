@@ -45,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,7 +95,7 @@ fun SeiteScreen(
             }
 
             uiState.seite != null -> SeitenAnsicht(
-                ansicht = uiState.seite!!,
+                rohAnsicht = uiState.seite!!,
                 onClose = onClose,
                 aktioFehler = uiState.aktioFehler,
                 onSende = viewModel::sendeAktion,
@@ -146,7 +147,7 @@ fun SeiteScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SeitenAnsicht(
-    ansicht: SeitenAnsicht,
+    rohAnsicht: SeitenAnsicht,
     onClose: () -> Unit,
     aktioFehler: String?,
     onSende: (String, List<Pair<String, String>>) -> Unit,
@@ -158,6 +159,10 @@ private fun SeitenAnsicht(
     onTrainerVorschauZuruecksetzen: () -> Unit = {},
     onTabClick: (String) -> Unit = {},
 ) {
+    var vertragsSortierung by rememberSaveable { mutableStateOf(VertragsSortierung.LAUFZEIT) }
+    val ansicht = remember(rohAnsicht, vertragsSortierung) {
+        sortierteVerlaengerungen(rohAnsicht, vertragsSortierung)
+    }
     val trainingAbschnitt = remember(ansicht) {
         ansicht.abschnitte.firstOrNull { abschnitt ->
             abschnitt.aktionen.any(::istTrainingFormular)
@@ -196,6 +201,12 @@ private fun SeitenAnsicht(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
+                }
+            }
+
+            if (ansicht.titel == "Verträge verlängern") {
+                item {
+                    VertragsSortLeiste(vertragsSortierung) { vertragsSortierung = it }
                 }
             }
 
@@ -715,7 +726,11 @@ internal fun AuswahlFeld(
                 Text(anzeige.ifBlank { "—"}, modifier = Modifier.weight(1f))
                 Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
             }
-            DropdownMenu(expanded = offen, onDismissRequest = { offen = false }) {
+            DropdownMenu(
+                expanded = offen,
+                onDismissRequest = { offen = false },
+                modifier = Modifier.heightIn(max = 300.dp),
+            ) {
                 feld.optionen.forEach { option ->
                     val wertAnzeige = wertProOption[option.wert]?.takeIf { it.isNotBlank() }
                     DropdownMenuItem(

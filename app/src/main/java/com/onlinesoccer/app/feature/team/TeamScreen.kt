@@ -256,6 +256,35 @@ private fun SortLeiste(
 }
 
 @Composable
+internal fun VertragsSortLeiste(
+    sortierung: VertragsSortierung,
+    onSortierung: (VertragsSortierung) -> Unit,
+) {
+    SingleChoiceSegmentedButtonRow(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        VertragsSortierung.entries.forEachIndexed { index, s ->
+            SegmentedButton(
+                selected = sortierung == s,
+                onClick = { onSortierung(s) },
+                shape = SegmentedButtonDefaults.itemShape(index, VertragsSortierung.entries.size),
+            ) {
+                Text(
+                    when (s) {
+                        VertragsSortierung.LAUFZEIT -> "Laufzeit"
+                        VertragsSortierung.NAME -> "Name"
+                        VertragsSortierung.POSITION -> "Position"
+                    },
+                    fontSize = 12.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun SpielerZeile(
     spieler: KaderSpieler,
     onClick: () -> Unit,
@@ -388,39 +417,44 @@ private fun VerletztStatus(kuerzel: String) {
 @Composable
 internal fun VertraegeAnsicht(
     vertraege: List<VertragZeile>,
+    sortierung: VertragsSortierung,
+    onSortierung: (VertragsSortierung) -> Unit,
     onSpielerClick: (Long) -> Unit,
 ) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        items(vertraege, key = { it.pid }) { v ->
-            Card(Modifier.fillMaxWidth().clickable { onSpielerClick(v.pid) }) {
-                Column(Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (v.position != SpielerPosition.AMATEUR) {
-                            PositionsBadge(v.position)
-                            Spacer(Modifier.width(6.dp))
+    Column(Modifier.fillMaxSize()) {
+        VertragsSortLeiste(sortierung, onSortierung)
+        LazyColumn(
+            Modifier.weight(1f),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            items(vertraege, key = { it.pid }) { v ->
+                Card(Modifier.fillMaxWidth().clickable { onSpielerClick(v.pid) }) {
+                    Column(Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (v.position != SpielerPosition.AMATEUR) {
+                                PositionsBadge(v.position)
+                                Spacer(Modifier.width(6.dp))
+                            }
+                            Text(v.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                         }
-                        Text(v.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Gehalt", style = MaterialTheme.typography.labelSmall)
-                        Text(v.gehalt ?: "–", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Laufzeit", style = MaterialTheme.typography.labelSmall)
-                        Text(v.laufzeit ?: "–", style = MaterialTheme.typography.bodySmall)
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Marktwert", style = MaterialTheme.typography.labelSmall)
-                        Text(v.marktwert ?: "–", style = MaterialTheme.typography.bodySmall)
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Geburtstag", style = MaterialTheme.typography.labelSmall)
-                        Text(v.geburtstag ?: "–", style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(4.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Gehalt", style = MaterialTheme.typography.labelSmall)
+                            Text(v.gehalt ?: "–", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Laufzeit", style = MaterialTheme.typography.labelSmall)
+                            Text(v.laufzeit ?: "–", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Marktwert", style = MaterialTheme.typography.labelSmall)
+                            Text(v.marktwert ?: "–", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Geburtstag", style = MaterialTheme.typography.labelSmall)
+                            Text(v.geburtstag ?: "–", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }

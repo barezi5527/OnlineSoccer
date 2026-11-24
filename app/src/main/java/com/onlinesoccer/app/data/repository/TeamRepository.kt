@@ -1169,6 +1169,7 @@ data class AktionErgebnis(val erfolg: Boolean, val meldung: String? = null)
                 aktionSchluessel = pid,
                 aktionTitel = "Vertrag verlängern",
                 spielerPid = pid?.toLongOrNull(),
+                position = zellen.firstOrNull()?.classNames()?.firstNotNullOfOrNull { positionFromText(it) },
             )
         }
         val gebote = mutableListOf<AktionZeile>()

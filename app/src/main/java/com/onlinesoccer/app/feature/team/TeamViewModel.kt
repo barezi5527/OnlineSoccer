@@ -34,6 +34,7 @@ data class TeamUiState(
     val sortierung: Sortierung = Sortierung.POSITION,
     // Sub-Bereiche (lazy geladen)
     val vertraege: List<VertragZeile>? = null,
+    val vertragsSortierung: VertragsSortierung = VertragsSortierung.LAUFZEIT,
     val staerken: List<StaerkeZeile>? = null,
     val statistik: List<StatistikZeile>? = null,
     val statistikGesamt: Boolean = false,
@@ -59,10 +60,24 @@ data class TeamUiState(
                 Sortierung.ALTER -> compareBy<KaderSpieler> { it.alter ?: Int.MAX_VALUE }
                 Sortierung.NUMMER -> compareBy<KaderSpieler> { it.nummer.toIntOrNull() ?: Int.MAX_VALUE }
             })
+
+    val sortierteVertraege: List<VertragZeile>
+        get() = vertraege.orEmpty().sortedWith(when (vertragsSortierung) {
+            VertragsSortierung.LAUFZEIT -> compareBy<VertragZeile> { laufzeitZahl(it.laufzeit) }
+                .thenBy { it.name.lowercase() }
+            VertragsSortierung.NAME -> compareBy<VertragZeile> { it.name.lowercase() }
+            VertragsSortierung.POSITION -> compareBy<VertragZeile> { it.position.rang }
+                .thenBy { laufzeitZahl(it.laufzeit) }
+                .thenBy { it.name.lowercase() }
+        })
 }
 
 enum class Sortierung {
     POSITION, SKILL, OPTI, ALTER, NUMMER,
+}
+
+enum class VertragsSortierung {
+    LAUFZEIT, NAME, POSITION,
 }
 
 @HiltViewModel
@@ -142,6 +157,10 @@ class TeamViewModel @Inject constructor(
 
     fun setzeSortierung(sortierung: Sortierung) {
         _uiState.value = _uiState.value.copy(sortierung = sortierung)
+    }
+
+    fun setzeVertragsSortierung(sortierung: VertragsSortierung) {
+        _uiState.value = _uiState.value.copy(vertragsSortierung = sortierung)
     }
 
     fun ladeVertraege(teamId: Long? = null) {

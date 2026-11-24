@@ -11,6 +11,7 @@ data class UebersichtZeile(
     val aktionTitel: String? = null,
     /** Spieler-ID, falls in dieser Zeile ein Spieler verlinkt ist (ermöglicht Karten-Klick). */
     val spielerPid: Long? = null,
+    val position: SpielerPosition? = null,
 )
 
 /** Ein Abschnitt einer Übersichtsseite (Titel + Einzelwerte/Merkpunkte/Karten + evtl. Formulare). */

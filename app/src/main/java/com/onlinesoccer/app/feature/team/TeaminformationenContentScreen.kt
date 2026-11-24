@@ -114,7 +114,12 @@ fun TeaminformationenContentScreen(
             }
             else -> when (eintragId) {
                 "s0" -> KaderAnsicht(uiState, viewModel, onSpielerClick)
-                "s1" -> VertraegeAnsicht(uiState.vertraege.orEmpty(), onSpielerClick)
+                "s1" -> VertraegeAnsicht(
+                    vertraege = uiState.sortierteVertraege,
+                    sortierung = uiState.vertragsSortierung,
+                    onSortierung = viewModel::setzeVertragsSortierung,
+                    onSpielerClick = onSpielerClick,
+                )
                 "s2" -> StaerkenAnsicht(uiState.staerken.orEmpty())
                 "s3" -> StatistikAnsicht(
                     uiState.statistik.orEmpty(),
