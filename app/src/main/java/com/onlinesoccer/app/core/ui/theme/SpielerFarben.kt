@@ -3,6 +3,8 @@ package com.onlinesoccer.app.core.ui.theme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -11,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.onlinesoccer.app.data.model.SpielerPosition
@@ -82,6 +86,18 @@ internal fun kastenTextFarbe(hintergrund: Color): Color {
 internal val KACHEL_TEXT = Color(0xFF191C19)
 internal val KACHEL_BADGE_HINTERGRUND = Color(0xFFDDE5DE)
 internal val KACHEL_BADGE_TEXT = Color(0xFF081F13)
+
+/** Kleiner Positionspunkt in der Trikotfarbe des Kaders. */
+@Composable
+internal fun PositionsPunkt(position: SpielerPosition) {
+    Box(
+        Modifier
+            .size(10.dp)
+            .clip(CircleShape)
+            .background(trikotFarbe(position))
+            .semantics { contentDescription = "Position: ${positionsKuerzel(position)}" },
+    )
+}
 
 /** Positionskürzel für das Kästchen (z. B. „TOR“, „ABW“). */
 internal fun positionsKuerzel(position: SpielerPosition): String = when (position) {

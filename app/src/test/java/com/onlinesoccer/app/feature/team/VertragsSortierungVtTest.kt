@@ -30,6 +30,13 @@ class VertragsSortierungVtTest {
     }
 
     @Test
+    fun parser_liestPositionenFuerAlleKuerzel() {
+        val positionen = vtAnsicht().abschnitte.first().zeilen.mapNotNull { it.position }.toSet()
+
+        assertEquals(SpielerPosition.entries.filter { it != SpielerPosition.AMATEUR }.toSet(), positionen)
+    }
+
+    @Test
     fun sortiert_nachLaufzeitMitMonatsSuffix() {
         val sortiert = sortierteVerlaengerungen(vtAnsicht(), VertragsSortierung.LAUFZEIT)
         val zeilen = sortiert.abschnitte.first().zeilen
