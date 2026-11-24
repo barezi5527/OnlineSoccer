@@ -133,7 +133,7 @@ Kontoauszug, Steuer, Team-Editor …).
     Trainer, Stadion, Team-Editor, Kontoauszug, Steuer, Verträge verlängern)
   - **Zugabgabe/ZAT:** `Vorschlag | Aufstellung | Taktik | Aktionen | Einstellungen` +
     ⋮ (ZAT-Report, ZAT-Ergebnisse)
-  - **Bewerbe:** `Ligatabelle | Spieltage | Pokal` (+ optional später: Internationale
+  - **Bewerbe:** `Spieltage | Ligatabelle | Pokal` (+ optional später: Internationale
     Bewerbe)
 - Umsetzung: ein eigener NavController-Level pro Tab (im Plan §7 bereits vorgesehen);
   Sub-Tab-Wechsel im Fliege „innerhalb des Tabs", State via `rememberSaveable`.

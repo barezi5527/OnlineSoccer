@@ -66,7 +66,7 @@ import com.onlinesoccer.app.data.model.LigaTabelle
 import com.onlinesoccer.app.data.model.PokalAnsicht
 import com.onlinesoccer.app.ui.HubTabs
 
-private enum class BewerbeBereich { TABELLE, SPIELTAGE, POKAL }
+private enum class BewerbeBereich { SPIELTAGE, TABELLE, POKAL }
 
 /** Unter-Schalter innerhalb des Menüpunkts „Spieltage". */
 private enum class SpieltageUnteransicht { SPIELTAGE, ELF_DE_SPIELTAGS }
@@ -80,7 +80,7 @@ fun BewerbeScreen(
     viewModel: BewerbeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var bereich by rememberSaveable { mutableStateOf(BewerbeBereich.TABELLE) }
+    var bereich by rememberSaveable { mutableStateOf(BewerbeBereich.SPIELTAGE) }
     var spieltageUnteransicht by rememberSaveable { mutableStateOf(SpieltageUnteransicht.SPIELTAGE) }
     var ergebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
     var pokalErgebnisseSichtbar by rememberSaveable { mutableStateOf(false) }
@@ -113,8 +113,8 @@ fun BewerbeScreen(
         ) {
             HubTabs(
                 tabs = listOf(
-                    "Ligatabelle" to BewerbeBereich.TABELLE,
                     "Spieltage" to BewerbeBereich.SPIELTAGE,
+                    "Ligatabelle" to BewerbeBereich.TABELLE,
                     "Landespokal" to BewerbeBereich.POKAL,
                 ),
                 selected = bereich,
